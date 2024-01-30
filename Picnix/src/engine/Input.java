@@ -23,19 +23,13 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	private Input() {}
 	
 	/**
-	 * If not yet created, creates the singleton instance.
-	 */
-	public static void createInstance() {
-		if (instance == null)
-			instance = new Input();
-	}
-	
-	/**
-	 * Returns the singleton instance.
-	 * @return The Input instance, or null if no instance has been created.
+	 * Returns the singleton instance. If no instance exists,
+	 * one will be created.
+	 * @return The Input instance.
 	 */
 	public static Input getInstance() {
-		return instance;
+		return instance == null ? 
+				(instance = new Input()) : instance;
 	}
 	
 	/* ~~~
@@ -263,13 +257,9 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	@Override
 	public void mouseMoved(MouseEvent e) {
 		Engine engine = Engine.getEngine();
-		// adjust for frame insets
-		Insets insets = engine.getFrame().getInsets();
 		motionRecordHead = (motionRecordHead + 1) % RECORD_SIZE;
-		motionRecordsX[motionRecordHead] =
-				(e.getX() - engine.getDisplayOffsetX() - insets.left) / engine.getDisplayScale();
-		motionRecordsY[motionRecordHead] =
-				(e.getY() - engine.getDisplayOffsetY() - insets.top) / engine.getDisplayScale();
+		motionRecordsX[motionRecordHead] = e.getX() / engine.getDisplayScale();
+		motionRecordsY[motionRecordHead] = e.getY() / engine.getDisplayScale();
 		motionRecordsTime[motionRecordHead] = System.currentTimeMillis();
 	}
 	

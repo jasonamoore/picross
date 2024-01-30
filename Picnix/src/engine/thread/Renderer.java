@@ -1,11 +1,10 @@
 package engine.thread;
 
+import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Insets;
+import java.awt.image.BufferStrategy;
 import java.awt.image.VolatileImage;
-
-import javax.swing.JFrame;
 
 import engine.Engine;
 import state.State;
@@ -33,15 +32,17 @@ public class Renderer extends ThreadManager {
 	public void setFrameRate(int fps) {
 		frameTime = 1_000_000_000 / fps;
 	}
-
+	
 	@Override
-	protected void begin() {
+	public void begin() {
+		running = true;
 		Engine engine = Engine.getEngine();
-		JFrame frame = engine.getFrame();
-		Insets insets = frame.getInsets();
+		Canvas canvas = engine.getCanvas();
 		
-		// create blank volatile canvas
-		VolatileImage canvas = frame.createVolatileImage(Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
+		// set up buffer strategy
+    	canvas.createBufferStrategy(3);
+		BufferStrategy bs = canvas.getBufferStrategy();
+        VolatileImage image = canvas.createVolatileImage(Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
 		
 		// render loop stuff
 		long startTime = System.nanoTime();
@@ -51,36 +52,25 @@ public class Renderer extends ThreadManager {
 			long now = System.nanoTime();
 			if (now - startTime >= frameTime) {
 				startTime = now;
-				// accelerate?
-				//canvas.setAccelerationPriority(1);
-				// create graphics context
-				Graphics g = canvas.createGraphics();
 				
-				// draw frame
+				// get Graphics
+	            Graphics g = image.createGraphics();
+	            // render game
 				State state = engine.getActiveState();
 				g.setColor(Color.PINK);
 				g.fillRect(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
 				state.render(g);
-				
-				// dispose to free memory
-				g.dispose();
-				
-				// draw full screen with backdrop
-				VolatileImage fullscreen = frame.createVolatileImage(frame.getWidth(), frame.getHeight());
-				g = fullscreen.getGraphics();
-				// draw display border
-				g.setColor(Color.BLACK);
-				g.fillRect(0, 0, frame.getWidth(), frame.getHeight());
-				// draw rendered screen
-				g.drawImage(canvas, engine.getDisplayOffsetX(), engine.getDisplayOffsetY(),
-						engine.getDisplayWidth(), engine.getDisplayHeight(), null);
-				
-				// dispose to free memory
-				g.dispose();
-				
-				// present frame
-				g = frame.getGraphics();
-				g.drawImage(fullscreen, insets.left, insets.top, null);
+	            g.dispose();
+	            // present frame
+	            g = bs.getDrawGraphics();
+	            g.drawImage(image, 0, 0, engine.getDisplayWidth(), engine.getDisplayHeight(), null);
+	            g.dispose();
+	            bs.show();
+	            try {
+					Thread.sleep(5);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}

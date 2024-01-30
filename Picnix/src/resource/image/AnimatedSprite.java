@@ -1,15 +1,17 @@
 package resource.image;
 
+import java.awt.image.BufferedImage;
+
 import util.Animation;
 
 public class AnimatedSprite extends Sprite {
 
-	private RasterSheet sheet;
+	private BufferedImage[] sheet;
 	private Animation anim;
 	
 	@Override
-	protected Raster getCurrentRaster() {
-		return sheet.getRasterByIndex(anim.getIntValue());
+	protected BufferedImage getCurrentRaster() {
+		return sheet[anim.getIntValue()];
 	}
 	
 }

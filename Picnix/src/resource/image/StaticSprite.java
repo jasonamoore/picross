@@ -1,11 +1,13 @@
 package resource.image;
 
+import java.awt.image.BufferedImage;
+
 public class StaticSprite extends Sprite {
 
-	private Raster raster;
+	private BufferedImage raster;
 	
 	@Override
-	protected Raster getCurrentRaster() {
+	protected BufferedImage getCurrentRaster() {
 		return raster;
 	}
 

@@ -1,12 +1,13 @@
 package engine;
 
+import java.awt.Canvas;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.Rectangle;
-import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,7 +21,7 @@ import engine.thread.Speaker;
 import puzzle.Puzzle;
 import resource.bank.AudioBank;
 import resource.bank.FontBank;
-import resource.bank.SpriteBank;
+import resource.bank.ImageBank;
 import state.PuzzleState;
 import state.State;
 
@@ -33,17 +34,14 @@ public class Engine {
 
 	private static Engine engine;
 
-	public static final int SCREEN_WIDTH = 400;
-	public static final int SCREEN_HEIGHT = 400;
+	public static final int SCREEN_WIDTH = 480;
+	public static final int SCREEN_HEIGHT = 416;
 
 	private int displayScale;
-	private int displayWidth;
-	private int displayHeight;
-	private int displayOffsetX;
-	private int displayOffsetY;
 	
-	private String title = "";
+	private String title = "Picnix";
 	private JFrame frame;
+	public Canvas canvas;
 
 	private Executor executor;
 	private Renderer renderer;
@@ -74,6 +72,24 @@ public class Engine {
 	}
 	
 	/**
+	 * Accessor for the engine's Canvas.
+	 * @return The Canvas component, inside the JFrame used by the engine.
+	 */
+	public Canvas getCanvas() {
+		return canvas;
+	}
+	
+	/**
+	 * Mutator for the JFrame title. Calls setTitle with the
+	 * given String.
+	 * @param newTitle The new title for the JFrame.
+	 */
+	public void changeFrameTitle(String newTitle) {
+		title = newTitle;
+		frame.setTitle(title);
+	}
+	
+	/**
 	 * Returns the scale factor of the engine's display.
 	 * This is the ratio of the display size to the
 	 * original game's screen size.
@@ -88,7 +104,7 @@ public class Engine {
 	 * @return The width of this engine's display.
 	 */
 	public int getDisplayWidth() {
-		return displayWidth;
+		return SCREEN_WIDTH * displayScale;
 	}
 	
 	/**
@@ -96,23 +112,7 @@ public class Engine {
 	 * @return The height of this engine's display.
 	 */
 	public int getDisplayHeight() {
-		return displayHeight;
-	}
-	
-	/**
-	 * Accessor for the horizontal display offset.
-	 * @return The horizontal offset of this engine's display.
-	 */
-	public int getDisplayOffsetX() {
-		return displayOffsetX;
-	}
-	
-	/**
-	 * Accessor for the vertical display offset.
-	 * @return The vertical offset of this engine's display.
-	 */
-	public int getDisplayOffsetY() {
-		return displayOffsetY;
+		return SCREEN_HEIGHT * displayScale;
 	}
 
 	/**
@@ -124,75 +124,63 @@ public class Engine {
 	}
 	
 	/**
-	 * Called by the ResizeListener when the JFrame is resized.
-	 * @param e The ComponentEvent received when the JFrame's inner content pane was resized.
+	 * Sets the size of the Canvas component by calling
+	 * setMinimumSize, setMaximumSize, and setPreferredSize.
 	 */
-	public void frameSizeChanged(ComponentEvent e) {
-		// do stuff to update the screen
-		updateDisplay();
+	public void setCanvasSize(int width, int height) {
+		Dimension size = new Dimension(width, height);
+		canvas.setMinimumSize(size);
+		canvas.setPreferredSize(size);
+		canvas.setMaximumSize(size);
 	}
 	
-	public void maximizeDisplay(Insets insets) {
-		// calculate frame size
+	public void maximizeCanvas() {
+		// get user display size
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		GraphicsDevice gd = ge.getDefaultScreenDevice();
 		GraphicsConfiguration config = gd.getDefaultConfiguration();
 		Rectangle bounds = config.getBounds();
 		// increase frame size as big as possible while fitting in display bounds
 		displayScale = 1;
-		displayWidth = SCREEN_WIDTH;
-		displayHeight = SCREEN_HEIGHT;
-		while (displayWidth * displayScale + insets.left + insets.right <= bounds.getWidth()
-				&& displayHeight * displayScale + insets.top + insets.bottom <= bounds.getHeight()) {
+		while (getDisplayWidth() <= bounds.getWidth()
+				&& getDisplayHeight() <= bounds.getHeight()) {
 			displayScale++;
 		}
 		// fit to the last valid scale
 		displayScale--;
-		displayWidth = SCREEN_WIDTH * displayScale;
-		displayHeight = SCREEN_HEIGHT * displayScale;
 		// set size plus insets, so window content size = width and height
-		frame.setSize(insets.left + insets.right + displayWidth, insets.top + insets.bottom + displayHeight);
-	}
-	
-	/**
-	 * Called to update the screen size and rendering hints.
-	 * Usually called when the JFrame is resized, so the
-	 * optimal display size can be calculated.
-	 */
-	private void updateDisplay() {
-		Insets insets = frame.getInsets();
-		// first get inner size (frame size without insets)
-		int innerWidth = frame.getWidth() - insets.left - insets.right;
-		int innerHeight = frame.getHeight() - insets.top - insets.bottom;
-		// now determine the largest screen scaling that can fit in this window]
-		// increase frame size as big as possible while fitting in display bounds
-		displayScale = 1;
-		displayWidth = SCREEN_WIDTH;
-		displayHeight = SCREEN_HEIGHT;
-		while (displayWidth * displayScale <= innerWidth
-				&& displayHeight * displayScale <= innerHeight) {
-			displayScale++;
-		}
-		// fit to the last valid scale
-		displayScale--;
-		displayWidth = SCREEN_WIDTH * displayScale;
-		displayHeight = SCREEN_HEIGHT * displayScale;
-		// determine display hints
-		displayOffsetX = Math.max(0, (innerWidth - displayWidth) / 2);
-		displayOffsetY = Math.max(0, (innerHeight - displayHeight) / 2);
+		setCanvasSize(getDisplayWidth(), getDisplayHeight());
+		frame.pack();
 	}
 
 	/**
-	 * Creates and configures the native window (JFrame).
+	 * Creates and configures the native window (JFrame). Also
+	 * creates the Canvas, maximizing it to fit the user's display
+	 * and packing it into the JFrame. Finally, adds various listeners
+	 * to the frame for input and window events.
 	 */
-	private Insets frameInit() {
+	private void frameInit() {
+		// create JFrame
 		frame = new JFrame(title);
+		// set up Canvas component
+		canvas = new Canvas();
+		frame.add(canvas);
+		// maximize the canvas scale
+		maximizeCanvas();
+		// frame settings
+		frame.setResizable(false);
+		frame.setLocationRelativeTo(null);
+		frame.setAutoRequestFocus(true);
+		// add input listeners
+		Input input = Input.getInstance();
+		canvas.addKeyListener(input);
+		canvas.addMouseListener(input);
+		canvas.addMouseMotionListener(input);
+		canvas.addMouseWheelListener(input);
+		// add window listener
+		frame.addWindowListener(new EngineWindowListener());
 		// make the window appear
 		frame.setVisible(true);
-		// set JFrame attributes
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setResizable(true);
-		return frame.getInsets();
 	}
 	
 	/**
@@ -223,60 +211,25 @@ public class Engine {
 	}
 	
 	/**
-	 * Sets the size and position of the frame,
-	 * and provides necessary input and window listeners.
-	 */
-	private void guiInit(Insets insets) {
-		frame = new JFrame(title);
-		// adjust size to fit user's display
-		maximizeDisplay(insets);
-		// set JFrame attributes
-		frame.setLocationRelativeTo(null);
-		// add input listeners
-		Input input = Input.getInstance();
-		frame.addKeyListener(input);
-		frame.addMouseListener(input);
-		frame.addMouseMotionListener(input);
-		frame.addMouseWheelListener(input);
-		// add window listeners here
-		// frame.addWindowListener...
-		frame.getContentPane().addComponentListener(new ResizeListener());
-		frame.setAutoRequestFocus(true);
-		// make the window appear
-		frame.setVisible(true);
-	}
-	
-	/**
 	 * Initializes and configures the engine's default fields and necessary objects.
 	 */
 	private void init() {
 		// create state manager
 		//TODO THIS IS AN EXPLICIT TESTING PLUG-IN
 		stateManager = new StateManager(new PuzzleState(new Puzzle(Puzzle.genPuzzle(5, 5))));
-		// create the three thread managers
+		// creates the JFrame
+		frameInit();
+		// load global resources
+		ImageBank.loadGlobalResources();
+		FontBank.loadGlobalResources();
+		AudioBank.loadGlobalResources();
+		// create and start thread managers
 		executor = new Executor();
 		renderer = new Renderer();
 		speaker = new Speaker();
-		// initialize input singleton
-		Input.createInstance();
-		// creates the JFrame
-		Insets insets = frameInit();
-		// draw splash screen (show window)
-		try {
-			splash();
-		} catch (IOException ioe) {
-			// could not load splash
-		}
-		// gets ready for displaying the game
-		guiInit(insets);
-		// load global resources
-		SpriteBank.loadGlobalResources();
-		FontBank.loadGlobalResources();
-		AudioBank.loadGlobalResources();
-		// start threads
 		executor.start();
-		renderer.start();
 		speaker.start();
+		renderer.begin();
 	}
 	
 	/**
@@ -287,6 +240,21 @@ public class Engine {
 	public static void main(String[] args) {
 		engine = new Engine();
 		engine.init();
+	}
+
+	/**
+	 * Closes all running threads and cleanly
+	 * exists the Java application.
+	 */
+	public void cleanExit() {
+		try {
+			executor.stop();
+			renderer.stop();
+			speaker.stop();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		System.exit(0);
 	}
 
 }

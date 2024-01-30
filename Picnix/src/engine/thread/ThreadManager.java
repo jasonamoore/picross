@@ -33,10 +33,12 @@ public abstract class ThreadManager {
 	/**
 	 * Stops the ThreadManager by modifying the running state
 	 * to false, signaling to the thread to exit its loop.
+	 * @throws InterruptedException
 	 */
-	public void stop() {
+	public void stop() throws InterruptedException {
 		if (running)
 			running = false;
+		thread.join();
 	}
 	
 	/**

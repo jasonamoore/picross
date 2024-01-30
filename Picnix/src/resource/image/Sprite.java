@@ -1,13 +1,9 @@
 package resource.image;
 
-import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 
 public abstract class Sprite {
-
-	public void render(Graphics g) {
-		getCurrentRaster().render(g);
-	}
 	
-	protected abstract Raster getCurrentRaster();
+	protected abstract BufferedImage getCurrentRaster();
 	
 }

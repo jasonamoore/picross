@@ -14,13 +14,13 @@ public class Animation {
 	public static final int NO_LOOP = 0;
 	public static final int INF_LOOP = Integer.MAX_VALUE;
 	
-	// animation transition strategies (corresponds to PRESETS array)
-	public static final int HOLD = 0;
-	public static final int LINEAR = 1;
-	public static final int CUBIC = 2;
-	public static final int INV_CUBIC = 3;
-	public static final int EASE_IN = 4;
-	public static final int EASE_OUT = 5;
+	// animation transition strategies indices (corresponds to PRESETS array)
+	private static final int HOLD_INDEX = 0;
+	private static final int LINEAR_INDEX = 1;
+	private static final int CUBIC_INDEX = 2;
+	private static final int INV_CUBIC_INDEX = 3;
+	private static final int EASE_IN_INDEX = 4;
+	private static final int EASE_OUT_INDEX = 5;
 	
 	// bezier coefficients for presets (indices match to strategy constants)
 	private static final double[][] PRESETS = {
@@ -31,6 +31,14 @@ public class Animation {
 			{0, 0, 0.75, 1},
 			{0, 2.25, 3, 1},
 	};
+	
+	// *FOR public use: the arrays for common animation transition strategies
+	public static final double[] HOLD = PRESETS[HOLD_INDEX];
+	public static final double[] LINEAR = PRESETS[LINEAR_INDEX];
+	public static final double[] CUBIC = PRESETS[CUBIC_INDEX];
+	public static final double[] INV_CUBIC = PRESETS[INV_CUBIC_INDEX];
+	public static final double[] EASE_IN = PRESETS[EASE_IN_INDEX];
+	public static final double[] EASE_OUT= PRESETS[EASE_OUT_INDEX];
 	
 	// Timer used for timing the animation
 	private Timer timer;
@@ -49,11 +57,10 @@ public class Animation {
 	
 	// is the animation currently running
 	private boolean playing = false;
-	// the number of remaining loops (0 means no loop)
+	// the number of allowed loops
 	private int loopCount = 0;
 	
-	// the index of the current keyframe
-	private int frame;
+	private int startFrame;
 	// the offset in ms, of the start keyframe
 	private long offset;
 	// the total length, in frames, of the animation
@@ -75,16 +82,22 @@ public class Animation {
 	 * @param go Whether the animation should begin playing immediately.
 	 */
 	public Animation(double[] keys, int[] times, double[][] trans, int start, int loops, boolean go) {
-		timer = new Timer(false);
-		frame = start;
-		offset = start == 0 ? 0 : times[start - 1];
-		frameCount = keys.length;
-		duration = times[frameCount - 1];
+		timer = new Timer(false); // set up a timer for the anim
+		frameCount = keys.length; // num of frames in the anim
 		keyframes = keys;
 		timings = times;
 		transitions = trans;
-		loopCount = loops;
-		if (go) resume();
+		startFrame = start;
+		loopCount = loops; // num of loops
+		// to calculate duration and offset time:
+		int sum = 0;
+		for (int i = 0; i < times.length; i++) {
+			if (i == start)
+				offset = sum;
+			sum += times[i];
+		}
+		duration = sum; // sum of each keyframe duration
+		if (go) resume(); // start anim
 	}
 	
 	/**
@@ -131,40 +144,55 @@ public class Animation {
 	 * by the duration of the keyframe, its transition, and the amount of time elapsed.
 	 */
 	private void update() {
-		// increment frame if needed, until find the two keyframes which bound the elapsed time
-		// e.g. if elapsed = 11, with keyframe times {5, 10, 12, 15} find frame = k[1] (right bound = k[2])
-		long elapsed = (timer.elapsed() + offset) % duration;
-		while (elapsed >= timings[frame]) {
-			frame++;
-			// if past the last frame, and no loops left, value holds on the last keyframe
-			if (frame >= frameCount && loopCount < 1) {
-				value = keyframes[frameCount - 1];
-				return;
-			}
-			// otherwise, loop to beginning (keyframe 0) and decrement # of loops
-			else {
-				frame %= frameCount;
-				loopCount--;
-			}
+		/*
+		 *  step 0: UPDATE LOOP INFO
+		 */
+		// elapsed time divided by anim duration = # full loops
+		int loopsSoFar = (int) Math.floor(timer.elapsed() / duration);
+		if (loopsSoFar != INF_LOOP && loopsSoFar > loopCount) { // too many loops!
+			// stop the anim at last reached frame (frame before startFrame)
+			int frameBefore = (startFrame - 1 + frameCount) % frameCount;
+			value = keyframes[frameBefore];
+			pause(); // pause anim and return
+			return;
 		}
-		// to find intermediate - get relevant animation information
-		double keyfrom = keyframes[frame];
-		double keyto = keyframes[(frame + 1) % frameCount];
-		int start = frame == 0 ? 0 : timings[frame - 1];
-		int end = timings[frame];
-		double[] trans = transitions[frame];
+		// check if too many loops have occurred
+		/*
+		 *  step 1: FIND THE ANIMATION'S CURRENT KEYFRAME
+		 */
+		// start from first frame
+		int frame = 0;
+		// grab the time elapsed (modulus to get elapsed time within anim loop)
+		long elapsed = (timer.elapsed() + offset) % duration;
+		// increment frame as needed, adding key durations until we reached elapsed
+		int sum = timings[frame];
+		do {
+			sum += timings[frame++];
+		} while (elapsed > sum);
+		// rollback to last valid frame
+		sum -= timings[frame--];
+		
+		/*
+		 *  step 2: FIND INTERMEDIATE VALUE
+		 */
+		// first grab relevant info
+		double keyfrom = keyframes[frame]; // the current key
+		double keyto = keyframes[(frame + 1) % frameCount]; // the next key (to interpolate to)
+		double keydur = timings[frame]; // the duration of the current key
+		double[] keytrans = transitions[frame]; // the transition from the curr to next key
 		// the x-value of the curve, i.e. the percent from [0-1) of completion of this frame
-		double progress = (elapsed - start) / (end - start);
+		double progress = (sum - elapsed) / keydur; // i.e., the amount of this key that has passed
+		System.out.println(progress);
 		// catch cases for easy to compute transitions
-		if (trans == PRESETS[HOLD]) { // easy, just return the held key
+		if (keytrans == HOLD) { // easy, just return the held key
 			value = keyfrom;
 		}
-		else if (trans == PRESETS[LINEAR]) { // easy, just multiply by progress ratio
+		else if (keytrans == LINEAR) { // easy, just multiply by progress ratio
 			value = keyfrom + (keyto - keyfrom) * progress;
 		}
 		else { // otherwise, transition is cubic
 			// y = start + range * bezier_progress
-			value = keyfrom + (keyto - keyfrom) * bezier(progress, trans);
+			value = keyfrom + (keyto - keyfrom) * bezier(progress, keytrans);
 		}
 	}
 

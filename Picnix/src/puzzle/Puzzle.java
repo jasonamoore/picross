@@ -8,8 +8,8 @@ public class Puzzle {
 	public static final int CLEARED = 1;
 	public static final int FLAGGED = 2;
 
-	public int rows;
-	public int columns;
+	private int rows;
+	private int columns;
 	
 	// the grid holding the puzzle solution (image)
 	private boolean[][] solution;
@@ -40,6 +40,14 @@ public class Puzzle {
 		solvedStateDirty = true;
 		// calculate clues
 		calculateClues();
+	}
+	
+	public int getRows() {
+		return rows;
+	}
+	
+	public int getColumns() {
+		return columns;
 	}
 	
 	private void calculateClues() {
@@ -232,7 +240,7 @@ public class Puzzle {
 		boolean[][] grid = new boolean[height][width];
 		for (int i = 0; i < height; i++)
 			for (int j = 0; j < width; j++)
-				grid[i][j] = Math.random() < 0.5;
+				grid[i][j] = Math.random() < 0.6;
 		return grid;
 	}
 	
