@@ -160,17 +160,16 @@ public class Animation {
 		/*
 		 *  step 1: FIND THE ANIMATION'S CURRENT KEYFRAME
 		 */
-		// start from first frame
-		int frame = 0;
+		// start after first frame, with its duration added
+		int frame = 1;
+		int sum = timings[0];
 		// grab the time elapsed (modulus to get elapsed time within anim loop)
 		long elapsed = (timer.elapsed() + offset) % duration;
 		// increment frame as needed, adding key durations until we reached elapsed
-		int sum = timings[frame];
-		do {
+		while (elapsed > sum)
 			sum += timings[frame++];
-		} while (elapsed > sum);
 		// rollback to last valid frame
-		sum -= timings[frame--];
+		sum -= timings[--frame];
 		
 		/*
 		 *  step 2: FIND INTERMEDIATE VALUE
@@ -181,7 +180,7 @@ public class Animation {
 		double keydur = timings[frame]; // the duration of the current key
 		double[] keytrans = transitions[frame]; // the transition from the curr to next key
 		// the x-value of the curve, i.e. the percent from [0-1) of completion of this frame
-		double progress = (sum - elapsed) / keydur; // i.e., the amount of this key that has passed
+		double progress = (elapsed - sum) / keydur; // i.e., the amount of this key that has passed
 		System.out.println(progress);
 		// catch cases for easy to compute transitions
 		if (keytrans == HOLD) { // easy, just return the held key
