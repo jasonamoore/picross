@@ -32,5 +32,17 @@ public class StateManager {
 	public State getTopState() {
 		return stateStack.peek();
 	}
+
+	/**
+	 * Opens this state, pushing it to the top of the stack.
+	 * @param state
+	 */
+	public void openState(State state) {
+		stateStack.push(state);
+	}
+
+	public void exitTopState() {
+		stateStack.pop();
+	}
 	
 }

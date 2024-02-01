@@ -1,6 +1,5 @@
 package engine;
 
-import java.awt.Insets;
 import java.awt.MouseInfo;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -12,15 +11,25 @@ import java.awt.event.MouseWheelListener;
 
 import javax.swing.SwingUtilities;
 
+/**
+ * 
+ * @author Jason
+ *
+ */
 public class Input implements KeyListener, MouseListener, MouseMotionListener, MouseWheelListener {
 
 	// singleton implementation
 	private static Input instance;
 	
+	// the engine the input is tied to
+	private Engine engine;
+	
 	/**
 	 * Private constructor to prevent outside initialization.
 	 */
-	private Input() {}
+	private Input() {
+		engine = Engine.getEngine();
+	}
 	
 	/**
 	 * Returns the singleton instance. If no instance exists,
@@ -78,13 +87,15 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		int code = e.getKeyCode();
 		// if code is a valid key to store
 		if (code >= 0 && code <= KEY_MAX) {
-			keysPressing[code] = true;
-			keysReleased[code] = false;
-			keyTimestamps[code] = System.currentTimeMillis();
-			// records
-			keyPressRecordHead = (keyPressRecordHead + 1) % RECORD_SIZE;
-			keyPressButtonRecords[keyPressRecordHead] = code;
-			keyPressTimeRecords[keyPressRecordHead] = System.currentTimeMillis();
+			synchronized (this) {
+				keysPressing[code] = true;
+				keysReleased[code] = false;
+				keyTimestamps[code] = e.getWhen();
+				// records
+				keyPressRecordHead = (keyPressRecordHead + 1) % RECORD_SIZE;
+				keyPressButtonRecords[keyPressRecordHead] = code;
+				keyPressTimeRecords[keyPressRecordHead] = e.getWhen();
+			}
 		}
 	}
 	
@@ -99,13 +110,15 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		int code = e.getKeyCode();
 		// if code is a valid key to store
 		if (code >= 0 && code <= KEY_MAX) {
-			keysPressing[code] = false;
-			keysReleased[code] = true;
-			keyTimestamps[code] = System.currentTimeMillis();
-			// records
-			keyReleaseRecordHead = (keyReleaseRecordHead + 1) % RECORD_SIZE;
-			keyReleaseButtonRecords[keyReleaseRecordHead] = code;
-			keyReleaseTimeRecords[keyReleaseRecordHead] = System.currentTimeMillis();
+			synchronized (this) {
+				keysPressing[code] = false;
+				keysReleased[code] = true;
+				keyTimestamps[code] = e.getWhen();
+				// records
+				keyReleaseRecordHead = (keyReleaseRecordHead + 1) % RECORD_SIZE;
+				keyReleaseButtonRecords[keyReleaseRecordHead] = code;
+				keyReleaseTimeRecords[keyReleaseRecordHead] = e.getWhen();
+			}
 		}
 	}
 	
@@ -124,7 +137,9 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	// mouse button constants for clarity
 	public static int LEFT_CLICK = 1;
 	public static int MIDDLE_CLICK = 2;
-	public static int RIGHT_CLICK = 3;
+	public static int RIGHT_CLICK = 3;	
+	// used for filtering mouse press/release records
+	public static int ANY_CLICK = 0;
 	
 	// whether the mouse is within the window
 	private boolean mouseFocused;
@@ -141,12 +156,16 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	// a set of circular arrays holding data about the previous 'RECORD_SIZE' mouse presses
 	private int[] mousePressButtonRecords = new int[RECORD_SIZE];
 	private long[] mousePressTimeRecords= new long[RECORD_SIZE];
+	private int[] mousePressXPosRecords = new int[RECORD_SIZE];
+	private int[] mousePressYPosRecords = new int[RECORD_SIZE];
 	// the index of the most current record
 	private int mousePressRecordHead = 0;
 	
 	// a set of circular arrays holding data about the previous 'RECORD_SIZE' mouse releases
 	private int[] mouseReleaseButtonRecords = new int[RECORD_SIZE];
 	private long[] mouseReleaseTimeRecords= new long[RECORD_SIZE];
+	private int[] mouseReleaseXPosRecords = new int[RECORD_SIZE];
+	private int[] mouseReleaseYPosRecords = new int[RECORD_SIZE];
 	// the index of the most current record
 	private int mouseReleaseRecordHead = 0;
 	
@@ -174,13 +193,17 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	public void mousePressed(MouseEvent e) {
 		int code = mouseButtonDecode(e);
 		if (code >= 0 && code <= MOUSE_MAX) {
-			mouseButtonsPressing[code] = true;
-			mouseButtonsReleased[code] = false;
-			mouseTimestamps[code] = System.currentTimeMillis();
-			// records
-			mousePressRecordHead = (mousePressRecordHead + 1) % RECORD_SIZE;
-			mousePressButtonRecords[mousePressRecordHead] = code;
-			mousePressTimeRecords[mousePressRecordHead] = System.currentTimeMillis();
+			synchronized (this) {
+				mouseButtonsPressing[code] = true;
+				mouseButtonsReleased[code] = false;
+				mouseTimestamps[code] = e.getWhen();
+				// records
+				mousePressRecordHead = (mousePressRecordHead + 1) % RECORD_SIZE;
+				mousePressButtonRecords[mousePressRecordHead] = code;
+				mousePressTimeRecords[mousePressRecordHead] = e.getWhen();
+				mousePressXPosRecords[mousePressRecordHead] = e.getX() / engine.getDisplayScale();
+				mousePressYPosRecords[mousePressRecordHead] = e.getY() / engine.getDisplayScale();
+			}
 		}
 	}
 
@@ -195,13 +218,17 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	public void mouseReleased(MouseEvent e) {
 		int code = mouseButtonDecode(e);
 		if (code >= 0 && code <= MOUSE_MAX) {
-			mouseButtonsPressing[code] = false;
-			mouseButtonsReleased[code] = true;
-			mouseTimestamps[code] = System.currentTimeMillis();
-			// records
-			mouseReleaseRecordHead = (mouseReleaseRecordHead + 1) % RECORD_SIZE;
-			mouseReleaseButtonRecords[mouseReleaseRecordHead] = code;
-			mouseReleaseTimeRecords[mouseReleaseRecordHead] = System.currentTimeMillis();
+			synchronized (this) {
+				mouseButtonsPressing[code] = false;
+				mouseButtonsReleased[code] = true;
+				mouseTimestamps[code] = e.getWhen();
+				// records
+				mouseReleaseRecordHead = (mouseReleaseRecordHead + 1) % RECORD_SIZE;
+				mouseReleaseButtonRecords[mouseReleaseRecordHead] = code;
+				mouseReleaseXPosRecords[mouseReleaseRecordHead] = e.getX() / engine.getDisplayScale();
+				mouseReleaseYPosRecords[mouseReleaseRecordHead] = e.getY() / engine.getDisplayScale();
+				mouseReleaseTimeRecords[mouseReleaseRecordHead] = e.getWhen();
+			}
 		}
 	}
 	
@@ -256,11 +283,12 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 */
 	@Override
 	public void mouseMoved(MouseEvent e) {
-		Engine engine = Engine.getEngine();
-		motionRecordHead = (motionRecordHead + 1) % RECORD_SIZE;
-		motionRecordsX[motionRecordHead] = e.getX() / engine.getDisplayScale();
-		motionRecordsY[motionRecordHead] = e.getY() / engine.getDisplayScale();
-		motionRecordsTime[motionRecordHead] = System.currentTimeMillis();
+		synchronized (this) {
+			motionRecordHead = (motionRecordHead + 1) % RECORD_SIZE;
+			motionRecordsX[motionRecordHead] = e.getX() / engine.getDisplayScale();
+			motionRecordsY[motionRecordHead] = e.getY() / engine.getDisplayScale();
+			motionRecordsTime[motionRecordHead] = e.getWhen();
+		}
 	}
 	
 	/*
@@ -270,6 +298,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	// a set of circular arrays holding data about the previous 'RECORD_SIZE' wheel movements
 	private double[] wheelRecordsAmount = new double[RECORD_SIZE];
 	private long[] wheelRecordsTime = new long[RECORD_SIZE];
+	private double unconsumedScrollAmount = 0;
 	
 	// the index of the most current record
 	private int wheelRecordHead = 0;
@@ -280,9 +309,12 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 */
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		wheelRecordHead = (wheelRecordHead + 1) % RECORD_SIZE;
-		wheelRecordsAmount[wheelRecordHead] = e.getPreciseWheelRotation();
-		wheelRecordsTime[wheelRecordHead] = System.currentTimeMillis();
+		synchronized (this) {
+			unconsumedScrollAmount += e.getPreciseWheelRotation();
+			wheelRecordHead = (wheelRecordHead + 1) % RECORD_SIZE;
+			wheelRecordsAmount[wheelRecordHead] = e.getPreciseWheelRotation();
+			wheelRecordsTime[wheelRecordHead] = e.getWhen();
+		}
 	}
 	
 	/* ~~~
@@ -401,7 +433,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * @see #getMouseXRecord
 	 */
 	public int getMouseX() {
-		return getMouseXRecord(0);
+		return getMouseMoveXRecord(0);
 	}
 	
 	/**
@@ -410,7 +442,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * @see #getMouseYRecord
 	 */
 	public int getMouseY() {
-		return getMouseYRecord(0);
+		return getMouseMoveYRecord(0);
 	}
 	
 	/**
@@ -429,7 +461,10 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * @return The x position {@code lookback} entries prior to the current.
 	 * 			If this record does not exist, returns -1.
 	 */
-	public int getMouseXRecord(int lookback) {
+	public int getMouseMoveXRecord(int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
 		int lookHead = (motionRecordHead - lookback) % RECORD_SIZE;
 		return motionRecordsTime[lookHead] != 0 ? motionRecordsX[lookHead] : -1;
 	}
@@ -441,7 +476,10 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * @return The y position {@code lookback} entries prior to the current.
 	 * 			If this record does not exist, returns -1.
 	 */
-	public int getMouseYRecord(int lookback) {
+	public int getMouseMoveYRecord(int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
 		int lookHead = (motionRecordHead - lookback) % RECORD_SIZE;
 		return motionRecordsTime[lookHead] != 0 ? motionRecordsY[lookHead] : -1;
 	}
@@ -454,6 +492,9 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * 			If this record does not exist, returns -1.
 	 */
 	public long getMouseMoveTimeRecord(int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
 		int lookHead = (motionRecordHead - lookback) % RECORD_SIZE;
 		return motionRecordsTime[lookHead] != 0 ? motionRecordsTime[lookHead] : -1;
 	}
@@ -502,6 +543,9 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * 			If this record does not exist, returns -1.
 	 */
 	public int getKeyPressButtonRecord(int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
 		int lookHead = (keyPressRecordHead - lookback) % RECORD_SIZE;
 		return keyPressTimeRecords[lookHead] != 0 ? keyPressButtonRecords[lookHead] : -1;
 	}
@@ -514,6 +558,9 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * 			If this record does not exist, returns -1.
 	 */
 	public long getKeyPressTimeRecord(int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
 		int lookHead = (keyPressRecordHead - lookback) % RECORD_SIZE;
 		return keyPressTimeRecords[lookHead] != 0 ? keyPressTimeRecords[lookHead] : -1;
 	}
@@ -526,6 +573,9 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * 			If this record does not exist, returns -1.
 	 */
 	public int getKeyReleaseButtonRecord(int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
 		int lookHead = (keyReleaseRecordHead - lookback) % RECORD_SIZE;
 		return keyReleaseTimeRecords[lookHead] != 0 ? keyReleaseButtonRecords[lookHead] : -1;
 	}
@@ -538,6 +588,9 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * 			If this record does not exist, returns -1.
 	 */
 	public long getKeyReleaseTimeRecord(int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
 		int lookHead = (keyReleaseRecordHead - lookback) % RECORD_SIZE;
 		return keyReleaseTimeRecords[lookHead] != 0 ? keyReleaseTimeRecords[lookHead] : -1;
 	}
@@ -552,12 +605,33 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	}
 	
 	/**
-	 * The timestamp of the most recently pressed mouse button.
+	 * The timestamp of the most recently pressed mouse button (matching the given code).
+	 * @param code The code of the mouse button to search for release records of, or ANY_CLICK for all records.
 	 * @return A time in milliseconds, or -1 if no mouse buttons have been pressed yet.
 	 * @see #getMouseButtonTimeRecord
 	 */
-	public long getLastMousePressTime() {
-		return getMousePressTimeRecord(0);
+	public long getLastMousePressTime(int code) {
+		return getMousePressTimeRecord(code, 0);
+	}
+	
+	/**
+	 * The x position of the most recent mouse press (matching the given code).
+	 * @param code The code of the mouse button to search for press records of, or ANY_CLICK for all records.
+	 * @return A button code, or -1 if no mouse buttons have been pressed yet.
+	 * @see #getMouseButtonRecord
+	 */
+	public int getLastMousePressXPosition(int code) {
+		return getMousePressXPositionRecord(code, 0);
+	}
+	
+	/**
+	 * The y position of the most recent mouse press (matching the given code).
+	 * @param code The code of the mouse button to search for press records of, or ANY_CLICK for all records.
+	 * @return A button code, or -1 if no mouse buttons have been pressed yet.
+	 * @see #getMouseButtonRecord
+	 */
+	public int getLastMousePressYPosition(int code) {
+		return getMousePressYPositionRecord(code, 0);
 	}
 	
 	/**
@@ -570,12 +644,33 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	}
 	
 	/**
-	 * The timestamp of the most recently pressed mouse button.
+	 * The timestamp of the most recently pressed mouse button (matching the given code).
+	 * @param code The code of the mouse button to search for release records of, or ANY_CLICK for all records.
 	 * @return A time in milliseconds, or -1 if no mouse buttons have been pressed yet.
 	 * @see #getMouseButtonTimeRecord
 	 */
-	public long getLastMouseReleaseTime() {
-		return getMouseReleaseTimeRecord(0);
+	public long getLastMouseReleaseTime(int code) {
+		return getMouseReleaseTimeRecord(code, 0);
+	}
+	
+	/**
+	 * The x position of the most recent mouse release (matching the given code).
+	 * @param code The code of the mouse button to search for release records of, or ANY_CLICK for all records.
+	 * @return A button code, or -1 if no mouse buttons have been pressed yet.
+	 * @see #getMouseButtonRecord
+	 */
+	public int getLastMouseReleaseXPosition(int code) {
+		return getMouseReleaseXPositionRecord(code, 0);
+	}
+	
+	/**
+	 * The y position of the most recent mouse release (matching the given code).
+	 * @param code The code of the mouse button to search for release records of, or ANY_CLICK for all records.
+	 * @return A button code, or -1 if no mouse buttons have been pressed yet.
+	 * @see #getMouseButtonRecord
+	 */
+	public int getLastMouseReleaseYPosition(int code) {
+		return getMouseReleaseYPositionRecord(code, 0);
 	}
 	
 	/**
@@ -586,6 +681,9 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * 			If this record does not exist, returns -1.
 	 */
 	public int getMousePressButtonRecord(int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
 		int lookHead = (mousePressRecordHead - lookback) % RECORD_SIZE;
 		return mousePressTimeRecords[lookHead] != 0 ? mousePressButtonRecords[lookHead] : -1;
 	}
@@ -594,22 +692,112 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * Returns the timestamp of a historical mouse press record.
 	 * @param lookback The distance of the desired record from the current record.
 	 * 			(i.e., 0 is the current record, 1 is the previous record, etc.)
+	 * @param code The code of the mouse button to search for press records of, or ANY_CLICK for all records.
 	 * @return The button press time {@code lookback} entries prior to the current.
 	 * 			If this record does not exist, returns -1.
 	 */
-	public long getMousePressTimeRecord(int lookback) {
-		int lookHead = (mousePressRecordHead - lookback) % RECORD_SIZE;
-		return mousePressTimeRecords[lookHead] != 0 ? mousePressTimeRecords[lookHead] : -1;
+	public long getMousePressTimeRecord(int code, int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
+		// lookback through all records
+		if (code == ANY_CLICK) {
+			int lookHead = (mousePressRecordHead - lookback) % RECORD_SIZE;
+			return mousePressTimeRecords[lookHead] != 0 ? mousePressTimeRecords[lookHead] : -1;
+		}
+		// lookback through records that match the code
+		else {
+			int matched = 0;
+			for (int i = 0; i < RECORD_SIZE; i++) {
+				int lookHead = (mousePressRecordHead - i) % RECORD_SIZE;
+				int button = mousePressButtonRecords[lookHead];
+				if (button == code)
+					matched++;
+				if (matched > lookback)
+					return mousePressTimeRecords[lookHead];
+			}
+			return -1;
+		}
+	}
+	
+	/**
+	 * Returns the x position of a historical mouse press record.
+	 * @param lookback The distance of the desired record from the current record.
+	 * 			(i.e., 0 is the current record, 1 is the previous record, etc.)
+	 * @param code The code of the mouse button to search for press records of, or ANY_CLICK for all records.
+	 * @return The button press time {@code lookback} entries prior to the current.
+	 * 			If this record does not exist, returns -1.
+	 */
+	public int getMousePressXPositionRecord(int code, int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
+		// lookback through all records
+		if (code == ANY_CLICK) {
+			int lookHead = (mousePressRecordHead - lookback) % RECORD_SIZE;
+			return mousePressXPosRecords[lookHead] != 0 ? mousePressXPosRecords[lookHead] : -1;
+		}
+		// lookback through records that match the code
+		else {
+			int matched = 0;
+			for (int i = 0; i < RECORD_SIZE; i++) {
+				int lookHead = (mousePressRecordHead - i) % RECORD_SIZE;
+				int button = mousePressButtonRecords[lookHead];
+				if (button == code)
+					matched++;
+				if (matched > lookback)
+					return mousePressXPosRecords[lookHead];
+			}
+			return -1;
+		}
+	}
+	
+	/**
+	 * Returns the y position of a historical mouse press record.
+	 * @param lookback The distance of the desired record from the current record.
+	 * 			(i.e., 0 is the current record, 1 is the previous record, etc.)
+	 * @param code The code of the mouse button to search for press records of, or ANY_CLICK for all records.
+	 * @return The button press time {@code lookback} entries prior to the current.
+	 * 			If this record does not exist, returns -1.
+	 */
+	public int getMousePressYPositionRecord(int code, int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
+		synchronized (this) {
+			// lookback through all records
+			if (code == ANY_CLICK) {
+				int lookHead = (mousePressRecordHead - lookback) % RECORD_SIZE;
+				return mousePressYPosRecords[lookHead] != 0 ? mousePressYPosRecords[lookHead] : -1;
+			}
+			// lookback through records that match the code
+			else {
+				int matched = 0;
+				for (int i = 0; i < RECORD_SIZE; i++) {
+					int lookHead = (mousePressRecordHead - i) % RECORD_SIZE;
+					int button = mousePressButtonRecords[lookHead];
+					if (button == code)
+						matched++;
+					if (matched > lookback)
+						return mousePressYPosRecords[lookHead];
+				}
+				return -1;
+			}
+		}
 	}
 	
 	/**
 	 * Returns the button code of a historical mouse release record.
 	 * @param lookback The distance of the desired record from the current record.
 	 * 			(i.e., 0 is the current record, 1 is the previous record, etc.)
+	 * @param code The code of the mouse button to search for release records of, or ANY_CLICK for all records.
 	 * @return The button code {@code lookback} entries prior to the current.
 	 * 			If this record does not exist, returns -1.
 	 */
 	public int getMouseReleaseButtonRecord(int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
 		int lookHead = (mouseReleaseRecordHead - lookback) % RECORD_SIZE;
 		return mouseReleaseTimeRecords[lookHead] != 0 ? mouseReleaseButtonRecords[lookHead] : -1;
 	}
@@ -618,17 +806,110 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * Returns the timestamp of a historical mouse release record.
 	 * @param lookback The distance of the desired record from the current record.
 	 * 			(i.e., 0 is the current record, 1 is the previous record, etc.)
+	 * @param code The code of the mouse button to search for release records of, or ANY_CLICK for all records.
 	 * @return The button release time {@code lookback} entries prior to the current.
 	 * 			If this record does not exist, returns -1.
 	 */
-	public long getMouseReleaseTimeRecord(int lookback) {
-		int lookHead = (mouseReleaseRecordHead - lookback) % RECORD_SIZE;
-		return mouseReleaseTimeRecords[lookHead] != 0 ? mouseReleaseTimeRecords[lookHead] : -1;
+	public long getMouseReleaseTimeRecord(int code, int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
+		// lookback through all records
+		if (code == ANY_CLICK) {
+			int lookHead = (mouseReleaseRecordHead - lookback) % RECORD_SIZE;
+			return mouseReleaseTimeRecords[lookHead] != 0 ? mouseReleaseTimeRecords[lookHead] : -1;
+		}
+		// lookback through records that match the code
+		else {
+			int matched = 0;
+			for (int i = 0; i < RECORD_SIZE; i++) {
+				int lookHead = (mouseReleaseRecordHead - i) % RECORD_SIZE;
+				int button = mouseReleaseButtonRecords[lookHead];
+				if (button == code)
+					matched++;
+				if (matched > lookback)
+					return mouseReleaseTimeRecords[lookHead];
+			}
+			return -1;
+		}
+	}
+	
+	/**
+	 * Returns the x position of a historical mouse release record.
+	 * @param lookback The distance of the desired record from the current record.
+	 * 			(i.e., 0 is the current record, 1 is the previous record, etc.)
+	 * @param code The code of the mouse button to search for release records of, or ANY_CLICK for all records.
+	 * @return The button press time {@code lookback} entries prior to the current.
+	 * 			If this record does not exist, returns -1.
+	 */
+	public int getMouseReleaseXPositionRecord(int code, int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
+		// lookback through all records
+		if (code == ANY_CLICK) {
+			int lookHead = (mouseReleaseRecordHead - lookback) % RECORD_SIZE;
+			return mouseReleaseXPosRecords[lookHead] != 0 ? mouseReleaseXPosRecords[lookHead] : -1;
+		}
+		// lookback through records that match the code
+		else {
+			int matched = 0;
+			for (int i = 0; i < RECORD_SIZE; i++) {
+				int lookHead = (mouseReleaseRecordHead - i) % RECORD_SIZE;
+				int button = mouseReleaseButtonRecords[lookHead];
+				if (button == code)
+					matched++;
+				if (matched > lookback)
+					return mouseReleaseXPosRecords[lookHead];
+			}
+			return -1;
+		}
+	}
+	
+	/**
+	 * Returns the y position of a historical mouse release record.
+	 * @param lookback The distance of the desired record from the current record.
+	 * 			(i.e., 0 is the current record, 1 is the previous record, etc.)
+	 * @param code The code of the mouse button to search for release records of, or ANY_CLICK for all records.
+	 * @return The button press time {@code lookback} entries prior to the current.
+	 * 			If this record does not exist, returns -1.
+	 */
+	public int getMouseReleaseYPositionRecord(int code, int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
+		// lookback through all records
+		if (code == ANY_CLICK) {
+			int lookHead = (mouseReleaseRecordHead - lookback) % RECORD_SIZE;
+			return mouseReleaseYPosRecords[lookHead] != 0 ? mouseReleaseYPosRecords[lookHead] : -1;
+		}
+		// lookback through records that match the code
+		else {
+			int matched = 0;
+			for (int i = 0; i < RECORD_SIZE; i++) {
+				int lookHead = (mouseReleaseRecordHead - i) % RECORD_SIZE;
+				int button = mouseReleaseButtonRecords[lookHead];
+				if (button == code)
+					matched++;
+				if (matched > lookback)
+					return mouseReleaseYPosRecords[lookHead];
+			}
+			return -1;
+		}
+	}
+	
+	/**
+	 * Returns the amount that the mouse wheel has been scrolled
+	 * (the scroll delta), since the the last time it was consumed.
+	 * @return
+	 */
+	public double getUnconsumedScrollAmount() {
+		return unconsumedScrollAmount;
 	}
 	
 	/**
 	 * The scroll amount of the most recent mouse wheel scroll.
-	 * @return A button code, or -1 if no scroll has occurred yet.
+	 * @return The most recent scroll amount, or -1 if there was no scroll.
 	 * @see #getScrollAmountRecord
 	 */
 	public double getLastScrollAmount() {
@@ -652,6 +933,9 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * 			If this record does not exist, returns -1.
 	 */
 	public double getScrollAmountRecord(int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
 		int lookHead = (wheelRecordHead - lookback) % RECORD_SIZE;
 		return wheelRecordsTime[lookHead] != 0 ? wheelRecordsAmount[lookHead] : -1;
 	}
@@ -664,6 +948,9 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * 			If this record does not exist, returns -1.
 	 */
 	public long getScrollTimeRecord(int lookback) {
+		// can't lookback more than records store
+		if (lookback > RECORD_SIZE)
+			return -1;
 		int lookHead = (wheelRecordHead - lookback) % RECORD_SIZE;
 		return wheelRecordsTime[lookHead] != 0 ? wheelRecordsTime[lookHead] : -1;
 	}
@@ -675,7 +962,27 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		return mouseFocused;
 	}
 	
-	// methods for consuming button releases have been processed
+	// methods for consuming button press/releases that have been processed
+	
+	/**
+	 * If this key is currently marked as being pressed,
+	 * it is consumed (unmarked in the pressed array).
+	 * @param code
+	 */
+	public void consumeKeyPress(int code) {
+		if (code >= 0 && code < keysPressing.length)
+			keysPressing[code] = false;
+	}
+	
+	/**
+	 * If this mouse button is currently marked as being
+	 * pressed, it is consumed (unmarked in the pressed array).
+	 * @param code
+	 */
+	public void consumeMouseButtonPress(int code) {
+		if (code >= 0 && code < mouseButtonsPressing.length)
+			mouseButtonsPressing[code] = false;
+	}
 	
 	/**
 	 * If this key was in the released key log,
@@ -683,7 +990,8 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * @param code
 	 */
 	public void consumeKeyRelease(int code) {
-		keysReleased[code] = false;
+		if (code >= 0 && code < keysReleased.length)
+			keysReleased[code] = false;
 	}
 	
 	/**
@@ -692,7 +1000,15 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * @param code
 	 */
 	public void consumeMouseButtonRelease(int code) {
+		if (code >= 0 && code < mouseButtonsReleased.length)
 		mouseButtonsReleased[code] = false;
+	}
+	
+	/**
+	 * Resets the unconsumed scroll amount to 0.
+	 */
+	public void consumeMouseWheelScroll() {
+		unconsumedScrollAmount = 0;
 	}
 	
 	/**

@@ -181,7 +181,6 @@ public class Animation {
 		double[] keytrans = transitions[frame]; // the transition from the curr to next key
 		// the x-value of the curve, i.e. the percent from [0-1) of completion of this frame
 		double progress = (elapsed - sum) / keydur; // i.e., the amount of this key that has passed
-		System.out.println(progress);
 		// catch cases for easy to compute transitions
 		if (keytrans == HOLD) { // easy, just return the held key
 			value = keyfrom;
@@ -204,10 +203,14 @@ public class Animation {
 	private static double bezier(double x, double[] anchors) {
 		// note the ternary expressions; saves calculation time
 		// (Math.pow time) if result will be multiplied by 0
-		return 	anchors[0] == 0 ? 0 : (anchors[0] * Math.pow(1 - x, 3)) +
-				anchors[1] == 0 ? 0 : (anchors[1] * Math.pow(1 - x, 2) * x) +
-				anchors[2] == 0 ? 0 : (anchors[2] * (1 - x) * Math.pow(x, 2)) +
-				anchors[3] == 0 ? 0 : (anchors[3] * Math.pow(x, 3));
+		return 	(anchors[0] == 0 ? 0 : anchors[0] * Math.pow(1 - x, 3)) +
+				(anchors[1] == 0 ? 0 : anchors[1] * Math.pow(1 - x, 2) * x) +
+				(anchors[2] == 0 ? 0 : anchors[2] * (1 - x) * Math.pow(x, 2)) +
+				(anchors[3] == 0 ? 0 : anchors[3] * Math.pow(x, 3));
+	}
+
+	public boolean isPlaying() {
+		return playing;
 	}
 	
 }

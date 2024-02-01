@@ -12,8 +12,8 @@ public  class Food {
 		// for now, simple animation from a to b
 		drop = new Animation(
 				new double[] {0, endYPos},
-				new int[] {500, 0},
-				new double[][] {Animation.LINEAR, Animation.HOLD},
+				new int[] {100, 0},
+				new double[][] {Animation.EASE_OUT, Animation.HOLD},
 				0, Animation.NO_LOOP, true
 				);
 	}

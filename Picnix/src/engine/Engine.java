@@ -24,6 +24,8 @@ import resource.bank.FontBank;
 import resource.bank.ImageBank;
 import state.PuzzleState;
 import state.State;
+import state.TestScrollState;
+import state.TitleState;
 
 /**
  * Singleton class that handles all system-level jobs. Creates the native UI
@@ -113,6 +115,14 @@ public class Engine {
 	 */
 	public int getDisplayHeight() {
 		return SCREEN_HEIGHT * displayScale;
+	}
+
+	public void openState(State state) {
+		stateManager.openState(state);
+	}
+	
+	public void exitTopState() {
+		stateManager.exitTopState();
 	}
 
 	/**
@@ -214,15 +224,16 @@ public class Engine {
 	 * Initializes and configures the engine's default fields and necessary objects.
 	 */
 	private void init() {
-		// create state manager
-		//TODO THIS IS AN EXPLICIT TESTING PLUG-IN
-		stateManager = new StateManager(new PuzzleState(new Puzzle(Puzzle.genPuzzle(5, 5))));
 		// creates the JFrame
 		frameInit();
 		// load global resources
 		ImageBank.loadGlobalResources();
 		FontBank.loadGlobalResources();
 		AudioBank.loadGlobalResources();
+		// create state manager
+		//TODO THIS IS AN EXPLICIT TESTING PLUG-IN
+		//stateManager = new StateManager(new PuzzleState(new Puzzle(Puzzle.genPuzzle(5, 5))));
+		stateManager = new StateManager(new TitleState());
 		// create and start thread managers
 		executor = new Executor();
 		renderer = new Renderer();

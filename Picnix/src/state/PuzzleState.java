@@ -78,6 +78,12 @@ public class PuzzleState extends State {
 	}
 	
 	@Override
+	public void focus(int status) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
 	public void tick() {
 		Input input = Input.getInstance();
 		

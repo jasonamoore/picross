@@ -12,6 +12,9 @@ public class ImageBank {
 	public static BufferedImage pink;
 	public static BufferedImage white;
 	public static BufferedImage grass;
+	public static BufferedImage test;
+	public static BufferedImage test2;
+	public static BufferedImage title;
 	
 	private static BufferedImage load(String src) {
 		BufferedImage image = null;
@@ -44,6 +47,9 @@ public class ImageBank {
 		pink = 			load("pinksquare.png");
 		white = 		load("whitesquare.png");
 		grass = 		load("grass.png");
+		test =			load("testScrollImg.png");
+		test2 =			load("testScrollImg2.png");
+		title =			load("splash.png");
 	}
 	
 }
