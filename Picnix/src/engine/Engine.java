@@ -1,6 +1,7 @@
 package engine;
 
 import java.awt.Canvas;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
@@ -8,23 +9,19 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
 import java.io.IOException;
 import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
-import engine.thread.Executor;
-import engine.thread.Renderer;
-import engine.thread.Speaker;
-import puzzle.Puzzle;
 import resource.bank.AudioBank;
 import resource.bank.FontBank;
 import resource.bank.ImageBank;
-import state.PuzzleState;
 import state.State;
-import state.TestScrollState;
 import state.TitleState;
 
 /**
@@ -39,15 +36,14 @@ public class Engine {
 	public static final int SCREEN_WIDTH = 480;
 	public static final int SCREEN_HEIGHT = 416;
 
+	public static final double TICK_TIME = 1_000_000_000 / 45.0;
+	public static final double RENDER_CAP = 1_000_000_000 / 60.0;
+	
 	private int displayScale;
 	
 	private String title = "Picnix";
 	private JFrame frame;
 	public Canvas canvas;
-
-	private Executor executor;
-	private Renderer renderer;
-	private Speaker speaker;
 
 	private StateManager stateManager;
 
@@ -63,22 +59,6 @@ public class Engine {
 	 */
 	public static Engine getEngine() {
 		return engine;
-	}
-	
-	/**
-	 * Accessor for the engine's JFrame.
-	 * @return The JFrame used by the engine.
-	 */
-	public JFrame getFrame() {
-		return frame;
-	}
-	
-	/**
-	 * Accessor for the engine's Canvas.
-	 * @return The Canvas component, inside the JFrame used by the engine.
-	 */
-	public Canvas getCanvas() {
-		return canvas;
 	}
 	
 	/**
@@ -152,12 +132,12 @@ public class Engine {
 		Rectangle bounds = config.getBounds();
 		// increase frame size as big as possible while fitting in display bounds
 		displayScale = 1;
-		while (getDisplayWidth() <= bounds.getWidth()
+		/*while (getDisplayWidth() <= bounds.getWidth()
 				&& getDisplayHeight() <= bounds.getHeight()) {
 			displayScale++;
 		}
 		// fit to the last valid scale
-		displayScale--;
+		displayScale--;*/
 		// set size plus insets, so window content size = width and height
 		setCanvasSize(getDisplayWidth(), getDisplayHeight());
 		frame.pack();
@@ -227,20 +207,65 @@ public class Engine {
 		// creates the JFrame
 		frameInit();
 		// load global resources
-		ImageBank.loadGlobalResources();
-		FontBank.loadGlobalResources();
-		AudioBank.loadGlobalResources();
+		try {
+			ImageBank.loadGlobalResources();
+			FontBank.loadGlobalResources();
+			AudioBank.loadGlobalResources();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return;
+		}
 		// create state manager
 		//TODO THIS IS AN EXPLICIT TESTING PLUG-IN
 		//stateManager = new StateManager(new PuzzleState(new Puzzle(Puzzle.genPuzzle(5, 5))));
 		stateManager = new StateManager(new TitleState());
-		// create and start thread managers
-		executor = new Executor();
-		renderer = new Renderer();
-		speaker = new Speaker();
-		executor.start();
-		speaker.start();
-		renderer.begin();
+		// enter game loop
+		loop();
+	}
+	
+	private boolean running = true;
+	
+	private void loop() {
+		final int SLEEP = 4; //(int) Math.floor((RENDER_CAP / 1_000_000) / 2);
+		// game loop stuff
+		long lastTime = System.nanoTime();
+		double queuedTicks = 0;
+		
+		// rendering stuff
+    	canvas.createBufferStrategy(2);
+		BufferStrategy bs = canvas.getBufferStrategy();
+        VolatileImage image = canvas.createVolatileImage(Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
+		
+		while (running) {
+			// calculate unprocessed ticks
+			long now = System.nanoTime();
+			queuedTicks += (now - lastTime) / TICK_TIME;
+			// do ticks
+			while (queuedTicks >= 1) {
+				getActiveState().tick();
+				queuedTicks -= 1;
+			}
+			// render
+            Graphics g = image.getGraphics();
+            // render game
+			State state = engine.getActiveState();
+			g.setColor(Color.PINK);
+			g.fillRect(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
+			state.render(g);
+            g.dispose();
+            // present frame
+            g = bs.getDrawGraphics();
+            g.drawImage(image, 0, 0, engine.getDisplayWidth(), engine.getDisplayHeight(), null);
+            g.dispose();
+            bs.show();
+            
+            // sleep to save CPU for next cycle
+            try {
+				Thread.sleep(SLEEP);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	/**
@@ -255,16 +280,13 @@ public class Engine {
 
 	/**
 	 * Closes all running threads and cleanly
-	 * exists the Java application.
+	 * exits the Java application.
 	 */
 	public void cleanExit() {
-		try {
-			executor.stop();
-			renderer.stop();
-			speaker.stop();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		/*
+		 * try { executor.stop(); renderer.stop(); speaker.stop(); } catch
+		 * (InterruptedException e) { e.printStackTrace(); }
+		 */
 		System.exit(0);
 	}
 

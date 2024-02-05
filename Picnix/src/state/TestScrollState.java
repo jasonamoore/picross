@@ -7,8 +7,6 @@ import puzzle.Puzzle;
 import state.element.Button;
 
 public class TestScrollState extends ScrollableState {
-
-	private Button[] games;
 	
 	public static Color randCol() {
 		return new Color(
@@ -20,15 +18,8 @@ public class TestScrollState extends ScrollableState {
 	
 	public TestScrollState(int innerWidth, int innerHeight) {
 		super(innerWidth, innerHeight);
-		games = new Button[10];
-		for (int i = 0; i < games.length; i++) {
-			Button b = new Button(randCol()) {
-				@Override
-				public void onClick() {
-					super.onClick();
-					backgroundColor = backgroundColor.darker();
-				}
-
+		for (int i = 0; i < 10; i++) {
+			Button b = new Button(i * 100, 20, 80, 300) {
 				@Override
 				public void onRelease() {
 					super.onRelease();
@@ -36,21 +27,31 @@ public class TestScrollState extends ScrollableState {
 					PuzzleState ps = new PuzzleState(new Puzzle(Puzzle.genPuzzle(7, 7)));
 					Engine.getEngine().openState(ps);
 				}
-			};
-			b.setBounds(i * 100, 20, 80, 300);
-			games[i] = b;
-			scrollContainer.add(b);
-			Button back = new Button(Color.BLACK) {
 				@Override
-				public void onRelease() {
-					super.onRelease();
-					Engine.getEngine().exitTopState();
+				public void render(java.awt.Graphics g) {
+					g.setColor(java.awt.Color.YELLOW);
+					if (clicking)
+						g.setColor(java.awt.Color.ORANGE);
+					g.fillRect(getDisplayX(), getDisplayY(), width, height);
 				}
 			};
-			back.setBounds(5, 5, 30, 30);
-			back.setZ(20);
-			add(back);
+			scrollContainer.add(b);
 		}
+		Button back = new Button(5, 5, 30, 30) {
+			@Override
+			public void onRelease() {
+				super.onRelease();
+				if (!hovering) return;
+				Engine.getEngine().exitTopState();
+			}
+			@Override
+			public void render(java.awt.Graphics g) {
+				g.setColor(java.awt.Color.BLACK);
+				g.fillRect(getDisplayX(), getDisplayY(), width, height);
+			}
+		};
+		back.setZ(20);
+		add(back);
 	}
 
 	@Override

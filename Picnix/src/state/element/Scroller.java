@@ -13,7 +13,7 @@ import util.Animation;
  * flip everything for vertical scroll bars :)
  * @author Jason Moore
  */
-public class Scroller extends Button {
+public class Scroller extends Element {
 
 	// some convenience constants
 	public static final int DEFAULT_THICKNESS = 10;
@@ -73,8 +73,7 @@ public class Scroller extends Button {
 	 * @param contSize
 	 * @param orient
 	 */
-	public Scroller(int x, int y, int thickness, int dispSize, int viewSize, int contSize, boolean orient) {
-		super(Color.GRAY);
+	public Scroller(int x, int y, int thickness, int dispSize, int viewSize, int contSize, boolean orient) {	
 		orientation = orient;
 		this.x = x;
 		this.y = y;
@@ -182,7 +181,7 @@ public class Scroller extends Button {
 			g.setColor(Color.BLACK);
 			g.drawRect(xp, yp, thickness - 1, thickness - 1);
 			g.drawRect(width - thickness, yp, thickness - 1, thickness - 1);
-			g.setColor(backgroundColor);
+			g.setColor(Color.GRAY);
 			g.fillRect(xp + thickness + (int) thumbOffset, yp, (int) Math.ceil(thumbSize), thickness);
 		}
 		// if vertical
@@ -190,7 +189,7 @@ public class Scroller extends Button {
 			g.setColor(Color.BLACK);
 			g.drawRect(xp, yp, thickness - 1, thickness - 1);
 			g.drawRect(xp, height - thickness, thickness - 1, thickness - 1);
-			g.setColor(backgroundColor);
+			g.setColor(Color.GRAY);
 			g.fillRect(xp, yp + thickness + (int) thumbOffset, thickness, (int) Math.ceil(thumbSize));
 		}
 	}

@@ -11,7 +11,7 @@ public abstract class ScrollableState extends State {
 	protected Container scrollContainer;
 	
 	protected ScrollableState(int innerWidth, int innerHeight) {
-		scrollContainer = new Container(Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT,
+		scrollContainer = new Container(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT,
 										innerWidth, innerHeight);
 		add(scrollContainer);
 		Scroller sHor = scrollContainer.getHorizontalScroller();

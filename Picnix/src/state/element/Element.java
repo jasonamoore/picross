@@ -1,16 +1,13 @@
 package state.element;
 
-import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import engine.Input;
 import state.State;
 
 public abstract class Element implements Comparable<Element> {
-
-	//
-	public static final int Z_UNSET = 0;
 	
 	protected State state;
 	
@@ -21,12 +18,25 @@ public abstract class Element implements Comparable<Element> {
 	protected int z;
 	
 	protected int x, y, width, height;
-	
+
 	protected boolean hovering;
+	protected boolean clicking;
 	
-	protected Color backgroundColor;
+	protected BufferedImage background;
+	
+	protected boolean visible;
 	
 	public Element() {
+		// bounds set to 0
+		this(0, 0, 0, 0);
+	}
+	
+	public Element(int x, int y, int w, int h) {
+		this.x = x;
+		this.y = y;
+		width = w;
+		height = h;
+		visible = true;
 		children = new ArrayList<Element>();
 	}
 	
@@ -63,7 +73,7 @@ public abstract class Element implements Comparable<Element> {
 		if (parent != newParent) {
 			parent = newParent;
 			// make sure this displays in front
-			if (parent != null && z == Z_UNSET)
+			if (parent != null/* && z <= parent.z */)
 				setZ(parent.z + 1);
 		}
 	}
@@ -74,14 +84,26 @@ public abstract class Element implements Comparable<Element> {
 			state.sortChildren();
 	}
 	
+	public void setVisible(boolean visible) {
+		this.visible = visible;
+	}
+
+	public boolean isVisible() {
+		return visible;
+	}
+	
+	public void setBackground(BufferedImage back) {
+		background = back;
+	}
+	
 	public int getRelativeMouseX() {
 		Input input = Input.getInstance();
-		return input.getMouseX() - x;
+		return input.getMouseX() - getDisplayX();
 	}
 	
 	public int getRelativeMouseY() {
 		Input input = Input.getInstance();
-		return input.getMouseY() - y;
+		return input.getMouseY() - getDisplayY();
 	}
 	
 	public int getScrollX() {
@@ -114,6 +136,32 @@ public abstract class Element implements Comparable<Element> {
 				&& posY >= dpy && posY < dpy + height);
 	}
 	
+	public boolean beingHovered() {
+		return hovering;
+	}
+	
+	public boolean beingClicked() {
+		return clicking;
+	}
+	
+	/**
+	 * Called when the left mouse is pressed and the
+	 * mouse cursor is in this button's bounds.
+	 */
+	public void onClick() {
+		clicking = true;
+	}
+	
+	/**
+	 * Called when the left mouse is released after
+	 * this button had been pressed (clicking = true),
+	 * and the cursor may be anywhere in the window.
+	 */
+	public void onRelease() {
+		clicking = false;
+		state.deactivate(this);
+	}
+	
 	public void onHover() {
 		hovering = true;
 	}
@@ -124,13 +172,21 @@ public abstract class Element implements Comparable<Element> {
 	
 	public void tick() {
 		Input input = Input.getInstance();
+		// request focus for this if mouse is over it
 		boolean nowHovering = inBounds(input.getMouseX(), input.getMouseY());
-		if (!hovering && nowHovering)
-			onHover();
+		if (nowHovering)
+			state.requestFocus(this);
+		// call negative events if state has changed
 		if (hovering && !nowHovering)
 			onLeave();
+		if (clicking && !input.isPressingMouseButton(Input.LEFT_CLICK))
+			onRelease();
 	}
 	
-	public abstract void render(Graphics g);
+	public void render(Graphics g) {
+		if (background != null);
+			g.drawImage(background, getDisplayX(), getDisplayY(),
+					width, height, null);
+	}
 	
 }

@@ -10,15 +10,18 @@ public class TitleState extends State {
 	public TitleState() {
 		Icon titleIcon = new Icon(ImageBank.title);
 		titleIcon.setBounds(50, 50, 300, 150);
-		Button play = new Button(TestScrollState.randCol()) {
+		Button play = new Button(100, 250, 200, 100) {
 			public void onRelease() {
 				super.onRelease();
 				Engine.getEngine().openState(
 						new TestScrollState(1000, 600)
 					);
 			}
+			public void render(java.awt.Graphics g) {
+				g.setColor(java.awt.Color.YELLOW);
+				g.fillRect(getDisplayX(), getDisplayY(), width, height);
+			}
 		};
-		play.setBounds(100, 250, 200, 100);
 		add(titleIcon);
 		add(play);
 	}

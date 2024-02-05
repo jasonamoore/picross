@@ -2,66 +2,42 @@ package state.element;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 
-import engine.Input;
+public class Button extends Element {
 
-public abstract class Button extends Element {
-	
-	protected boolean clicking;
+	private Color hoverColor = Color.WHITE;
+	private BufferedImage clickBackground;
 	
 	public Button() {
-		this(Color.GRAY);
-	}
-	
-	public Button(Color back) {
 		super();
-		backgroundColor = back;
 	}
 	
-	public boolean beingClicked() {
-		return clicking;
+	public Button(int x, int y, int w, int h) {
+		super(x, y, w, h);
 	}
 	
-	/**
-	 * Called when the left mouse is pressed and the
-	 * mouse cursor is in this button's bounds.
-	 */
-	public void onClick() {
-		clicking = true;
+	public void setClickBackground(BufferedImage cbg) {
+		clickBackground = cbg;
 	}
 	
-	/**
-	 * Called when the left mouse is released after
-	 * this button had been pressed (clicking = true),
-	 * and the cursor may be anywhere in the window.
-	 */
-	public void onRelease() {
-		clicking = false;
+	public void setHoverOutlineColor(Color hc) {
+		hoverColor = hc;
 	}
 	
-	public void tick() {
-		super.tick();
-		Input input = Input.getInstance();
-		// if left clicking...
-		if (input.isPressingMouseButton(Input.LEFT_CLICK)) {
-			// and if the click was performed in bounds...
-			int mpx = input.getLastMousePressXPosition(Input.LEFT_CLICK);
-			int mpy = input.getLastMousePressYPosition(Input.LEFT_CLICK);
-			if (clicking || inBounds(mpx, mpy)) {
-				// queue up this element for a possible onClick event
-				state.requestClick(this);
-			}
-		} // if this item was being clicked, and the mouse has released
-		// note: mouse can be released anywhere (after mouse has moved off)
-		else if (clicking && input.hasReleasedMouseButton(Input.LEFT_CLICK)) {
-			onRelease();
-			input.consumeMouseButtonRelease(Input.LEFT_CLICK);
-		}
-	}
-	
+	@Override
 	public void render(Graphics g) {
-		g.setColor(backgroundColor);
-		g.fillRect(getDisplayX(), getDisplayY(), width, height);
+		int xp = getDisplayX();
+		int yp = getDisplayY();
+		if (!clicking && background != null) {
+			g.drawImage(background, xp, yp, width, height, null);
+			if (hovering) { // draw focus rectangle
+				g.setColor(hoverColor);
+				g.drawRect(xp, yp, width - 1, height - 1);
+			}
+		}
+		else if (clicking && clickBackground != null)
+			g.drawImage(clickBackground, xp, yp, width, height, null);
 	}
 	
 }
