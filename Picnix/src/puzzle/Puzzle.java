@@ -19,6 +19,7 @@ public class Puzzle {
 	// clue lists for rows and columns
 	private int[][] rowClues;
 	private int[][] colClues;
+	private int totalFilled;
 	
 	// maintains whether the user's marks are a solution for the puzzle
 	private boolean solved;
@@ -48,6 +49,10 @@ public class Puzzle {
 	
 	public int getColumns() {
 		return columns;
+	}
+	
+	public boolean validSpot(int row, int col) {
+		return row >= 0 && row < rows && col >= 0 && col < columns;
 	}
 	
 	private void calculateClues() {
@@ -128,7 +133,11 @@ public class Puzzle {
 			if (chain != 0)
 				colClues[c][num - 1] = chain;
 		}
-		// done
+		// done with clues
+		// count filled squares
+		for (int i = 0; i < rowClues.length; i++)
+			for (int j = 0; j < rowClues[i].length; j++)
+				totalFilled += rowClues[i][j];
 	}
 
 	public int[] getClueRow(int row) {
@@ -137,6 +146,10 @@ public class Puzzle {
 	
 	public int[] getClueColumn(int col) {
 		return colClues[col];
+	}
+	
+	public int getTotalCellsInSolution() {
+		return totalFilled;
 	}
 	
 	public void markSpot(int row, int col, int flag) {

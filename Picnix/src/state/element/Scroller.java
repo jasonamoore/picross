@@ -3,6 +3,7 @@ package state.element;
 import java.awt.Color;
 import java.awt.Graphics;
 
+import engine.Input;
 import util.Animation;
 
 /**      Thumb
@@ -103,8 +104,10 @@ public class Scroller extends Element {
 	// TODO arrow button clicks and mid-bar clicks
 	
 	@Override
-	public void onClick() {
-		super.onClick();
+	public void onClick(int mbutton) {
+		super.onClick(mbutton);
+		if (mbutton != Input.LEFT_CLICK)
+			return;
 		// check if inside thumb bounds
 		int railPos = getMouseRailPosition();
 		if (railPos >= thumbOffset && railPos < thumbOffset + thumbSize) {
@@ -126,9 +129,10 @@ public class Scroller extends Element {
 	}
 	
 	@Override
-	public void onRelease() {
-		super.onRelease();
-		dragging = false;
+	public void onRelease(int mbutton) {
+		super.onRelease(mbutton);
+		if (mbutton == Input.LEFT_CLICK)
+			dragging = false;
 	}
 	
 	public boolean isHorizontal() {

@@ -11,8 +11,8 @@ public class TitleState extends State {
 		Icon titleIcon = new Icon(ImageBank.title);
 		titleIcon.setBounds(50, 50, 300, 150);
 		Button play = new Button(100, 250, 200, 100) {
-			public void onRelease() {
-				super.onRelease();
+			public void onRelease(int mbutton) {
+				super.onRelease(mbutton);
 				Engine.getEngine().openState(
 						new TestScrollState(1000, 600)
 					);

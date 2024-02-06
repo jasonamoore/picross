@@ -8,23 +8,18 @@ import engine.Input;
 import state.State;
 
 public abstract class Element implements Comparable<Element> {
-	
-	protected State state;
-	
-	protected Element parent;
+
 	private ArrayList<Element> children;
-	
+	protected State state;
+	protected Element parent;
 	// the element's depth order (greater means farther in front)
 	protected int z;
-	
 	protected int x, y, width, height;
-
-	protected boolean hovering;
-	protected boolean clicking;
-	
-	protected BufferedImage background;
-	
 	protected boolean visible;
+	private boolean hovering;
+	// onClick events will be called for the three basic click types
+	private boolean[] clicking = new boolean[Input.RIGHT_CLICK + 1];
+	protected BufferedImage background;
 	
 	public Element() {
 		// bounds set to 0
@@ -140,16 +135,32 @@ public abstract class Element implements Comparable<Element> {
 		return hovering;
 	}
 	
-	public boolean beingClicked() {
-		return clicking;
+	public boolean beingClicked(int mbutton) {
+		return clicking[mbutton];
+	}
+	
+	public boolean notBeingClicked() {
+		return  !clicking[Input.LEFT_CLICK] &&
+				!clicking[Input.MIDDLE_CLICK] &&
+				!clicking[Input.RIGHT_CLICK];
+	}
+	
+	public void upstreamClick(int mbutton) {
+		if (state == null || parent == null) return;
+		// simulate the click returning to the parent
+		parent.onClick(mbutton);
+		// make sure the state knows this elem was clicked
+		state.requestFocus(parent);
+		state.deactivate(this);
+		state.activate(parent);
 	}
 	
 	/**
 	 * Called when the left mouse is pressed and the
 	 * mouse cursor is in this button's bounds.
 	 */
-	public void onClick() {
-		clicking = true;
+	public void onClick(int mbutton) {
+		clicking[mbutton] = true;
 	}
 	
 	/**
@@ -157,9 +168,10 @@ public abstract class Element implements Comparable<Element> {
 	 * this button had been pressed (clicking = true),
 	 * and the cursor may be anywhere in the window.
 	 */
-	public void onRelease() {
-		clicking = false;
-		state.deactivate(this);
+	public void onRelease(int mbutton) {
+		clicking[mbutton] = false;
+		if (notBeingClicked())
+			state.deactivate(this);
 	}
 	
 	public void onHover() {
@@ -179,8 +191,9 @@ public abstract class Element implements Comparable<Element> {
 		// call negative events if state has changed
 		if (hovering && !nowHovering)
 			onLeave();
-		if (clicking && !input.isPressingMouseButton(Input.LEFT_CLICK))
-			onRelease();
+		for (int mb = Input.LEFT_CLICK; mb <= Input.RIGHT_CLICK; mb++)
+			if (clicking[mb] && !input.isPressingMouseButton(mb))
+				onRelease(mb);
 	}
 	
 	public void render(Graphics g) {

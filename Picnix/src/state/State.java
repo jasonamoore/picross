@@ -51,6 +51,11 @@ public abstract class State {
 		focusElement = e;
 	}
 	
+	public void activate(Element e) {
+		if (activeElement == null)
+			activeElement = e;
+	}
+	
 	public void deactivate(Element e) {
 		if (activeElement == e)
 			activeElement = null;
@@ -69,7 +74,7 @@ public abstract class State {
 		Input input = Input.getInstance();
 		// call events (only if focused element has not had the event called yet)
 		if (focusElement != null) {
-			System.out.println(focusElement);
+			//System.out.println(focusElement);
 			// mouse is over it: call hover
 			if (!focusElement.beingHovered()) {
 				focusElement.onHover();
@@ -78,14 +83,17 @@ public abstract class State {
 					lastFocus.onLeave();
 			}
 			// mouse is over and is clicking: call click
-			if (input.isPressingMouseButton(Input.LEFT_CLICK)) {
-				int lastX = input.getLastMousePressXPosition(Input.LEFT_CLICK);
-				int lastY = input.getLastMousePressYPosition(Input.LEFT_CLICK);
-				if (focusElement.inBounds(lastX, lastY)
-						&& activeElement == null
-						&& !focusElement.beingClicked()) {
-					activeElement = focusElement;
-					focusElement.onClick();
+			// for each mouse button (left to middle to right click)
+			for (int mb = Input.LEFT_CLICK; mb <= Input.RIGHT_CLICK; mb++) {
+				if (input.isPressingMouseButton(mb)) {
+					int lastX = input.getLastMousePressXPosition(mb);
+					int lastY = input.getLastMousePressYPosition(mb);
+					if (focusElement.inBounds(lastX, lastY)
+							&& (activeElement == null || activeElement == focusElement)
+							&& !focusElement.beingClicked(mb)) {
+						activate(focusElement);
+						focusElement.onClick(mb);
+					}
 				}
 			}
 		}

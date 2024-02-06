@@ -17,13 +17,16 @@ public class ImageBank {
 	public static BufferedImage title;
 
 	public static BufferedImage[] topbar;
-	
+
+	public static BufferedImage[] minimize;
 	public static BufferedImage toolbar;
 	public static BufferedImage[] toolarrows;
 	public static BufferedImage[] toolpopups;
 	public static BufferedImage[] smallrednums;
 	public static BufferedImage[] toolicons;
-
+	public static BufferedImage[] tooldos;
+	public static BufferedImage[] toolbacks;
+	// --
 	public static BufferedImage layerbar;
 	public static BufferedImage layerframe;
 	public static BufferedImage[] layernames;
@@ -42,11 +45,17 @@ public class ImageBank {
 		// ui sprite sheet
 		BufferedImage uiSheet = loadSheet("ui.png");
 		topbar = loadMany(uiSheet, 0, 0, 24, 32, 3, 1);
+		minimize = loadMany(uiSheet, 126, 18, 14, 11, 2, 1);
 		toolbar = loadOne(uiSheet, 0, 32, 80, 336);
-		toolarrows = loadMany(uiSheet, 96, 0, 10, 15, 1, 2);
+		//toolarrows = loadMany(uiSheet, 96, 0, 10, 15, 1, 2);
+		toolarrows = loadMany(uiSheet, 160, 125, 12, 17, 1, 2);
 		toolpopups = loadMany(uiSheet, 106, 0, 18, 9, 2, 2);
 		smallrednums = loadMany(uiSheet, 106, 18, 4, 5, 5, 2);
-		toolicons = loadMany(uiSheet, 222, 0, 45, 40, 1, 2);
+		toolicons = loadMany(uiSheet, 222, 0, 45, 40, 1, 8);
+		tooldos = new BufferedImage[2];
+		tooldos[0] = loadOne(uiSheet, 222, 320, 23, 40);
+		tooldos[1] = loadOne(uiSheet, 244, 320, 23, 40);
+		toolbacks = loadMany(uiSheet, 172, 125, 44, 30, 1, 4);
 		layerbar = loadOne(uiSheet, 80, 32, 80, 336);
 		layerframe = loadOne(uiSheet, 160, 0, 62, 50);
 		layernames = loadMany(uiSheet, 160, 50, 62, 15, 1, 4);

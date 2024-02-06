@@ -3,6 +3,7 @@ package state;
 import java.awt.Color;
 
 import engine.Engine;
+import engine.Input;
 import puzzle.Puzzle;
 import state.element.Button;
 
@@ -21,16 +22,16 @@ public class TestScrollState extends ScrollableState {
 		for (int i = 0; i < 10; i++) {
 			Button b = new Button(i * 100, 20, 80, 300) {
 				@Override
-				public void onRelease() {
-					super.onRelease();
-					if (!hovering) return;
+				public void onRelease(int mbutton) {
+					super.onRelease(mbutton);
+					if (!beingHovered()) return;
 					PuzzleState ps = new PuzzleState(new Puzzle(Puzzle.genPuzzle(7, 7)));
 					Engine.getEngine().openState(ps);
 				}
 				@Override
 				public void render(java.awt.Graphics g) {
 					g.setColor(java.awt.Color.YELLOW);
-					if (clicking)
+					if (beingClicked(Input.LEFT_CLICK))
 						g.setColor(java.awt.Color.ORANGE);
 					g.fillRect(getDisplayX(), getDisplayY(), width, height);
 				}
@@ -39,9 +40,9 @@ public class TestScrollState extends ScrollableState {
 		}
 		Button back = new Button(5, 5, 30, 30) {
 			@Override
-			public void onRelease() {
-				super.onRelease();
-				if (!hovering) return;
+			public void onRelease(int mbutton) {
+				super.onRelease(mbutton);
+				if (!beingHovered()) return;
 				Engine.getEngine().exitTopState();
 			}
 			@Override
