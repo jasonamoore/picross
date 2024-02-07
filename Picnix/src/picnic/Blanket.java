@@ -47,7 +47,7 @@ public class Blanket extends Element {
 		cellSize =  msize <= 5 ? CELL_SIZE_5x5 :
 					msize <= 10 ? CELL_SIZE_10x10 :
 					msize <= 15 ? CELL_SIZE_15x15 :
-					/*msize<=20?*/ CELL_SIZE_20x20;
+					/*msize>15?*/ CELL_SIZE_20x20;
 	}
 	
 	public int getPixelWidth() {
@@ -103,16 +103,14 @@ public class Blanket extends Element {
 		g.translate(getDisplayX(), getDisplayY());
 		for (int r = 0; r < puzzle.getRows(); r++) {
 			for (int c = 0; c < puzzle.getColumns(); c++) {
-				BufferedImage pic = r % 2 == 0 ? (c % 2 == 0 ? ImageBank.red : ImageBank.pink)
-						: (c % 2 == 0 ? ImageBank.pink : ImageBank.white);
+				BufferedImage pic = r % 2 == 0 ? (c % 2 == 0 ? ImageBank.cells20[0] : ImageBank.cells20[1])
+						: (c % 2 == 0 ? ImageBank.cells20[1] : ImageBank.cells20[2]);
 				g.drawImage(pic, c * cellSize, r * cellSize, cellSize, cellSize, null);
 				if (puzzle.getMark(r, c) == Puzzle.CLEARED) {
-					g.setColor(puzzle.isSolved() ? java.awt.Color.BLUE : java.awt.Color.MAGENTA);
-					g.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+					g.drawImage(ImageBank.plates20[0], c * cellSize, r * cellSize, null);
 				}
 				else if (puzzle.getMark(r, c) == Puzzle.FLAGGED) {
-					g.setColor(java.awt.Color.GRAY);
-					g.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+					g.drawImage(ImageBank.forks20[0], c * cellSize, r * cellSize, null);
 				}
 			}
 		}

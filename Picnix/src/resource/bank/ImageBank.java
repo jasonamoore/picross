@@ -32,6 +32,20 @@ public class ImageBank {
 	public static BufferedImage[] layernames;
 	public static BufferedImage layerprogress;
 	
+	// blanket
+	public static BufferedImage[] plates35;
+	public static BufferedImage[] forks35;
+	public static BufferedImage[] cells35;
+	public static BufferedImage[] plates20;
+	public static BufferedImage[] forks20;
+	public static BufferedImage[] cells20;
+	public static BufferedImage[] plates15;
+	public static BufferedImage[] forks15;
+	public static BufferedImage[] cells15;
+	public static BufferedImage[] plates8;
+	public static BufferedImage[] forks8;
+	public static BufferedImage[] cells8;
+	
 	public static BufferedImage grassback;
 	
 	public static void loadGlobalResources() throws IOException {
@@ -60,6 +74,20 @@ public class ImageBank {
 		layerframe = loadOne(uiSheet, 160, 0, 62, 50);
 		layernames = loadMany(uiSheet, 160, 50, 62, 15, 1, 4);
 		layerprogress = loadOne(uiSheet, 160, 110, 62, 15);
+		// blanket sprite sheet
+		BufferedImage blanketSheet = loadSheet("blanket.png");
+		plates35 = loadMany(blanketSheet, 0, 0, 33, 33, 1, 5);
+		forks35 = loadMany(blanketSheet, 33, 0, 32, 30, 1, 4);
+		cells35 = loadMany(blanketSheet, 0, 165, 35, 35, 1, 3);
+		plates20 = loadMany(blanketSheet, 66, 0, 18, 18, 1, 5);
+		forks20 = loadMany(blanketSheet, 84, 0, 19, 17, 1, 4);
+		cells20 = loadMany(blanketSheet, 66, 90, 20, 20, 1, 3);
+		plates15 = loadMany(blanketSheet, 106, 0, 15, 15, 1, 5);
+		forks15 = loadMany(blanketSheet, 121, 0, 13, 14, 1, 4);
+		cells15 = loadMany(blanketSheet, 106, 75, 15, 15, 1, 3);
+		plates8 = loadMany(blanketSheet, 136, 0, 8, 8, 1, 5);
+		forks8 = loadMany(blanketSheet, 144, 0, 8, 8, 1, 2);
+		cells8 = loadMany(blanketSheet, 144, 16, 8, 8, 1, 3);
 	}
 	
 	private static BufferedImage loadSheet(String src) throws IOException {

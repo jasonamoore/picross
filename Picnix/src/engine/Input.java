@@ -41,6 +41,14 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 				(instance = new Input()) : instance;
 	}
 	
+	/**
+	 * Used to find the index in the circular array
+	 * given a relative index. Basically, does non-negative modulus.
+	 */
+	private static int getWrappedHead(int rin) {
+		return (rin + RECORD_SIZE) % RECORD_SIZE;
+	}
+	
 	/* ~~~
 	 * 
 	 * INPUT IMPLEMENTATION
@@ -465,7 +473,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		// can't lookback more than records store
 		if (lookback > RECORD_SIZE)
 			return -1;
-		int lookHead = (motionRecordHead - lookback) % RECORD_SIZE;
+		int lookHead = getWrappedHead(motionRecordHead - lookback);
 		return motionRecordsTime[lookHead] != 0 ? motionRecordsX[lookHead] : -1;
 	}
 	
@@ -480,7 +488,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		// can't lookback more than records store
 		if (lookback > RECORD_SIZE)
 			return -1;
-		int lookHead = (motionRecordHead - lookback) % RECORD_SIZE;
+		int lookHead = getWrappedHead(motionRecordHead - lookback);
 		return motionRecordsTime[lookHead] != 0 ? motionRecordsY[lookHead] : -1;
 	}
 	
@@ -495,7 +503,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		// can't lookback more than records store
 		if (lookback > RECORD_SIZE)
 			return -1;
-		int lookHead = (motionRecordHead - lookback) % RECORD_SIZE;
+		int lookHead = getWrappedHead(motionRecordHead - lookback);
 		return motionRecordsTime[lookHead] != 0 ? motionRecordsTime[lookHead] : -1;
 	}
 
@@ -546,7 +554,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		// can't lookback more than records store
 		if (lookback > RECORD_SIZE)
 			return -1;
-		int lookHead = (keyPressRecordHead - lookback) % RECORD_SIZE;
+		int lookHead = getWrappedHead(keyPressRecordHead - lookback);
 		return keyPressTimeRecords[lookHead] != 0 ? keyPressButtonRecords[lookHead] : -1;
 	}
 	
@@ -561,7 +569,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		// can't lookback more than records store
 		if (lookback > RECORD_SIZE)
 			return -1;
-		int lookHead = (keyPressRecordHead - lookback) % RECORD_SIZE;
+		int lookHead = getWrappedHead(keyPressRecordHead - lookback);
 		return keyPressTimeRecords[lookHead] != 0 ? keyPressTimeRecords[lookHead] : -1;
 	}
 	
@@ -576,7 +584,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		// can't lookback more than records store
 		if (lookback > RECORD_SIZE)
 			return -1;
-		int lookHead = (keyReleaseRecordHead - lookback) % RECORD_SIZE;
+		int lookHead = getWrappedHead(keyReleaseRecordHead - lookback);
 		return keyReleaseTimeRecords[lookHead] != 0 ? keyReleaseButtonRecords[lookHead] : -1;
 	}
 	
@@ -591,7 +599,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		// can't lookback more than records store
 		if (lookback > RECORD_SIZE)
 			return -1;
-		int lookHead = (keyReleaseRecordHead - lookback) % RECORD_SIZE;
+		int lookHead = getWrappedHead(keyReleaseRecordHead - lookback);
 		return keyReleaseTimeRecords[lookHead] != 0 ? keyReleaseTimeRecords[lookHead] : -1;
 	}
 	
@@ -684,7 +692,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		// can't lookback more than records store
 		if (lookback > RECORD_SIZE)
 			return -1;
-		int lookHead = (mousePressRecordHead - lookback) % RECORD_SIZE;
+		int lookHead = getWrappedHead(mousePressRecordHead - lookback);
 		return mousePressTimeRecords[lookHead] != 0 ? mousePressButtonRecords[lookHead] : -1;
 	}
 	
@@ -702,14 +710,14 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 			return -1;
 		// lookback through all records
 		if (code == ANY_CLICK) {
-			int lookHead = (mousePressRecordHead - lookback) % RECORD_SIZE;
+			int lookHead = getWrappedHead(mousePressRecordHead - lookback);
 			return mousePressTimeRecords[lookHead] != 0 ? mousePressTimeRecords[lookHead] : -1;
 		}
 		// lookback through records that match the code
 		else {
 			int matched = 0;
 			for (int i = 0; i < RECORD_SIZE; i++) {
-				int lookHead = (mousePressRecordHead - i) % RECORD_SIZE;
+				int lookHead = getWrappedHead(mousePressRecordHead - i);
 				int button = mousePressButtonRecords[lookHead];
 				if (button == code)
 					matched++;
@@ -734,14 +742,14 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 			return -1;
 		// lookback through all records
 		if (code == ANY_CLICK) {
-			int lookHead = (mousePressRecordHead - lookback) % RECORD_SIZE;
+			int lookHead = getWrappedHead(mousePressRecordHead - lookback);
 			return mousePressXPosRecords[lookHead] != 0 ? mousePressXPosRecords[lookHead] : -1;
 		}
 		// lookback through records that match the code
 		else {
 			int matched = 0;
 			for (int i = 0; i < RECORD_SIZE; i++) {
-				int lookHead = (mousePressRecordHead - i) % RECORD_SIZE;
+				int lookHead = getWrappedHead(mousePressRecordHead - i);
 				int button = mousePressButtonRecords[lookHead];
 				if (button == code)
 					matched++;
@@ -767,14 +775,14 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		synchronized (this) {
 			// lookback through all records
 			if (code == ANY_CLICK) {
-				int lookHead = (mousePressRecordHead - lookback) % RECORD_SIZE;
+				int lookHead = getWrappedHead(mousePressRecordHead - lookback);
 				return mousePressYPosRecords[lookHead] != 0 ? mousePressYPosRecords[lookHead] : -1;
 			}
 			// lookback through records that match the code
 			else {
 				int matched = 0;
 				for (int i = 0; i < RECORD_SIZE; i++) {
-					int lookHead = (mousePressRecordHead - i) % RECORD_SIZE;
+					int lookHead = getWrappedHead(mousePressRecordHead - i);
 					int button = mousePressButtonRecords[lookHead];
 					if (button == code)
 						matched++;
@@ -798,7 +806,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		// can't lookback more than records store
 		if (lookback > RECORD_SIZE)
 			return -1;
-		int lookHead = (mouseReleaseRecordHead - lookback) % RECORD_SIZE;
+		int lookHead = getWrappedHead(mouseReleaseRecordHead - lookback);
 		return mouseReleaseTimeRecords[lookHead] != 0 ? mouseReleaseButtonRecords[lookHead] : -1;
 	}
 	
@@ -816,14 +824,14 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 			return -1;
 		// lookback through all records
 		if (code == ANY_CLICK) {
-			int lookHead = (mouseReleaseRecordHead - lookback) % RECORD_SIZE;
+			int lookHead = getWrappedHead(mouseReleaseRecordHead - lookback);
 			return mouseReleaseTimeRecords[lookHead] != 0 ? mouseReleaseTimeRecords[lookHead] : -1;
 		}
 		// lookback through records that match the code
 		else {
 			int matched = 0;
 			for (int i = 0; i < RECORD_SIZE; i++) {
-				int lookHead = (mouseReleaseRecordHead - i) % RECORD_SIZE;
+				int lookHead = getWrappedHead(mouseReleaseRecordHead - i);
 				int button = mouseReleaseButtonRecords[lookHead];
 				if (button == code)
 					matched++;
@@ -848,14 +856,14 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 			return -1;
 		// lookback through all records
 		if (code == ANY_CLICK) {
-			int lookHead = (mouseReleaseRecordHead - lookback) % RECORD_SIZE;
+			int lookHead = getWrappedHead(mouseReleaseRecordHead - lookback);
 			return mouseReleaseXPosRecords[lookHead] != 0 ? mouseReleaseXPosRecords[lookHead] : -1;
 		}
 		// lookback through records that match the code
 		else {
 			int matched = 0;
 			for (int i = 0; i < RECORD_SIZE; i++) {
-				int lookHead = (mouseReleaseRecordHead - i) % RECORD_SIZE;
+				int lookHead = getWrappedHead(mouseReleaseRecordHead - i);
 				int button = mouseReleaseButtonRecords[lookHead];
 				if (button == code)
 					matched++;
@@ -880,14 +888,14 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 			return -1;
 		// lookback through all records
 		if (code == ANY_CLICK) {
-			int lookHead = (mouseReleaseRecordHead - lookback) % RECORD_SIZE;
+			int lookHead = getWrappedHead(mouseReleaseRecordHead - lookback);
 			return mouseReleaseYPosRecords[lookHead] != 0 ? mouseReleaseYPosRecords[lookHead] : -1;
 		}
 		// lookback through records that match the code
 		else {
 			int matched = 0;
 			for (int i = 0; i < RECORD_SIZE; i++) {
-				int lookHead = (mouseReleaseRecordHead - i) % RECORD_SIZE;
+				int lookHead = getWrappedHead(mouseReleaseRecordHead - i);
 				int button = mouseReleaseButtonRecords[lookHead];
 				if (button == code)
 					matched++;
@@ -936,7 +944,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		// can't lookback more than records store
 		if (lookback > RECORD_SIZE)
 			return -1;
-		int lookHead = (wheelRecordHead - lookback) % RECORD_SIZE;
+		int lookHead = getWrappedHead(wheelRecordHead - lookback);
 		return wheelRecordsTime[lookHead] != 0 ? wheelRecordsAmount[lookHead] : -1;
 	}
 	
@@ -951,7 +959,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 		// can't lookback more than records store
 		if (lookback > RECORD_SIZE)
 			return -1;
-		int lookHead = (wheelRecordHead - lookback) % RECORD_SIZE;
+		int lookHead = getWrappedHead(wheelRecordHead - lookback);
 		return wheelRecordsTime[lookHead] != 0 ? wheelRecordsTime[lookHead] : -1;
 	}
 	
