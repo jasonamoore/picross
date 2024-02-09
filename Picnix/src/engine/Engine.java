@@ -9,6 +9,8 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
@@ -231,11 +233,6 @@ public class Engine {
 		long lastTime = System.nanoTime();
 		double queuedTicks = 0;
 		
-		// rendering stuff
-    	canvas.createBufferStrategy(2);
-		BufferStrategy bs = canvas.getBufferStrategy();
-        VolatileImage image = canvas.createVolatileImage(Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
-		
 		while (running) {
 			// calculate unprocessed ticks
 			long now = System.nanoTime();
@@ -245,7 +242,14 @@ public class Engine {
 				getActiveState().tick();
 				queuedTicks -= 1;
 			}
-			// render
+			// render setup
+			BufferStrategy bs = canvas.getBufferStrategy();
+			if (bs == null) {
+				canvas.createBufferStrategy(2);
+				continue;
+			}
+	        VolatileImage image = canvas.createVolatileImage(Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
+	        
             Graphics g = image.getGraphics();
             // render game
 			State state = engine.getActiveState();
@@ -278,16 +282,40 @@ public class Engine {
 		engine.init();
 	}
 
-	/**
-	 * Closes all running threads and cleanly
-	 * exits the Java application.
-	 */
-	public void cleanExit() {
-		/*
-		 * try { executor.stop(); renderer.stop(); speaker.stop(); } catch
-		 * (InterruptedException e) { e.printStackTrace(); }
-		 */
+	public static void cleanExit() {
+		//
 		System.exit(0);
 	}
 
+}
+
+class EngineWindowListener implements WindowListener {
+	@Override
+	public void windowOpened(WindowEvent e) {
+	}
+	
+	@Override
+	public void windowClosing(WindowEvent e) {
+		Engine.cleanExit();
+	}
+	
+	@Override
+	public void windowClosed(WindowEvent e) {
+	}
+	
+	@Override
+	public void windowIconified(WindowEvent e) {
+	}
+	
+	@Override
+	public void windowDeiconified(WindowEvent e) {
+	}
+	
+	@Override
+	public void windowActivated(WindowEvent e) {
+	}
+	
+	@Override
+	public void windowDeactivated(WindowEvent e) {
+	}
 }

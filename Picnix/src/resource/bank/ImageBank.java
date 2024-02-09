@@ -42,9 +42,17 @@ public class ImageBank {
 	public static BufferedImage[] plates15;
 	public static BufferedImage[] forks15;
 	public static BufferedImage[] cells15;
-	public static BufferedImage[] plates8;
-	public static BufferedImage[] forks8;
-	public static BufferedImage[] cells8;
+	public static BufferedImage[] plates10;
+	public static BufferedImage[] forks10;
+	public static BufferedImage[] cells10;
+	public static BufferedImage napkin35;
+	public static BufferedImage napkin20;
+	public static BufferedImage napkin15;
+	public static BufferedImage napkin10;
+	public static BufferedImage cupmed;
+	public static BufferedImage[] numsbig;
+	public static BufferedImage[] numsmed;
+	public static BufferedImage[] numstiny;
 	
 	public static BufferedImage grassback;
 	
@@ -85,9 +93,17 @@ public class ImageBank {
 		plates15 = loadMany(blanketSheet, 106, 0, 15, 15, 1, 5);
 		forks15 = loadMany(blanketSheet, 121, 0, 13, 14, 1, 4);
 		cells15 = loadMany(blanketSheet, 106, 75, 15, 15, 1, 3);
-		plates8 = loadMany(blanketSheet, 136, 0, 8, 8, 1, 5);
-		forks8 = loadMany(blanketSheet, 144, 0, 8, 8, 1, 2);
-		cells8 = loadMany(blanketSheet, 144, 16, 8, 8, 1, 3);
+		plates10 = loadMany(blanketSheet, 136, 0, 10, 10, 1, 5);
+		forks10 = loadMany(blanketSheet, 146, 0, 10, 10, 1, 2);
+		cells10 = loadMany(blanketSheet, 136, 50, 10, 10, 1, 3);
+		napkin35 = loadOne(blanketSheet, 35, 165, 35, 35);
+		napkin20 = loadOne(blanketSheet, 86, 90, 20, 20);
+		napkin15 = loadOne(blanketSheet, 121, 75, 15, 15);
+		napkin10 = loadOne(blanketSheet, 146, 50, 10, 10);
+		cupmed = loadOne(blanketSheet, 35, 235, 18, 18);
+		numsbig = loadMany(blanketSheet, 70, 230, 19, 19, 5, 1);
+		numsmed = loadMany(blanketSheet, 92, 150, 11, 12, 5, 2);
+		numstiny = loadMany(blanketSheet, 106, 120, 6, 7, 5, 4);
 	}
 	
 	private static BufferedImage loadSheet(String src) throws IOException {

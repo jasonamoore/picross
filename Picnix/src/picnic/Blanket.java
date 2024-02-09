@@ -1,7 +1,6 @@
 package picnic;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
@@ -22,7 +21,7 @@ public class Blanket extends Element {
 	private static final int CELL_SIZE_5x5 = 35;
 	private static final int CELL_SIZE_10x10 = 20;
 	private static final int CELL_SIZE_15x15 = 15;
-	private static final int CELL_SIZE_20x20 = 8;
+	private static final int CELL_SIZE_20x20 = 10;
 	
 	// size of this puzzle's grid cells
 	private int cellSize;
@@ -103,34 +102,34 @@ public class Blanket extends Element {
 		g.translate(getDisplayX(), getDisplayY());
 		for (int r = 0; r < puzzle.getRows(); r++) {
 			for (int c = 0; c < puzzle.getColumns(); c++) {
-				BufferedImage pic = r % 2 == 0 ? (c % 2 == 0 ? ImageBank.cells20[0] : ImageBank.cells20[1])
-						: (c % 2 == 0 ? ImageBank.cells20[1] : ImageBank.cells20[2]);
+				BufferedImage pic = r % 2 == 0 ? (c % 2 == 0 ? ImageBank.cells35[0] : ImageBank.cells35[1])
+						: (c % 2 == 0 ? ImageBank.cells35[1] : ImageBank.cells35[2]);
 				g.drawImage(pic, c * cellSize, r * cellSize, cellSize, cellSize, null);
 				if (puzzle.getMark(r, c) == Puzzle.CLEARED) {
-					g.drawImage(ImageBank.plates20[0], c * cellSize, r * cellSize, null);
+					if (!puzzle.isSolved())
+						g.drawImage(ImageBank.plates35[0], c * cellSize+1, r * cellSize+1, null);
+					else
+						g.drawImage(ImageBank.plates35[3], c * cellSize+1, r * cellSize+1, null);
 				}
 				else if (puzzle.getMark(r, c) == Puzzle.FLAGGED) {
-					g.drawImage(ImageBank.forks20[0], c * cellSize, r * cellSize, null);
+						g.drawImage(ImageBank.forks35[0], c * cellSize+2, r * cellSize+2, null);
 				}
 			}
 		}
-		g.setFont(g.getFont().deriveFont(Font.BOLD));
 		for (int r = 0; r < puzzle.getRows(); r++) {
 			int[] hints = puzzle.getClueRow(r);
 			for (int i = 0; i < hints.length; i++) {
-				g.setColor(Color.BLACK);
-				g.drawString(Integer.toString(hints[hints.length-1-i]), -cellSize * (i+1) + 1, r * cellSize + 1 + 10);
-				g.setColor(Color.WHITE);
-				g.drawString(Integer.toString(hints[hints.length-1-i]), -cellSize * (i+1), r * cellSize + 10);
+				int hintnum = hints[hints.length - 1 - i];
+				g.drawImage(ImageBank.napkin35, -cellSize * (i+1), r * cellSize, null);
+				g.drawImage(ImageBank.numsbig[hintnum-1], -cellSize * (i+1) + 7, r * cellSize + 7, null);
 			}
 		}
 		for (int c = 0; c < puzzle.getColumns(); c++) {
 			int[] hints = puzzle.getClueColumn(c);
 			for (int i = 0; i < hints.length; i++) {
-				g.setColor(Color.BLACK);
-				g.drawString(Integer.toString(hints[hints.length-1-i]), c * cellSize + 1, -cellSize * (i+1) + 1);
-				g.setColor(Color.WHITE);
-				g.drawString(Integer.toString(hints[hints.length-1-i]), c * cellSize, -cellSize * (i+1));
+				int hintnum = hints[hints.length - 1 - i];
+				g.drawImage(ImageBank.napkin35, c * cellSize, -cellSize * (i+1), null);
+				g.drawImage(ImageBank.numsbig[hintnum-1], c * cellSize + 7, -cellSize * (i+1) + 7, null);
 			}
 		}
 		g.translate(-getDisplayX(), -getDisplayY());
