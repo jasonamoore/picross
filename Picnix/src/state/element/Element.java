@@ -1,6 +1,9 @@
 package state.element;
 
+import java.awt.AlphaComposite;
+import java.awt.Composite;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
@@ -19,6 +22,7 @@ public abstract class Element implements Comparable<Element> {
 	private boolean hovering;
 	// onClick events will be called for the three basic click types
 	private boolean[] clicking = new boolean[Input.RIGHT_CLICK + 1];
+	private boolean disabled;
 	protected BufferedImage background;
 	
 	public Element() {
@@ -82,6 +86,15 @@ public abstract class Element implements Comparable<Element> {
 	public void setVisible(boolean visible) {
 		this.visible = visible;
 	}
+	
+	public void setDisabled(boolean disabled) {
+		this.disabled = disabled;
+	}
+	
+	public void setChildrenDisabled(boolean disabled) {
+		for (int i = 0; i < children.size(); i++)
+			children.get(i).setDisabled(disabled);
+	}
 
 	public boolean isVisible() {
 		return visible;
@@ -99,6 +112,13 @@ public abstract class Element implements Comparable<Element> {
 	public int getRelativeMouseY() {
 		Input input = Input.getInstance();
 		return input.getMouseY() - getDisplayY();
+	}
+	
+	public float getOpacity() {
+		float opacity = 1.0f;
+		if (parent != null)
+			opacity = Math.min(opacity, parent.getOpacity());
+		return opacity;
 	}
 	
 	public int getScrollX() {
@@ -186,7 +206,7 @@ public abstract class Element implements Comparable<Element> {
 		Input input = Input.getInstance();
 		// request focus for this if mouse is over it
 		boolean nowHovering = inBounds(input.getMouseX(), input.getMouseY());
-		if (nowHovering)
+		if (nowHovering && !disabled)
 			state.requestFocus(this);
 		// call negative events if state has changed
 		if (hovering && !nowHovering)
@@ -196,10 +216,28 @@ public abstract class Element implements Comparable<Element> {
 				onRelease(mb);
 	}
 	
+	protected Composite setRenderComposite(Graphics g) {
+		Graphics2D gg = (Graphics2D) g;
+		Composite oldComp = gg.getComposite();
+		gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, getOpacity()));
+		return oldComp;	
+	}
+	
+	protected void setRenderClips(Graphics g) {
+		// clip to parent bounds
+		if (parent != null)
+			g.setClip(parent.getDisplayX(), parent.getDisplayY(), parent.width, parent.height);
+		// add clip to only draw bg image within this elem's bounds
+		g.clipRect(getDisplayX(), getDisplayY(), width, height);
+	}
+	
 	public void render(Graphics g) {
-		if (background != null);
-			g.drawImage(background, getDisplayX(), getDisplayY(),
-					width, height, null);
+		setRenderClips(g);
+		Composite oldComp = setRenderComposite(g);
+		if (background != null)
+			g.drawImage(background, getDisplayX(), getDisplayY(), null);
+		g.setClip(null);
+		((Graphics2D) g).setComposite(oldComp);
 	}
 	
 }

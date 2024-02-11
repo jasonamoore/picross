@@ -134,12 +134,12 @@ public class Engine {
 		Rectangle bounds = config.getBounds();
 		// increase frame size as big as possible while fitting in display bounds
 		displayScale = 1;
-		/*while (getDisplayWidth() <= bounds.getWidth()
+		while (getDisplayWidth() <= bounds.getWidth()
 				&& getDisplayHeight() <= bounds.getHeight()) {
 			displayScale++;
 		}
 		// fit to the last valid scale
-		displayScale--;*/
+		displayScale--;
 		// set size plus insets, so window content size = width and height
 		setCanvasSize(getDisplayWidth(), getDisplayHeight());
 		frame.pack();

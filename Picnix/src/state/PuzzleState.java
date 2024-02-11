@@ -1,9 +1,9 @@
 package state;
 
 import picnic.Field;
+import picnic.Sidebar;
 import puzzle.Puzzle;
 import resource.bank.ImageBank;
-import state.element.Button;
 import state.element.Container;
 import state.element.ToolButton;
 
@@ -20,8 +20,8 @@ public class PuzzleState extends State {
 	// layer collapse right anim
 	
 	// tool and layer windows
-	private Container toolbar;
-	private Container layerbar;
+	private Sidebar toolbar;
+	private Sidebar layerbar;
 	
 	private boolean guessing;
 	private int currentToolId;
@@ -43,18 +43,12 @@ public class PuzzleState extends State {
 	private ToolButton[] tools;
 	
 	private void generateUI() {
-		toolbar = new Container(0, 56, 80, 336);
-		layerbar = new Container(400, 56, 80, 336);
+		toolbar = new Sidebar(Sidebar.TOOLBAR_X);
+		layerbar = new Sidebar(Sidebar.LAYERBAR_X);
 		toolbar.setBackground(ImageBank.toolbar);
 		layerbar.setBackground(ImageBank.layerbar);
 		add(toolbar);
 		add(layerbar);
-		Button toolMinimizer = new Button(7, 6, 14, 11);
-		Button layerMinimizer = new Button(59, 6, 14, 11);
-		toolbar.add(toolMinimizer);
-		layerbar.add(layerMinimizer);
-		toolMinimizer.setBackgrounds(ImageBank.minimize[0], ImageBank.minimize[1]);
-		layerMinimizer.setBackgrounds(ImageBank.minimize[0], ImageBank.minimize[1]);
 		tools = new ToolButton[NUM_TOOLS];
 		// make the "normal" tools
 		for (int i = 0; i < ToolButton.UNDO; i++) {
@@ -130,6 +124,11 @@ public class PuzzleState extends State {
 				id == ToolButton.MAYBE_PLATE ||
 				id == ToolButton.MAYBE_FORKS ||
 				id == ToolButton.PAN;
+	}
+
+	public void fadeSiderbars(boolean fade) {
+		toolbar.setFade(fade);
+		layerbar.setFade(fade);
 	}
 	
 }

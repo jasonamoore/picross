@@ -147,11 +147,7 @@ public class Scroller extends Element {
 	public void nudgeSmooth(int amount) {
 		// find where to nudge to from the current offset (and keep in bounds!)
 		double end = Math.max(0, Math.min(realRailSize, thumbOffset + amount));
-		nudgeAnim = new Animation(
-			new double[] {thumbOffset, end},
-			new int[] {100, 0},
-			new double[][] {Animation.EASE_OUT, Animation.HOLD},
-			0, Animation.NO_LOOP, true);
+		nudgeAnim = new Animation(thumbOffset, end, 100, Animation.EASE_OUT, Animation.LOOP_NONE, true);
 	}
 
 	@Override

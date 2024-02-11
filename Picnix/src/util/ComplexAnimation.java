@@ -8,12 +8,11 @@ package util;
  *				 as indices of an array of images to create an animated image.
  *	For example: The LINEAR transition can be used to animate an entity moving horizontally across the screen.
  */
-public class Animation {
+public class ComplexAnimation {
 
 	// loop constants
-	public static final int LOOP_NONE = 0;
-	public static final int LOOP_CONTINUE = 1;
-	public static final int LOOP_BOUNCE = 2;
+	public static final int NO_LOOP = 0;
+	public static final int INF_LOOP = Integer.MAX_VALUE;
 	
 	// animation transition strategies indices (corresponds to PRESETS array)
 	private static final int HOLD_INDEX = 0;
@@ -44,28 +43,64 @@ public class Animation {
 	// Timer used for timing the animation
 	private Timer timer;
 
-	private double from;
-	private double to;
-	private int duration;
-	private double[] transition;
+	/* KEYFRAMES: stored as three arrays (values, timings & transitions)
+	 * 
+	 * keyframes: the keyframe decimal values
+	 * timings: the END time of each keyframe
+	 * transitions:
+	 * 		a double array of coefficients for a bezier curve
+	 * 		representing the transition between two keyframes
+	 */
+	private double[] keyframes;
+	private int[] timings;
+	private double[][] transitions;
 	
 	// is the animation currently running
 	private boolean playing = false;
 	// the direction (forward/backward) of playback
 	private boolean forward = true;
-	// whether the animation should loop
-	private int loopMode;
+	// the number of allowed loops
+	private int loopCount = 0;
 	
+	// the frame where this animation shuold start
+	private int startFrame;
+	// the offset in ms, of the start keyframe
 	private long offset;
+	// the total length, in frames, of the animation
+	private int frameCount;
+	// the total length, in ms, of the animation
+	private long duration;
 	
-	public Animation(double from, double to, int duration, double[] transition, int loopMode, boolean start) {
+	// the current animation value
+	private double value;
+	
+	/**
+	 * Creates an Animation with the specified keyframes and additional parameters.
+	 * @param keys The list of animation keyframes.
+	 * @param time The list of durations of each keyframe.
+	 * @param trans The list of transitions between keyframes.
+	 * @param bez The list of custom bezier anchors for transitions between keyframes.
+	 * @param start The keyframe at which the animation begins.
+	 * @param loops The amount of times the animation should loop.
+	 * @param go Whether the animation should begin playing immediately.
+	 */
+	public ComplexAnimation(double[] keys, int[] times, double[][] trans, int start, int loops, boolean go) {
 		timer = new Timer(false); // set up a timer for the anim
-		this.from = from;
-		this.to = to;
-		this.duration = duration;
-		this.transition = transition;
-		this.loopMode = loopMode;
-		if (start) resume(); // start anim
+		frameCount = keys.length; // num of frames in the anim
+		keyframes = keys;
+		timings = times;
+		transitions = trans;
+		startFrame = start;
+		loopCount = loops; // num of loops
+		// to calculate duration and offset time:
+		int sum = 0;
+		for (int i = 0; i < times.length; i++) {
+			if (i == start)
+				offset = sum;
+			sum += times[i];
+		}
+		duration = sum; // sum of each keyframe duration
+		if (go) resume(); // start anim
 	}
 	
 	/**
@@ -83,14 +118,6 @@ public class Animation {
 		playing = true;
 		timer.resume();
 	}
-
-	/**
-	 * Returns whether the animation is currently playing.
-	 * @return True if the animation is in progress.
-	 */
-	public boolean isPlaying() {
-		return playing;
-	}
 	
 	/**
 	 * Resets the animation to its starting frame.
@@ -100,7 +127,7 @@ public class Animation {
 	public void reset(boolean restart) {
 		playing = restart;
 		// reset playback offset
-		offset = 0;
+		offset = getOffsetFromFrame(startFrame);
 		timer.reset(restart);
 	}
 	
@@ -109,12 +136,11 @@ public class Animation {
 	 * WARNING: Loop behavior is undefined if an animation
 	 * is reversed while playback has already started.
 	 */
-	public void reverse(boolean play) {
+	public void reverse() {
 		forward = !forward;
 		// find where playback should start from opposite direction
-		offset = duration - getElapsed();
-		// reset time elapsed (and resume if needed)
-		playing = play;
+		offset = duration - Math.min(duration, timer.elapsed() + offset);
+		// reset time elapsed
 		timer.reset(playing);
 	}
 	
@@ -123,11 +149,10 @@ public class Animation {
 	 * WARNING: Loop behavior is undefined if an animation
 	 * is reversed while playback has already started.
 	 * @param fwd If true, direction is set to forward.
-	 * @param play If true, resume the animation.
 	 */
-	public void setForward(boolean fwd, boolean play) {
+	public void setForward(boolean fwd) {
 		if (forward != fwd)
-			reverse(play);
+			reverse();
 	}
 	
 	/**
@@ -135,7 +160,9 @@ public class Animation {
 	 * @return The animation's current {@code double} value.
 	 */
 	public double getValue() {
-		return calculateValue();
+		if (playing)
+			update();
+		return value;
 	}
 
 	/**
@@ -155,49 +182,73 @@ public class Animation {
 	 * current keyframe and the next keyframe. The intermediate value is determined
 	 * by the duration of the keyframe, its transition, and the amount of time elapsed.
 	 */
-	private double calculateValue() {
-		// get amount elapsed; capped if not looping
-		long elapsed = getElapsed();
-		// swap from and to if playing backwards
-		double realfrom = forward ? from : to;
-		double realto = forward ? to : from;
-		// the x-value of the curve, i.e. the percent from [0-1) of completion of this frame
-		double progress = elapsed / (double) duration; // i.e., the amount of this key that has passed
-		// catch cases for easy to compute transitions
-		if (transition == HOLD) { // easy, just return the held key
-			return realfrom;
+	private void update() {
+		/*
+		 *  step 0: UPDATE LOOP INFO
+		 */
+		// elapsed time divided by anim duration = # full loops
+		int loopsSoFar = (int) Math.floor(timer.elapsed() / duration);
+		if (loopsSoFar != INF_LOOP && loopsSoFar > loopCount) { // too many loops!
+			// stop the anim at last reached frame (frame before startFrame)
+			int frameBefore = (startFrame - 1 + frameCount) % frameCount;
+			value = keyframes[frameBefore];
+			pause(); // pause anim and return
+			return;
 		}
-		else if (transition == LINEAR) { // easy, just multiply by progress ratio
-			return realfrom + (realto - realfrom) * progress;
+		// check if too many loops have occurred
+		/*
+		 *  step 1: FIND THE ANIMATION'S CURRENT KEYFRAME
+		 */
+		// start after first frame, with its duration added				// DIR SIGN NOTE: starts at first or last keyframe
+		int frame = (keyframes.length + dirSign()) % (keyframes.length + 1); 			// (depending on playback direction)
+		int sum = timings[frame]; 
+		// grab the time elapsed (modulus to get elapsed time within anim loop)
+		long elapsed = (timer.elapsed() + offset) % duration;
+		// increment frame as needed, adding key durations until we reached elapsed
+		do {
+			frame += dirSign();				// DIR SIGN NOTE: increments or decrements through array
+			sum += timings[frame];							// (depending on playback direction)
+		} while (elapsed > sum);
+		// rollback to last valid frame
+		frame -= dirSign();
+		sum -= timings[frame];
+		
+		/*
+		 *  step 2: FIND INTERMEDIATE VALUE
+		 */
+		// first grab relevant info
+		double keyfrom = keyframes[frame]; // the current key
+		// the next key (to interpolate to)
+		double keyto = keyframes[(frame + dirSign()) % frameCount]; // DIR SIGN NOTE: either frame + 1 or - 1, depend. on dir.
+		double keydur = timings[frame]; // the duration of the current key
+		double[] keytrans = transitions[frame]; // the transition from the curr to next key
+		// the x-value of the curve, i.e. the percent from [0-1) of completion of this frame
+		double progress = (elapsed - sum) / keydur; // i.e., the amount of this key that has passed
+		// catch cases for easy to compute transitions
+		if (keytrans == HOLD) { // easy, just return the held key
+			value = keyfrom;
+		}
+		else if (keytrans == LINEAR) { // easy, just multiply by progress ratio
+			value = keyfrom + (keyto - keyfrom) * progress;
 		}
 		else { // otherwise, transition is cubic
 			// y = start + range * bezier_progress
-			return realfrom + (realto - realfrom) * bezier(progress, transition);
+			value = keyfrom + (keyto - keyfrom) * bezier(progress, keytrans);
 		}
 	}
 	
-	private long getElapsed() {
-		long ms = timer.elapsed() + offset;
-		if (ms > duration) {
-			if (loopMode == LOOP_BOUNCE) {
-				int bounces = (int) (ms / duration);
-				ms %= duration;
-				if (bounces % 2 == 1) {
-					// reverse
-					forward = !forward;
-					offset = ms;
-					timer.reset(playing);
-				}
-					
-			}
-			else if (loopMode == LOOP_CONTINUE)
-				ms %= duration;
-			else {
-				pause();
-				ms = duration;
-			}
-		}
-		return ms;
+	// used for various logic stuff in update
+	// needed to reverse logic depending on direction
+	private int dirSign() {
+		return forward ? 1 : -1;
+	}
+	
+	// gets the start time, in ms, of a given frame
+	private long getOffsetFromFrame(int frame) {
+		long sum = 0;
+		for (int i = 0; i < frame; i++)
+			sum += timings[frame];
+		return sum;
 	}
 
 	/**
@@ -213,6 +264,10 @@ public class Animation {
 				(anchors[1] == 0 ? 0 : anchors[1] * Math.pow(1 - x, 2) * x) +
 				(anchors[2] == 0 ? 0 : anchors[2] * (1 - x) * Math.pow(x, 2)) +
 				(anchors[3] == 0 ? 0 : anchors[3] * Math.pow(x, 3));
+	}
+
+	public boolean isPlaying() {
+		return playing;
 	}
 	
 }

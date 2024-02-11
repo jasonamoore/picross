@@ -9,6 +9,7 @@ import resource.bank.ImageBank;
 import state.PuzzleState;
 import state.element.Container;
 import state.element.ToolButton;
+import util.Animation;
 
 public class Field extends Container {
 
@@ -25,6 +26,11 @@ public class Field extends Container {
 	private int camW = Engine.SCREEN_WIDTH;
 	private int camH = Engine.SCREEN_HEIGHT;
 	
+	// anims for smoothing camera x/y movement
+	private Animation camXAnim, camYAnim;
+	// keeps track of camera movement velocity
+	//private double camXVel, camYVel;
+	
 	// position & size of blanket within the field
 	private int bx, by, bw, bh;
 	
@@ -40,17 +46,27 @@ public class Field extends Container {
 		by = (FIELD_HEIGHT - bh) / 2;
 		blanket.setBounds(bx, by, bw, bh);
 		add(blanket);
-		recenter();
+		setCamX(getCamCenterX());
+		setCamY(getCamCenterY());
 	}
 
 	
-	public PuzzleState getParentState() {
+	public PuzzleState getPuzzleState() {
 		return puzState;
 	}
 	
+	public int getCamCenterX() {
+		return (FIELD_WIDTH - camW) / 2;
+	}
+	
+	public int getCamCenterY() {
+		return (FIELD_HEIGHT - camH) / 2;	
+	}
+	
+	
 	public void recenter() {
-		camX = (FIELD_WIDTH - camW) / 2;
-		camY = (FIELD_HEIGHT - camH) / 2;
+		camXAnim = new Animation(camX, getCamCenterX(), 777, Animation.EASE_OUT, Animation.LOOP_NONE, true);
+		camYAnim = new Animation(camY, getCamCenterY(), 777, Animation.EASE_OUT, Animation.LOOP_NONE, true);
 	}
 	
 	public void setCamX(int newX) {
@@ -71,11 +87,11 @@ public class Field extends Container {
 		return camY;
 	}
 	
-	int camXAtClick;
-	int camYAtClick;
-	int clickXOffset;
-	int clickYOffset;
-	boolean dragging;
+	private int camXAtClick;
+	private int camYAtClick;
+	private int clickXOffset;
+	private int clickYOffset;
+	private boolean dragging;
 	
 	@Override
 	public void onClick(int mbutton) {
@@ -84,6 +100,8 @@ public class Field extends Container {
 		if (mbutton == Input.LEFT_CLICK && puzState.getCurrentTool() == ToolButton.PAN
 				|| mbutton == Input.MIDDLE_CLICK) {
 			dragging = true;
+			camXAnim = null;
+			camYAnim = null;
 			camXAtClick = camX;
 			camYAtClick = camY;
 			clickXOffset = input.getMouseX();
@@ -99,6 +117,9 @@ public class Field extends Container {
 				&& puzState.getCurrentTool() == ToolButton.PAN)
 				&& !input.isPressingMouseButton(Input.MIDDLE_CLICK)) {
 			dragging = false;
+			// set smooth cam move // TODO area of definite memory improvement - resuse/modify same array instead of making new objects
+			//camXAnim = new Animation(camX, camX + camXVel, 200, Animation.EASE_OUT, Animation.LOOP_NONE, true);
+			//camYAnim = new Animation(camY, camY + camYVel, 200, Animation.EASE_OUT, Animation.LOOP_NONE, true);
 		}
 	}
 	
@@ -107,10 +128,22 @@ public class Field extends Container {
 		super.tick();
 		Input input = Input.getInstance();
 		if (dragging) {
+			//int lastCamX = camX;
+			//int lastCamY = camY;
 			int movedX = input.getMouseX() - clickXOffset;
 			int movedY = input.getMouseY() - clickYOffset;
 			setCamX(camXAtClick - movedX);
 			setCamY(camYAtClick - movedY);
+			//camXVel = (camXVel + camX - lastCamX) * .995;
+			//camYVel = (camYVel + camY - lastCamY) * .995;
+			//System.out.println(camXVel + ", " + camYVel);
+		}
+		else {
+			// if a cam anim is going, set camera to it
+			if (camXAnim != null && camXAnim.isPlaying())
+				setCamX(camXAnim.getIntValue());
+			if (camYAnim != null && camYAnim.isPlaying())
+				setCamY(camYAnim.getIntValue());
 		}
 	}
 	

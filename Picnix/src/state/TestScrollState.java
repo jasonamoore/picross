@@ -25,7 +25,7 @@ public class TestScrollState extends ScrollableState {
 				public void onRelease(int mbutton) {
 					super.onRelease(mbutton);
 					if (!beingHovered()) return;
-					PuzzleState ps = new PuzzleState(new Puzzle(Puzzle.genPuzzle(5, 5)));
+					PuzzleState ps = new PuzzleState(new Puzzle(Puzzle.genPuzzle(15, 15)));
 					Engine.getEngine().openState(ps);
 				}
 				@Override

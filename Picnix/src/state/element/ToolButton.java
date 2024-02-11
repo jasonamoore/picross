@@ -1,9 +1,12 @@
 package state.element;
 
+import java.awt.Composite;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 import engine.Input;
+import picnic.Sidebar;
 import resource.bank.ImageBank;
 import state.PuzzleState;
 
@@ -21,15 +24,15 @@ public class ToolButton extends Button {
 	public static final int UNDO = 8;
 	public static final int REDO = 9;
 	
-	private PuzzleState parent;
+	private PuzzleState puzState;
 	
 	private int toolId;
 	
 	private BufferedImage toolImage;
 	
-	public ToolButton(PuzzleState par, int tid, int x, int y, int w, int h) {
+	public ToolButton(PuzzleState pz, int tid, int x, int y, int w, int h) {
 		super(x, y, w, h);
-		parent = par;
+		puzState = pz;
 		toolId = tid;
 		if (tid < UNDO) {
 			toolImage = ImageBank.toolicons[toolId];
@@ -50,8 +53,8 @@ public class ToolButton extends Button {
 	@Override
 	public void onRelease(int mbutton) {
 		super.onRelease(mbutton);
-		if (mbutton == Input.LEFT_CLICK)
-			parent.toolClicked(toolId);
+		if (beingHovered() && mbutton == Input.LEFT_CLICK)
+			puzState.toolClicked(toolId);
 	}
 
 	public int getToolId() {
@@ -61,11 +64,17 @@ public class ToolButton extends Button {
 	@Override
 	public void render(Graphics g) {
 		super.render(g);
+		setRenderClips(g);
+		Composite oldComp = setRenderComposite(g);
 		int xp = getDisplayX();
 		int yp = getDisplayY();
 		g.drawImage(toolImage, xp, yp, null);
-		if (parent.getCurrentTool() == toolId)
-			g.drawImage(ImageBank.toolarrows[0], getDisplayX() - 12, getDisplayY() + 10, null);
+		g.setClip(null);
+		parent.setRenderClips(g);
+		if (puzState.getCurrentTool() == toolId)
+			g.drawImage(ImageBank.toolarrows[0], xp - 12, yp + 10, null);
+		g.setClip(null);
+		((Graphics2D) g).setComposite(oldComp);
 	}
 	
 }

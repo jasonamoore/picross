@@ -1,7 +1,9 @@
 package state.element;
 
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 import engine.Input;
@@ -34,6 +36,8 @@ public class Button extends Element {
 	
 	@Override
 	public void render(Graphics g) {
+		setRenderClips(g);
+		Composite oldComp = setRenderComposite(g);
 		int xp = getDisplayX();
 		int yp = getDisplayY();
 		// if not clicking, or has no click background
@@ -46,6 +50,8 @@ public class Button extends Element {
 		}
 		else if (beingClicked(Input.LEFT_CLICK) && clickBackground != null)
 			g.drawImage(clickBackground, xp, yp, null);
+		g.setClip(null);
+		((Graphics2D) g).setComposite(oldComp);
 	}
 	
 }
