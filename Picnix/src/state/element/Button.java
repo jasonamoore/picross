@@ -10,8 +10,9 @@ import engine.Input;
 
 public class Button extends Element {
 
-	private Color hoverColor = Color.RED;
-	private BufferedImage clickBackground;
+	protected Color hoverColor = Color.RED;
+	protected BufferedImage clickBackground;
+	protected BufferedImage disabledBackground;
 	
 	public Button() {
 		super();
@@ -21,13 +22,18 @@ public class Button extends Element {
 		super(x, y, w, h);
 	}
 	
-	public void setBackgrounds(BufferedImage reg, BufferedImage click) {
+	public void setBackgrounds(BufferedImage reg, BufferedImage cbg, BufferedImage dis) {
 		setBackground(reg);
-		setClickBackground(click);
+		setClickBackground(cbg);
+		setDisabledBackground(dis);
 	}
 	
 	public void setClickBackground(BufferedImage cbg) {
 		clickBackground = cbg;
+	}
+		
+	public void setDisabledBackground(BufferedImage dis) {
+		disabledBackground = dis;
 	}
 	
 	public void setHoverOutlineColor(Color hc) {
@@ -41,7 +47,10 @@ public class Button extends Element {
 		int xp = getDisplayX();
 		int yp = getDisplayY();
 		// if not clicking, or has no click background
-		if ((!beingClicked(Input.LEFT_CLICK) || clickBackground == null) && background != null) {
+		if (isDisabled() && disabledBackground != null) {
+			g.drawImage(disabledBackground, xp, yp, null);
+		}
+		else if ((!beingClicked(Input.LEFT_CLICK) || clickBackground == null) && background != null) {
 			g.drawImage(background, xp, yp, null);
 			if (beingHovered()) { // draw focus rectangle
 				g.setColor(hoverColor);

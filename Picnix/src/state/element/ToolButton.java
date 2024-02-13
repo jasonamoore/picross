@@ -6,7 +6,6 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 import engine.Input;
-import picnic.Sidebar;
 import resource.bank.ImageBank;
 import state.PuzzleState;
 
@@ -36,17 +35,21 @@ public class ToolButton extends Button {
 		toolId = tid;
 		if (tid < UNDO) {
 			toolImage = ImageBank.toolicons[toolId];
-			setBackground(ImageBank.toolbacks[toolId % 2]);
-			setClickBackground(ImageBank.toolbacks[toolId % 2 + 2]);
+			setBackgrounds(ImageBank.toolbacks[toolId % 2],
+					ImageBank.toolbacks[toolId % 2 + 2],
+					ImageBank.toolbacks[toolId % 2 + 4]);
 		} else {
 			int isRedo = toolId - UNDO;
 			toolImage = ImageBank.tooldos[isRedo];
 			BufferedImage back = ImageBank.toolbacks[UNDO % 2];
 			BufferedImage clickBack = ImageBank.toolbacks[UNDO % 2 + 2];
-			setBackground(back.getSubimage(back.getWidth()/2 * isRedo, 0,
-					back.getWidth()/2, back.getHeight()));
-			setClickBackground(clickBack.getSubimage(clickBack.getWidth()/2 * isRedo, 0,
-					clickBack.getWidth()/2, clickBack.getHeight()));
+			BufferedImage disBack = ImageBank.toolbacks[UNDO % 2 + 4];
+			int sx = back.getWidth()/2 * isRedo;
+			int sw = back.getWidth()/2;
+			int sh = back.getHeight();
+			setBackgrounds(back.getSubimage(sx, 0, sw, sh),
+					clickBack.getSubimage(sx, 0, sw, sh),
+					disBack.getSubimage(sx, 0, sw, sh));
 		}
 	}
 	

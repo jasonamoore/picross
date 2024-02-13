@@ -147,8 +147,10 @@ public abstract class Element implements Comparable<Element> {
 	public boolean inBounds(int posX, int posY) {
 		int dpx = getDisplayX();
 		int dpy = getDisplayY();
-		return (posX >= dpx && posX < dpx + width
-				&& posY >= dpy && posY < dpy + height);
+		// check if in parent bounds
+		boolean parentPass = parent == null || parent.inBounds(posX, posY);
+		return parentPass && (posX >= dpx && posX < dpx + width
+							&& posY >= dpy && posY < dpy + height);
 	}
 	
 	public boolean beingHovered() {
@@ -206,7 +208,7 @@ public abstract class Element implements Comparable<Element> {
 		Input input = Input.getInstance();
 		// request focus for this if mouse is over it
 		boolean nowHovering = inBounds(input.getMouseX(), input.getMouseY());
-		if (nowHovering && !disabled)
+		if (nowHovering && !isDisabled())
 			state.requestFocus(this);
 		// call negative events if state has changed
 		if (hovering && !nowHovering)
@@ -220,7 +222,7 @@ public abstract class Element implements Comparable<Element> {
 		Graphics2D gg = (Graphics2D) g;
 		Composite oldComp = gg.getComposite();
 		gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, getOpacity()));
-		return oldComp;	
+		return oldComp;
 	}
 	
 	protected void setRenderClips(Graphics g) {
@@ -238,6 +240,10 @@ public abstract class Element implements Comparable<Element> {
 			g.drawImage(background, getDisplayX(), getDisplayY(), null);
 		g.setClip(null);
 		((Graphics2D) g).setComposite(oldComp);
+	}
+
+	public boolean isDisabled() {
+		return disabled;
 	}
 	
 }

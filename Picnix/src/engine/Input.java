@@ -268,6 +268,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	private int[] motionRecordsX = new int[RECORD_SIZE];
 	private int[] motionRecordsY = new int[RECORD_SIZE];
 	private long[] motionRecordsTime = new long[RECORD_SIZE];
+	private int mouseX, mouseY;
 	
 	// the index of the most current record
 	private int motionRecordHead = 0;
@@ -292,9 +293,11 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	@Override
 	public void mouseMoved(MouseEvent e) {
 		synchronized (this) {
+			mouseX = e.getX() / engine.getDisplayScale();
+			mouseY = e.getY() / engine.getDisplayScale();
 			motionRecordHead = (motionRecordHead + 1) % RECORD_SIZE;
-			motionRecordsX[motionRecordHead] = e.getX() / engine.getDisplayScale();
-			motionRecordsY[motionRecordHead] = e.getY() / engine.getDisplayScale();
+			motionRecordsX[motionRecordHead] = mouseX;
+			motionRecordsY[motionRecordHead] = mouseY;
 			motionRecordsTime[motionRecordHead] = e.getWhen();
 		}
 	}
@@ -441,7 +444,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * @see #getMouseXRecord
 	 */
 	public int getMouseX() {
-		return getMouseMoveXRecord(0);
+		return mouseX;
 	}
 	
 	/**
@@ -450,7 +453,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 * @see #getMouseYRecord
 	 */
 	public int getMouseY() {
-		return getMouseMoveYRecord(0);
+		return mouseY;
 	}
 	
 	/**

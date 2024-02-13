@@ -4,7 +4,6 @@ import java.awt.Graphics;
 
 import engine.Engine;
 import engine.Input;
-import puzzle.Puzzle;
 import resource.bank.ImageBank;
 import state.PuzzleState;
 import state.element.Container;
@@ -13,6 +12,7 @@ import util.Animation;
 
 public class Field extends Container {
 
+	// parent puzzle state
 	private PuzzleState puzState;
 	// the picnic blanket, which has the puzzle loaded
 	private Blanket blanket;
@@ -28,28 +28,29 @@ public class Field extends Container {
 	
 	// anims for smoothing camera x/y movement
 	private Animation camXAnim, camYAnim;
-	// keeps track of camera movement velocity
-	//private double camXVel, camYVel;
 	
 	// position & size of blanket within the field
 	private int bx, by, bw, bh;
 	
-	public Field(PuzzleState puzState, Puzzle puzzle) {
+	public Field(PuzzleState puzState) {
 		super(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT, FIELD_WIDTH, FIELD_HEIGHT);
+		this.puzState = puzState;
 		disableScrollers();
 		setZ(-100);
-		this.puzState = puzState;
-		blanket = new Blanket(this, puzzle);
-		bw = blanket.getPixelWidth();
-		bh = blanket.getPixelHeight();
-		bx = (FIELD_WIDTH - bw) / 2;
-		by = (FIELD_HEIGHT - bh) / 2;
+		blanket = new Blanket(this);
+		bw = puzState.getPuzzleDisplayWidth();
+		bh = puzState.getPuzzleDisplayHeight();
+		bx = (FIELD_WIDTH - bw + puzState.getPuzzleLeftPadding()) / 2;
+		by = (FIELD_HEIGHT - bh + puzState.getPuzzleTopPadding()) / 2;
 		blanket.setBounds(bx, by, bw, bh);
 		add(blanket);
 		setCamX(getCamCenterX());
 		setCamY(getCamCenterY());
 	}
 
+	public Blanket getBlanket() {
+		return blanket;
+	}
 	
 	public PuzzleState getPuzzleState() {
 		return puzState;
@@ -106,6 +107,8 @@ public class Field extends Container {
 			camYAtClick = camY;
 			clickXOffset = input.getMouseX();
 			clickYOffset = input.getMouseY();
+			puzState.setCenterEnabled(true);
+			//puzState.fadeSidebars(true);
 		}
 	}
 	
@@ -117,9 +120,7 @@ public class Field extends Container {
 				&& puzState.getCurrentTool() == ToolButton.PAN)
 				&& !input.isPressingMouseButton(Input.MIDDLE_CLICK)) {
 			dragging = false;
-			// set smooth cam move // TODO area of definite memory improvement - resuse/modify same array instead of making new objects
-			//camXAnim = new Animation(camX, camX + camXVel, 200, Animation.EASE_OUT, Animation.LOOP_NONE, true);
-			//camYAnim = new Animation(camY, camY + camYVel, 200, Animation.EASE_OUT, Animation.LOOP_NONE, true);
+			//puzState.fadeSidebars(false);
 		}
 	}
 	

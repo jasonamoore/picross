@@ -7,19 +7,14 @@ import javax.imageio.ImageIO;
 
 public class ImageBank {
 
-	//public static BufferedImage[] tiles;
-	public static BufferedImage red;
-	public static BufferedImage pink;
-	public static BufferedImage white;
-	public static BufferedImage grass;
-	public static BufferedImage test;
-	public static BufferedImage test2;
 	public static BufferedImage title;
+	public static BufferedImage grassback;
 
 	public static BufferedImage[] topbar;
-
-	public static BufferedImage[] minimize;
+	// --
+	public static BufferedImage[] minimaxers;
 	public static BufferedImage toolbar;
+	public static BufferedImage toolbarbottom;
 	public static BufferedImage[] toolarrows;
 	public static BufferedImage[] toolpopups;
 	public static BufferedImage[] smallrednums;
@@ -28,7 +23,9 @@ public class ImageBank {
 	public static BufferedImage[] toolbacks;
 	// --
 	public static BufferedImage layerbar;
-	public static BufferedImage layerframe;
+	public static BufferedImage layerbarbottom;
+	public static BufferedImage[] layerframes;
+	public static BufferedImage layeractive;
 	public static BufferedImage[] layernames;
 	public static BufferedImage layerprogress;
 	
@@ -45,7 +42,14 @@ public class ImageBank {
 	public static BufferedImage[] plates10;
 	public static BufferedImage[] forks10;
 	public static BufferedImage[] cells10;
-	public static BufferedImage napkin35;
+	public static BufferedImage[] hintHoriz35;
+	public static BufferedImage[] hintVert35;
+	public static BufferedImage[] hintHoriz20;
+	public static BufferedImage[] hintVert20;
+	public static BufferedImage[] hintHoriz15;
+	public static BufferedImage[] hintVert15;
+	public static BufferedImage[] hintHoriz10;
+	public static BufferedImage[] hintVert10;
 	public static BufferedImage napkin20;
 	public static BufferedImage napkin15;
 	public static BufferedImage napkin10;
@@ -54,34 +58,31 @@ public class ImageBank {
 	public static BufferedImage[] numsmed;
 	public static BufferedImage[] numstiny;
 	
-	public static BufferedImage grassback;
 	
 	public static void loadGlobalResources() throws IOException {
 		// tests
-		red   =	 		loadSheet("redsquare.png");
-		pink = 			loadSheet("pinksquare.png");
-		white = 		loadSheet("whitesquare.png");
-		grass = 		loadSheet("grass.png");
 		title =			loadSheet("splash.png");
 		grassback = 	loadSheet("grasstest.png");
 		// ui sprite sheet
 		BufferedImage uiSheet = loadSheet("ui.png");
-		topbar = loadMany(uiSheet, 0, 0, 24, 32, 3, 1);
-		minimize = loadMany(uiSheet, 126, 18, 14, 11, 2, 1);
-		toolbar = loadOne(uiSheet, 0, 32, 80, 336);
-		//toolarrows = loadMany(uiSheet, 96, 0, 10, 15, 1, 2);
-		toolarrows = loadMany(uiSheet, 160, 125, 12, 17, 1, 2);
-		toolpopups = loadMany(uiSheet, 106, 0, 18, 9, 2, 2);
-		smallrednums = loadMany(uiSheet, 106, 18, 4, 5, 5, 2);
+		topbar = loadMany(uiSheet, 0, 0, 24, 32, 4, 1);
+		minimaxers = loadMany(uiSheet, 96, 18, 14, 11, 4, 1);
+		toolbar = loadOne(uiSheet, 0, 32, 80, 333);
+		toolbarbottom = loadOne(uiSheet, 0, 365, 80, 3);
+		toolarrows = loadMany(uiSheet, 160, 175, 12, 17, 1, 2);
+		toolpopups = loadMany(uiSheet, 96, 0, 18, 9, 3, 2);
+		smallrednums = loadMany(uiSheet, 267, 0, 4, 5, 5, 2);
 		toolicons = loadMany(uiSheet, 222, 0, 45, 40, 1, 8);
 		tooldos = new BufferedImage[2];
 		tooldos[0] = loadOne(uiSheet, 222, 320, 23, 40);
 		tooldos[1] = loadOne(uiSheet, 244, 320, 23, 40);
-		toolbacks = loadMany(uiSheet, 172, 125, 44, 30, 1, 4);
-		layerbar = loadOne(uiSheet, 80, 32, 80, 336);
-		layerframe = loadOne(uiSheet, 160, 0, 62, 50);
-		layernames = loadMany(uiSheet, 160, 50, 62, 15, 1, 4);
-		layerprogress = loadOne(uiSheet, 160, 110, 62, 15);
+		toolbacks = loadMany(uiSheet, 172, 175, 44, 30, 1, 6);
+		layerbar = loadOne(uiSheet, 80, 32, 80, 333);
+		layerbarbottom = loadOne(uiSheet, 80, 365, 80, 3);
+		layerframes = loadMany(uiSheet, 160, 0, 62, 50, 1, 2);
+		layeractive = loadOne(uiSheet, 267, 10, 62, 50);
+		layernames = loadMany(uiSheet, 160, 100, 62, 15, 1, 4);
+		layerprogress = loadOne(uiSheet, 160, 160, 62, 15);
 		// blanket sprite sheet
 		BufferedImage blanketSheet = loadSheet("blanket.png");
 		plates35 = loadMany(blanketSheet, 0, 0, 33, 33, 1, 5);
@@ -92,18 +93,21 @@ public class ImageBank {
 		cells20 = loadMany(blanketSheet, 66, 90, 20, 20, 1, 3);
 		plates15 = loadMany(blanketSheet, 106, 0, 15, 15, 1, 5);
 		forks15 = loadMany(blanketSheet, 121, 0, 13, 14, 1, 4);
-		cells15 = loadMany(blanketSheet, 106, 75, 15, 15, 1, 3);
+		cells15 = loadMany(blanketSheet, 146, 40, 15, 15, 1, 3);
 		plates10 = loadMany(blanketSheet, 136, 0, 10, 10, 1, 5);
-		forks10 = loadMany(blanketSheet, 146, 0, 10, 10, 1, 2);
-		cells10 = loadMany(blanketSheet, 136, 50, 10, 10, 1, 3);
-		napkin35 = loadOne(blanketSheet, 35, 165, 35, 35);
-		napkin20 = loadOne(blanketSheet, 86, 90, 20, 20);
-		napkin15 = loadOne(blanketSheet, 121, 75, 15, 15);
-		napkin10 = loadOne(blanketSheet, 146, 50, 10, 10);
-		cupmed = loadOne(blanketSheet, 35, 235, 18, 18);
-		numsbig = loadMany(blanketSheet, 70, 230, 19, 19, 5, 1);
-		numsmed = loadMany(blanketSheet, 92, 150, 11, 12, 5, 2);
-		numstiny = loadMany(blanketSheet, 106, 120, 6, 7, 5, 4);
+		forks10 = loadMany(blanketSheet, 146, 0, 10, 10, 1, 4);
+		cells10 = loadMany(blanketSheet, 156, 0, 10, 10, 1, 3);
+		hintHoriz35 = loadMany(blanketSheet, 35, 165, 20, 35, 4, 1);
+		hintVert35 = loadMany(blanketSheet, 35, 200, 35, 20, 2, 2);
+		hintHoriz20 = loadMany(blanketSheet, 86, 90, 15, 20, 4, 1);
+		hintVert20 = loadMany(blanketSheet, 86, 110, 20, 15, 2, 2);
+		hintHoriz15 = loadMany(blanketSheet, 161, 40, 10, 15, 4, 1);
+		hintVert15 = loadMany(blanketSheet, 161, 55, 15, 10, 2, 2);
+		hintHoriz10 = loadMany(blanketSheet, 166, 0, 7, 10, 4, 1);
+		hintVert10 = loadMany(blanketSheet, 166, 10, 10, 7, 2, 2);
+		numsbig = loadMany(blanketSheet, 35, 240, 11, 17, 5, 1);
+		numsmed = loadMany(blanketSheet, 86, 140, 8, 10, 5, 2);
+		numstiny = loadMany(blanketSheet, 161, 75, 6, 7, 5, 4);
 	}
 	
 	private static BufferedImage loadSheet(String src) throws IOException {

@@ -1,12 +1,12 @@
 package puzzle;
 
-import java.awt.Graphics;
-
 public class Puzzle {
 
-	public static final int UNCLEARED = 0;
-	public static final int CLEARED = 1;
-	public static final int FLAGGED = 2;
+	public static final int UNCLEARED = -1;
+	public static final int CLEARED = 0;
+	public static final int FLAGGED = 1;
+	public static final int MAYBE_CLEARED = 6;
+	public static final int MAYBE_FLAGGED = 7;
 
 	private int rows;
 	private int columns;
@@ -19,6 +19,8 @@ public class Puzzle {
 	// clue lists for rows and columns
 	private int[][] rowClues;
 	private int[][] colClues;
+	
+	private int correctCells;
 	private int totalFilled;
 	
 	// maintains whether the user's marks are a solution for the puzzle
@@ -37,6 +39,10 @@ public class Puzzle {
 		rows = solution.length;
 		columns = solution[0].length;
 		marks = new int[rows][columns];
+		// initialize marks to -1
+		for (int r = 0; r < rows; r++)
+			for (int c = 0; c < columns; c++)
+				marks[r][c] = UNCLEARED;
 		// meaning: it's not known if the puzzle is currently solved
 		solvedStateDirty = true;
 		// calculate clues
@@ -72,9 +78,9 @@ public class Puzzle {
 				else
 					chain = false;
 			}
-			if (num == 0)
-				rowClues[r] = new int[] {0};
-			else
+			//if (num == 0)
+			//	rowClues[r] = new int[] {0};
+			//else
 				rowClues[r] = new int[num];
 		}
 		// determine number of clues for each col
@@ -90,9 +96,9 @@ public class Puzzle {
 				else
 					chain = false;
 			}
-			if (num == 0)
-				colClues[c] = new int[] {0};
-			else
+			//if (num == 0)
+			//	colClues[c] = new int[] {0};
+			//else
 				colClues[c] = new int[num];
 		}
 		// set clue numbers for each row
@@ -148,12 +154,35 @@ public class Puzzle {
 		return colClues[col];
 	}
 	
+	public int getLongestRowHint() {
+		int max = rowClues[0].length;
+		for (int i = 1; i < rowClues.length; i++)
+			max = Math.max(max, rowClues[i].length);
+		return max;
+	}
+	
+	public int getLongestColumnHint() {
+		int max = colClues[0].length;
+		for (int i = 1; i < colClues.length; i++)
+			max = Math.max(max, colClues[i].length);
+		return max;
+	}
+	
 	public int getTotalCellsInSolution() {
 		return totalFilled;
 	}
+
+	public double getCorrectCells() {
+		return correctCells;
+	}
 	
 	public void markSpot(int row, int col, int flag) {
+		int oldFlag = getMark(row, col);
 		marks[row][col] = flag;
+		if (oldFlag != CLEARED && flag == CLEARED && solution[row][col])
+			correctCells++;
+		else if (oldFlag == CLEARED && flag != CLEARED && solution[row][col])
+			correctCells--;
 		solvedStateDirty = true;
 	}
 	
@@ -196,7 +225,7 @@ public class Puzzle {
 				}
 				else {
 					if (chain != 0 && (num > rowClues[r].length
-							|| chain != rowClues[r][num - 1])) {
+							|| chain != Math.abs(rowClues[r][num - 1]))) {
 						solved = false;
 						return;
 					}
@@ -204,7 +233,7 @@ public class Puzzle {
 				}
 			}
 			if (chain != 0 && (num > rowClues[r].length
-					|| chain != rowClues[r][num - 1])
+					|| chain != Math.abs(rowClues[r][num - 1]))
 					|| num < rowClues[r].length) {
 				solved = false;
 				return;
@@ -222,7 +251,7 @@ public class Puzzle {
 				}
 				else {
 					if (chain != 0 && (num > colClues[c].length
-							|| chain != colClues[c][num - 1])) {
+							|| chain != Math.abs(colClues[c][num - 1]))) {
 						solved = false;
 						return;
 					}
@@ -230,7 +259,7 @@ public class Puzzle {
 				}
 			}
 			if (chain != 0 && (num > colClues[c].length
-					|| chain != colClues[c][num - 1])
+					|| chain != Math.abs(colClues[c][num - 1]))
 					|| num < colClues[c].length) {
 				solved = false;
 				return;
@@ -239,8 +268,12 @@ public class Puzzle {
 		solved = true;
 	}
 	
-	// rendering
-	public void render(Graphics g) {
+	public void tryCrossingHintRow(int row) {
+		int[] hints = rowClues[row];
+	}
+	
+	public void tryCrossingHintCol(int col) {
+		int[] hints = colClues[col];
 	}
 
 	/**
