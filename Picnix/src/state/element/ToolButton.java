@@ -9,6 +9,10 @@ import engine.Input;
 import resource.bank.ImageBank;
 import state.PuzzleState;
 
+/**
+ * A special type of Button used in the PuzzleState.
+ * Click to use the tools!
+ */
 public class ToolButton extends Button {
 
 	// tool ids
@@ -23,15 +27,27 @@ public class ToolButton extends Button {
 	public static final int UNDO = 8;
 	public static final int REDO = 9;
 	
+	// parent puzzle state
 	private PuzzleState puzState;
 	
+	// id of this tool (see above)
 	private int toolId;
-	
+	// its image
 	private BufferedImage toolImage;
 	
-	public ToolButton(PuzzleState pz, int tid, int x, int y, int w, int h) {
+	/**
+	 * Creates a ToolButton with the given PuzzleState, tool id and
+	 * given bounds.
+	 * @param puzState The PuzzleState this button is tied to.
+	 * @param tid The id of the tool this button corresponds to.
+	 * @param x
+	 * @param y
+	 * @param w
+	 * @param h
+	 */
+	public ToolButton(PuzzleState puzState, int tid, int x, int y, int w, int h) {
 		super(x, y, w, h);
-		puzState = pz;
+		this.puzState = puzState;
 		toolId = tid;
 		if (tid < UNDO) {
 			toolImage = ImageBank.toolicons[toolId];

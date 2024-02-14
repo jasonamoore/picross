@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import engine.Input;
 import puzzle.Puzzle;
 import resource.bank.ImageBank;
+import resource.bank.Palette;
 import state.PuzzleState;
 import state.element.Element;
 import state.element.ToolButton;
@@ -83,10 +84,12 @@ public class Blanket extends Element {
 	@Override
 	public void onHover() {
 		super.onHover();
-		//if (drawing) {
-		//	lastDrawX = getRelativeMouseX();
-		//	lastDrawY = getRelativeMouseY();
-		//}
+		// make sure mouse didnt leave and return somewhere else,
+		// causing a stray ray trace across the blanket
+		if (drawing) {
+			lastDrawX = getRelativeMouseX();
+			lastDrawY = getRelativeMouseY();
+		}
 	}
 	
 	private void startDraw(int mode) {
@@ -192,6 +195,7 @@ public class Blanket extends Element {
 		int forkYLeeway = cellSize - forks[0].getHeight();
 
 		// the highlighted row and column hints
+		boolean hov = beingHovered();
 		int highRow = getCellAtPoint(getRelativeMouseY());
 		int highCol = getCellAtPoint(getRelativeMouseX());
 		
@@ -221,17 +225,22 @@ public class Blanket extends Element {
 		gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) hintFade.getValue()));
 		for (int r = 0; r < puzzle.getRows(); r++) {
 			int[] hints = puzzle.getClueRow(r);
-			int hh = r == highRow ? 2 : 0;
+			int hh = r == highRow && hov ? 2 : 0;
 			for (int i = 0; i < hints.length; i++) {
 				int hintnum = hints[hints.length - 1 - i];
 				g.drawImage(scrHoriz[1 + hh], -hgridW * (i+1), r * cellSize, null);
-				g.drawImage(nums[hintnum-1], -hgridW * (i+1) + rowXOff, r * cellSize + rowYOff, null);
+				g.drawImage(nums[Math.abs(hintnum)-1], -hgridW * (i+1) + rowXOff, r * cellSize + rowYOff, null);
+				if (hintnum < 0) {
+					g.setColor(Palette.RED);
+					g.drawLine(-hgridW * (i+1) + rowXOff, r * cellSize + rowYOff,
+							-hgridW * (i+1) + rowXOff + cellSize, r * cellSize + rowYOff + cellSize);
+				}
 			}
 			g.drawImage(scrHoriz[0 + hh], -hgridW * (hints.length+1), r * cellSize, null);
 		}
 		for (int c = 0; c < puzzle.getColumns(); c++) {
 			int[] hints = puzzle.getClueColumn(c);
-			int hh = c == highCol ? 2 : 0;
+			int hh = c == highCol && hov ? 2 : 0;
 			for (int i = 0; i < hints.length; i++) {
 				int hintnum = hints[hints.length - 1 - i];
 				g.drawImage(scrVert[1 + hh], c * cellSize, -hgridW * (i+1), null);

@@ -154,14 +154,14 @@ public class Puzzle {
 		return colClues[col];
 	}
 	
-	public int getLongestRowHint() {
+	public int getLongestRowClueList() {
 		int max = rowClues[0].length;
 		for (int i = 1; i < rowClues.length; i++)
 			max = Math.max(max, rowClues[i].length);
 		return max;
 	}
 	
-	public int getLongestColumnHint() {
+	public int getLongestColumnClueList() {
 		int max = colClues[0].length;
 		for (int i = 1; i < colClues.length; i++)
 			max = Math.max(max, colClues[i].length);
@@ -183,6 +183,7 @@ public class Puzzle {
 			correctCells++;
 		else if (oldFlag == CLEARED && flag != CLEARED && solution[row][col])
 			correctCells--;
+		tryCrossingClueRow(row);
 		solvedStateDirty = true;
 	}
 	
@@ -268,12 +269,67 @@ public class Puzzle {
 		solved = true;
 	}
 	
-	public void tryCrossingHintRow(int row) {
+	public void tryCrossingClueRow(int row) {
 		int[] hints = rowClues[row];
+		// go ahead and reset all hints to non-cleared
+		for (int i = 0; i < hints.length; i++)
+			hints[i] = Math.abs(hints[i]);
+		// count number of blobs
+		int numBlobs = 0;
+		int lastMark = FLAGGED; // so a blob starting at the left is counted
+		for (int c = 0; c < rows; c++) {
+			int mark = marks[row][c];
+			// went from non-blob to blob
+			if (lastMark != mark && lastMark == FLAGGED)
+				numBlobs++;
+			lastMark = mark;
+		}
+		/* array of blob sizes - negative blob indicates "free space",
+		 * i.e., a blob that has at least one open cell and therefore
+		 * is not a complete/punctuated blob. we only try to cross
+		 * hints for punctuated blobs, and use the free space to
+		 * test how many p-blobs fit with a matching hint number
+		 */
+		int[] blobs = new int[numBlobs];
+		int blobSize = 0;
+		int blobNum = 0;
+		lastMark = marks[row][0];
+		for (int c = 0; c < rows; c++) {
+			int mark = marks[row][c];
+			if (lastMark == mark)
+				blobSize++;
+			else {
+				blobs[blobNum++] = blobSize;
+				blobSize = 1;
+			}
+			lastMark = mark;
+		}
+		// match hints to blobs
+		for (int i = 0; i < hints.length; i++) {
+			int hintMatches = 0;
+			for (int j = 0; j < blobs.length; j++) {
+				if (hints[i] > 0 && hints[i] == blobs[j]) {
+					// blob matches to this hint. see if it fits in this spot
+					
+				}
+			}
+			if (hintMatches == 1) // if exactly one match
+				hints[i] = -hints[i];
+		}
 	}
 	
-	public void tryCrossingHintCol(int col) {
-		int[] hints = colClues[col];
+	private boolean matches(int[] hints, int[] blobs, int hintmin, int hintmax, int blobmin, int blobmax) {
+		// match hints to blobs
+		for (int i = hintmin; i < hintmax; i++) {
+			for (int j = blobmin; j < blobmax; j++) {
+				
+			}
+		}
+		return false;
+	}
+	
+	public void tryCrossingClueColumn(int col) {
+	//	tryCrossing(colClues, col);
 	}
 
 	/**

@@ -11,8 +11,7 @@ import util.Animation;
  *  v   _-------^----_
  * [<][ [  ==  ]       ][>]
  * 
- * flip everything for vertical scroll bars :)
- * @author Jason Moore
+ * (flip everything for vertical scroll bars)
  */
 public class Scroller extends Element {
 
@@ -100,8 +99,6 @@ public class Scroller extends Element {
 		double ratio = (contentSize - viewportSize) / realRailSize;
 		return (int) (thumbOffset * ratio);
 	}
-	
-	// TODO arrow button clicks and mid-bar clicks
 	
 	@Override
 	public void onClick(int mbutton) {

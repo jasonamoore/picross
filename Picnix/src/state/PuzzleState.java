@@ -10,57 +10,70 @@ import picnic.Field;
 import picnic.Stroke;
 import puzzle.Puzzle;
 import resource.bank.ImageBank;
+import resource.bank.Palette;
 import state.element.Icon;
 import state.element.LayerButton;
 import state.element.LayerProgress;
 import state.element.Sidebar;
 import state.element.ToolButton;
 
+/**
+ * A State the handles all the puzzling.
+ */
 public class PuzzleState extends State {
 
-	// grid cell sizes
+	// CONSTANTS for the puzzle cell sizes
 	public static final int CELL_SIZE_5x5 = 35;
 	public static final int CELL_SIZE_10x10 = 20;
 	public static final int CELL_SIZE_15x15 = 15;
 	public static final int CELL_SIZE_20x20 = 10;
-	
-	private int cellSize;
-
+	// CONSTANT for the layer ids
 	public static final int NO_LAYER = -1;
 	public static final int MAGENTA = 0;
 	public static final int YELLOW = 1;
 	public static final int CYAN = 2;
 	public static final int TOTAL = 3;
 	
-	// the puzzle
+	// the puzzle(s)
 	private Puzzle[] puzzleLayers;
+	// whether this is a layered game
 	private boolean layered;
 	
-	// the puzzle
+	// the active puzzle
 	private Puzzle activePuzzle;
+	// layer id of the active puzzle
 	private int activeLayerId;
 	
-	// an object to start field data, like the blanket and critters
+	// stores field data, like the picnic blanket and critters
 	private Field field;
 	
-	// tool and layer windows
+	// tool and layer sidebars
 	private Sidebar toolbar;
 	private Sidebar layerbar;
 
+	// array of ToolButtons for each of the tools
 	private static final int NUM_TOOLS = ToolButton.REDO + 1;
 	private ToolButton[] tools;
+	
+	// if guessing mode is on
+	private boolean guessing;
+	// id of the selected tool
+	private int currentToolId;
 
+	// dynamic sequences of Strokes, used to undo/redo draws
+	private ArrayList<Stroke> undo;
+	private ArrayList<Stroke> redo;
+
+	// array of LayerButtons and progress bars for each layer
 	private static final int NUM_LAYERS = 3;
 	private LayerButton[] layers;
 	private LayerProgress[] layerProgs;
+	// special elements for the "total" section
 	private Icon totalLabel;
 	private LayerProgress totalProg;
 	
-	private boolean guessing;
-	private int currentToolId;
-
-	private ArrayList<Stroke> undo;
-	private ArrayList<Stroke> redo;
+	// the cell size for puzzles in this State
+	private int cellSize;
 	
 	public PuzzleState(Puzzle puzzle) {
 		layered = false;
@@ -78,6 +91,23 @@ public class PuzzleState extends State {
 		setup();
 	}
 	
+	
+	@Override
+	public void focus(int status) {
+		// TODO Auto-generated method stub
+	}
+	
+	/* ~~~~~~~~~~~~~~~~~~~~
+	 * 	STATE SETUP
+	 * ~~~~~~~~~~~~~~~~~~~~
+	 */
+	
+	/**
+	 * Determines the puzzle cell size, creates a Field,
+	 * sets the current tool to "plate", and initializes
+	 * empty undo/redo arrays.
+	 * Then calls {@link #generateUI()} Ito create and setup UI elements.
+	 */
 	private void setup() {
 		int msize = Math.max(activePuzzle.getRows(), activePuzzle.getColumns());
 		cellSize =  msize <= 5 ? CELL_SIZE_5x5 :
@@ -91,46 +121,12 @@ public class PuzzleState extends State {
 		redo = new ArrayList<Stroke>();
 		generateUI();
 	}
-
-	public int getActiveLayerId() {
-		return activeLayerId;
-	}
 	
-	public Puzzle getActivePuzzle() {
-		return activePuzzle;
-	}
-	
-	public int getPuzzleCellSize() {
-		return cellSize;
-	}
-	
-	public int getPuzzleDisplayWidth() {
-		return cellSize * activePuzzle.getColumns();
-	}
-
-	public int getPuzzleDisplayHeight() {
-		return cellSize * activePuzzle.getRows();
-	}
-	
-	public int getPuzzleLeftPadding() {
-		int hintMax = activePuzzle.getLongestRowHint();
-		for (int i = 0; i < puzzleLayers.length; i++)
-			hintMax = Math.max(hintMax, puzzleLayers[i].getLongestRowHint());
-		return Blanket.getHintScrollWidth(cellSize) * hintMax;
-	}
-	
-	public int getPuzzleTopPadding() {
-		int hintMax = activePuzzle.getLongestColumnHint();
-		for (int i = 0; i < puzzleLayers.length; i++)
-			hintMax = Math.max(hintMax, puzzleLayers[i].getLongestColumnHint());
-		return Blanket.getHintScrollWidth(cellSize) * hintMax;
-	}
-	
-	@Override
-	public void focus(int status) {
-		// TODO Auto-generated method stub
-	}
-	
+	/**
+	 * Creates the toolbar and tools, layerbar and layers
+	 * (if the game is layered), and updates enable status
+	 * of the undo/redo, clear, and center buttons.
+	 */
 	private void generateUI() {
 		toolbar = new Sidebar(Sidebar.TOOLBAR_X);
 		toolbar.setBackground(ImageBank.toolbar);
@@ -153,15 +149,10 @@ public class PuzzleState extends State {
 			layerbar.setBackground(ImageBank.layerbar);
 			layers = new LayerButton[NUM_LAYERS];
 			layerProgs = new LayerProgress[NUM_LAYERS];
-			Color[] colors = new Color[] {
-				new Color(0xff00ff),
-				new Color(0xffff00),
-				new Color(0x00ffff)
-			};
 			for (int i = MAGENTA; i <= CYAN; i++) {
 				layers[i] = new LayerButton(this, i, 10, 27 + (i * 86), 62, 65);
 				layerbar.add(layers[i]);
-				layerProgs[i] = new LayerProgress(puzzleLayers[i], colors[i], 10, 94 + (i * 86), 62, 15);
+				layerProgs[i] = new LayerProgress(puzzleLayers[i], getColorByLayerId(i), 10, 94 + (i * 86), 62, 15);
 				layerbar.add(layerProgs[i]);
 			}
 			totalLabel = new Icon(ImageBank.layernames[TOTAL], 10, 295, 62, 15);
@@ -184,10 +175,69 @@ public class PuzzleState extends State {
 		updateClearEnabled();
 		setCenterEnabled(false);
 	}
+
+	/* ~~~~~~~~~~~~~~~~~~~~
+	 * 	SIZE STUFFS
+	 * ~~~~~~~~~~~~~~~~~~~~
+	 */
+	
+	public int getPuzzleCellSize() {
+		return cellSize;
+	}
+	
+	public int getPuzzleDisplayWidth() {
+		return cellSize * activePuzzle.getColumns();
+	}
+
+	public int getPuzzleDisplayHeight() {
+		return cellSize * activePuzzle.getRows();
+	}
+	
+	public int getPuzzleLeftPadding() {
+		int hintMax = activePuzzle.getLongestRowClueList();
+		for (int i = 0; i < puzzleLayers.length; i++)
+			hintMax = Math.max(hintMax, puzzleLayers[i].getLongestRowClueList());
+		return Blanket.getHintScrollWidth(cellSize) * hintMax;
+	}
+	
+	public int getPuzzleTopPadding() {
+		int hintMax = activePuzzle.getLongestColumnClueList();
+		for (int i = 0; i < puzzleLayers.length; i++)
+			hintMax = Math.max(hintMax, puzzleLayers[i].getLongestColumnClueList());
+		return Blanket.getHintScrollWidth(cellSize) * hintMax;
+	}
+	
+	/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	 * 	GETTERS FOR TOOL/LAYER STATE
+	 * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	 */
 	
 	public int getCurrentTool() {
 		return currentToolId;
 	}
+
+	public int getActiveLayerId() {
+		return activeLayerId;
+	}
+	
+	public Puzzle getActivePuzzle() {
+		return getPuzzleByLayerId(activeLayerId);
+	}
+
+	public Puzzle getPuzzleByLayerId(int layerId) {
+		if (layerId == NO_LAYER)
+			return activePuzzle;
+		return puzzleLayers[layerId];
+	}
+
+	public boolean isGuessing() {
+		return guessing;
+	}
+
+	/* ~~~~~~~~~~~~~~~~~~~~~~
+	 * 	TOOL/LAYER FUNCTIONS
+	 * ~~~~~~~~~~~~~~~~~~~~~~
+	 */
 	
 	public void toolClicked(int id) {
 		if (selectable(id))
@@ -212,7 +262,37 @@ public class PuzzleState extends State {
 			}
 		}
 	}
-
+	
+	public void layerClicked(int layerId) {
+		layers[activeLayerId].setActive(false);
+		activeLayerId = layerId;
+		activePuzzle = getPuzzleByLayerId(layerId);
+		layers[layerId].setActive(true);
+		updateClearEnabled();
+	}
+	
+	private void toggleGuess() {
+		guessing = !guessing;
+		tools[ToolButton.PLATE].setVisible(!guessing);
+		tools[ToolButton.FORKS].setVisible(!guessing);
+		tools[ToolButton.MAYBE_PLATE].setVisible(guessing);
+		tools[ToolButton.MAYBE_FORKS].setVisible(guessing);
+		switch (currentToolId) {
+		case ToolButton.PLATE:
+			currentToolId = ToolButton.MAYBE_PLATE;
+			break;
+		case ToolButton.FORKS:
+			currentToolId = ToolButton.MAYBE_FORKS;
+			break;
+		case ToolButton.MAYBE_PLATE:
+			currentToolId = ToolButton.PLATE;
+			break;
+		case ToolButton.MAYBE_FORKS:
+			currentToolId = ToolButton.FORKS;
+			break;
+		}
+	}
+	
 	private void centerCam() {
 		field.recenter();
 		setCenterEnabled(false);
@@ -229,8 +309,18 @@ public class PuzzleState extends State {
 			}
 		}
 		// disable the button
-		tools[ToolButton.CLEAR].setDisabled(true);
+		tools[ToolButton.CLEAR].setEnabled(false);
 		pushStroke(clear, Puzzle.UNCLEARED);
+	}
+	
+	public void pushStroke(Stroke s, int drawMode) {
+		if (s.size() < 1) // empty stroke
+			return;
+		undo.add(s);
+		// clear redo history
+		redo = new ArrayList<Stroke>();
+		updateClearEnabled();
+		updateUndoRedoEnabled();
 	}
 	
 	public void undo() {
@@ -261,68 +351,29 @@ public class PuzzleState extends State {
 			layerClicked(changedLayer);
 	}
 	
-	public void pushStroke(Stroke s, int drawMode) {
-		if (s.size() < 1) // empty stroke
-			return;
-		undo.add(s);
-		// clear redo history
-		redo = new ArrayList<Stroke>();
-		updateClearEnabled();
-		updateUndoRedoEnabled();
-	}
-		
+	/* ~~~~~~~~~~~~~~~~~~~~
+	 * 	UI UPDATES
+	 * ~~~~~~~~~~~~~~~~~~~~
+	 */
+	
 	public void updateClearEnabled() {
 		for (int r = 0; r < activePuzzle.getRows(); r++)
 			for (int c = 0; c < activePuzzle.getColumns(); c++)
 				if (activePuzzle.getMark(r, c) != Puzzle.UNCLEARED) {
-					tools[ToolButton.CLEAR].setDisabled(false);
+					tools[ToolButton.CLEAR].setEnabled(true);
 					return;
 				}
-		tools[ToolButton.CLEAR].setDisabled(true);
+		tools[ToolButton.CLEAR].setEnabled(false);
+	}
+
+	public void setCenterEnabled(boolean enabled) {
+		tools[ToolButton.CENTER].setEnabled(enabled);
 	}
 	
 	public void updateUndoRedoEnabled() {
 		// update whether buttons are enabled
-		tools[ToolButton.UNDO].setDisabled(undo.size() < 1);
-		tools[ToolButton.REDO].setDisabled(redo.size() < 1);
-	}
-	
-	public void setCenterEnabled(boolean enabled) {
-		tools[ToolButton.CENTER].setDisabled(!enabled);
-	}
-
-	public boolean isGuessing() {
-		return guessing;
-	}
-	
-	private void toggleGuess() {
-		guessing = !guessing;
-		tools[ToolButton.PLATE].setVisible(!guessing);
-		tools[ToolButton.FORKS].setVisible(!guessing);
-		tools[ToolButton.MAYBE_PLATE].setVisible(guessing);
-		tools[ToolButton.MAYBE_FORKS].setVisible(guessing);
-		switch (currentToolId) {
-		case ToolButton.PLATE:
-			currentToolId = ToolButton.MAYBE_PLATE;
-			break;
-		case ToolButton.FORKS:
-			currentToolId = ToolButton.MAYBE_FORKS;
-			break;
-		case ToolButton.MAYBE_PLATE:
-			currentToolId = ToolButton.PLATE;
-			break;
-		case ToolButton.MAYBE_FORKS:
-			currentToolId = ToolButton.FORKS;
-			break;
-		}
-	}
-
-	private boolean selectable(int id) {
-		return  id == ToolButton.PLATE ||
-				id == ToolButton.FORKS ||
-				id == ToolButton.MAYBE_PLATE ||
-				id == ToolButton.MAYBE_FORKS ||
-				id == ToolButton.PAN;
+		tools[ToolButton.UNDO].setEnabled(undo.size() > 0);
+		tools[ToolButton.REDO].setEnabled(redo.size() > 0);
 	}
 
 	public void fadeSidebars(boolean fade) {
@@ -330,20 +381,8 @@ public class PuzzleState extends State {
 		layerbar.setFade(fade);
 	}
 
-	public void layerClicked(int layerId) {
-		layers[activeLayerId].setActive(false);
-		activeLayerId = layerId;
-		activePuzzle = getPuzzleByLayerId(layerId);
-		layers[layerId].setActive(true);
-		updateClearEnabled();
-	}
-
-	public Puzzle getPuzzleByLayerId(int layerId) {
-		if (layerId == NO_LAYER)
-			return activePuzzle;
-		return puzzleLayers[layerId];
-	}
-
+	// ~~~~~~~~~~ RENDER
+	
 	@Override
 	public void render(Graphics g) {
 		super.render(g);
@@ -352,6 +391,33 @@ public class PuzzleState extends State {
 		for (i = 24; i < Engine.SCREEN_WIDTH - 24; i += 24)
 			g.drawImage(ImageBank.topbar[i % 48 > 0 ? 1 : 2], i, 0, null);
 		g.drawImage(ImageBank.topbar[3], i, 0, null);
+	}
+	
+	/* ~~~~~~~~~~~~~~~~~~~~
+	 * 	STATIC HELPERS
+	 * ~~~~~~~~~~~~~~~~~~~~
+	 */
+	
+	private static boolean selectable(int id) {
+		return  id == ToolButton.PLATE ||
+				id == ToolButton.FORKS ||
+				id == ToolButton.MAYBE_PLATE ||
+				id == ToolButton.MAYBE_FORKS ||
+				id == ToolButton.PAN;
+	}
+	
+	public static Color getColorByLayerId(int layerId) {
+		switch (layerId) {
+		case PuzzleState.NO_LAYER:
+			return Palette.BEIGE;
+		case PuzzleState.MAGENTA:
+			return Palette.MAGENTA;
+		case PuzzleState.YELLOW:
+			return Palette.YELLOW;
+		case PuzzleState.CYAN:
+			return Palette.CYAN;
+		}
+		return Palette.BLACK;
 	}
 	
 }

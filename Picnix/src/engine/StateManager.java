@@ -6,6 +6,7 @@ import state.State;
 
 public class StateManager {
 
+	// stack of State objects - the State list
 	private Stack<State> stateStack;
 	
 	/**
@@ -41,6 +42,9 @@ public class StateManager {
 		stateStack.push(state);
 	}
 
+	/**
+	 * Pops off the active (top) state, closing it.
+	 */
 	public void exitTopState() {
 		stateStack.pop();
 	}

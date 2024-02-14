@@ -1,12 +1,8 @@
 package util;
 
 /**
- *	Class for creating animations consisting of a set of keyframes, timings, and transitions.
- *	Keyframes are numerical (doubles) and can be used with versatility to represent various kinds of animations.
- *
- *	For example: The HOLD transition can be used to iterate through a set of integers, which can be used
- *				 as indices of an array of images to create an animated image.
- *	For example: The LINEAR transition can be used to animate an entity moving horizontally across the screen.
+ *	Simplified & lightweight animation class that uses two keyframes, a duration, and a transition function
+ *	to provide a stream of interpolated values used for smooth movement, fading, sprite animation, etc.
  */
 public class Animation {
 
@@ -44,6 +40,7 @@ public class Animation {
 	// Timer used for timing the animation
 	private Timer timer;
 
+	// keyframe and interpolation info
 	private double from;
 	private double to;
 	private int duration;
@@ -56,8 +53,18 @@ public class Animation {
 	// whether the animation should loop
 	private int loopMode;
 	
+	// offset to add to timer; needed when animation is reversed during playback
 	private long offset;
 	
+	/**
+	 * Creates an animation with the specified parameters.
+	 * @param from The start keyframe/value (inclusive).
+	 * @param to The end keyframe/value (inclusive).
+	 * @param duration The duration of the animation, in milliseconds.
+	 * @param transition The bezier function describing how to interoplate between keyframes.
+	 * @param loopMode The loop mode; use loop constants.
+	 * @param start Whether the animation should begin playing immediately upon construction.
+	 */
 	public Animation(double from, double to, int duration, double[] transition, int loopMode, boolean start) {
 		timer = new Timer(false); // set up a timer for the anim
 		this.from = from;
@@ -106,8 +113,6 @@ public class Animation {
 	
 	/**
 	 * Reverses playback direction of the animation.
-	 * WARNING: Loop behavior is undefined if an animation
-	 * is reversed while playback has already started.
 	 */
 	public void reverse(boolean play) {
 		forward = !forward;
@@ -120,8 +125,6 @@ public class Animation {
 	
 	/**
 	 * Sets playback direction of the animation.
-	 * WARNING: Loop behavior is undefined if an animation
-	 * is reversed while playback has already started.
 	 * @param fwd If true, direction is set to forward.
 	 * @param play If true, resume the animation.
 	 */
@@ -149,11 +152,9 @@ public class Animation {
 	
 	/**
 	 * Updates the animation by recalculating its current value.
-	 * This is achieved by first determining what the current keyframe of the animation is,
-	 * based on the amount of time elapsed and the duration of each keyframe.
-	 * After the current frame is found, the intermediate value is found between the
-	 * current keyframe and the next keyframe. The intermediate value is determined
-	 * by the duration of the keyframe, its transition, and the amount of time elapsed.
+	 * The intermediate (interpolated) value is found between the
+	 * start and end keyframes using the duration of the animation,
+	 * its transition function, and the amount of time elapsed.
 	 */
 	private double calculateValue() {
 		// get amount elapsed; capped if not looping
@@ -176,6 +177,18 @@ public class Animation {
 		}
 	}
 	
+	/**
+	 * Calculates the amount of time elapsed during playback.
+	 * 
+	 * @return If the animation does not loop, returns the
+	 * elapsed time, capped by the duration.
+	 * If the animation loops (continue mode), returns the
+	 * elapsed time {@code mod} duration.
+	 * If the animation loops (bounce mode), may reverse
+	 * playback, update offset and reset timer if
+	 * needed. After doing so, returns the elapsed time
+	 * the same as loop continue mode.
+	 */
 	private long getElapsed() {
 		long ms = timer.elapsed() + offset;
 		if (ms > duration) {

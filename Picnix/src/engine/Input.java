@@ -12,13 +12,12 @@ import java.awt.event.MouseWheelListener;
 import javax.swing.SwingUtilities;
 
 /**
- * 
- * @author Jason
- *
+ * Implements various AWT input listeners for managing game input.
+ * Provides methods to get info about current and past user inputs.
  */
 public class Input implements KeyListener, MouseListener, MouseMotionListener, MouseWheelListener {
 
-	// singleton implementation
+	// singleton instance
 	private static Input instance;
 	
 	// the engine the input is tied to
@@ -268,6 +267,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	private int[] motionRecordsX = new int[RECORD_SIZE];
 	private int[] motionRecordsY = new int[RECORD_SIZE];
 	private long[] motionRecordsTime = new long[RECORD_SIZE];
+	// the last recorded mouse position
 	private int mouseX, mouseY;
 	
 	// the index of the most current record
@@ -440,8 +440,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	
 	/**
 	 * Returns the current x position of the mouse.
-	 * @return The most recent record of the mouse x position.
-	 * @see #getMouseXRecord
+	 * @return The x position of the most recent mouse movement.
 	 */
 	public int getMouseX() {
 		return mouseX;
@@ -449,8 +448,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	
 	/**
 	 * Returns the current y position of the mouse.
-	 * @return The most recent record of the mouse y position.
-	 * @see #getMouseYRecord
+	 * @return The y position of the most recent mouse movement.
 	 */
 	public int getMouseY() {
 		return mouseY;

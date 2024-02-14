@@ -7,17 +7,14 @@ import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferStrategy;
-import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
-import java.io.IOException;
-import java.io.InputStream;
 
-import javax.imageio.ImageIO;
+import java.io.IOException;
+
 import javax.swing.JFrame;
 
 import resource.bank.AudioBank;
@@ -33,31 +30,38 @@ import state.TitleState;
  */
 public class Engine {
 
+	// singleton instance
 	private static Engine engine;
 
+	// width and height of the internal game display
 	public static final int SCREEN_WIDTH = 480;
 	public static final int SCREEN_HEIGHT = 416;
+	// the scale of the game display in the JFrame
+	private int displayScale;
 
+	// target time for updates/sec; cap for max frames to render/second
 	public static final double TICK_TIME = 1_000_000_000 / 45.0;
 	public static final double RENDER_CAP = 1_000_000_000 / 60.0;
 	
-	private int displayScale;
-	
+	// JFrame title
 	private String title = "Picnix";
+	// JFrame and Canvas component for drawing
 	private JFrame frame;
 	public Canvas canvas;
 
+	// instance of state manager, holding a stack of game states
 	private StateManager stateManager;
 
-	// private Stack<State> stateStack;
-
+	// whether the Engine should run updates
+	private boolean running;
+	
 	/**
 	 * Private constructor to prevent outside initialization.
 	 */
 	private Engine() {}
 	
 	/**
-	 * @return Returns the singleton instance.
+	 * @return Returns the Engine singleton instance.
 	 */
 	public static Engine getEngine() {
 		return engine;
@@ -99,10 +103,19 @@ public class Engine {
 		return SCREEN_HEIGHT * displayScale;
 	}
 
+	/**
+	 * Opens a new state by requesting the
+	 * {@link StateManager} to add this state to its stack.
+	 * @param state The new state to open.
+	 */
 	public void openState(State state) {
 		stateManager.openState(state);
 	}
 	
+	/**
+	 * Closes the current state by requesting the
+	 * {@link StateManager} to pop this state off its stack.
+	 */
 	public void exitTopState() {
 		stateManager.exitTopState();
 	}
@@ -126,6 +139,10 @@ public class Engine {
 		canvas.setMaximumSize(size);
 	}
 	
+	/**
+	 * Maximizes the display scale to be as large as possible
+	 * while fitting in the current display device.
+	 */
 	public void maximizeCanvas() {
 		// get user display size
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -175,10 +192,11 @@ public class Engine {
 		frame.setVisible(true);
 	}
 	
+	/*
 	/**
 	 * Draws a splash screen and makes the window visible.
 	 * @throws IOException If the splash image cannot be loaded.
-	 */
+	 /
 	private void splash() throws IOException {
 		Insets insets = frame.getInsets();
 		frame.setSize(SCREEN_WIDTH + insets.left + insets.right,
@@ -201,6 +219,7 @@ public class Engine {
 		}
 		frame.setVisible(false);
 	}
+	*/
 	
 	/**
 	 * Initializes and configures the engine's default fields and necessary objects.
@@ -222,11 +241,19 @@ public class Engine {
 		//stateManager = new StateManager(new PuzzleState(new Puzzle(Puzzle.genPuzzle(5, 5))));
 		stateManager = new StateManager(new TitleState());
 		// enter game loop
+		running = true;
 		loop();
 	}
 	
-	private boolean running = true;
-	
+	/**
+	 * The main game loop, which handles both logic
+	 * updates and game rendering.
+	 * 
+	 * Updates (ticks) are performed as needed to be
+	 * consistent with the target update/second rate.
+	 * Rendering is done when possible,
+	 * between batches of ticks.
+	 */
 	private void loop() {
 		final int SLEEP = 4; //(int) Math.floor((RENDER_CAP / 1_000_000) / 2);
 		// game loop stuff
@@ -274,48 +301,54 @@ public class Engine {
 	
 	/**
 	 * Creates the engine instance and calls {@link #init()} on it.
-	 * 
-	 * @param args
 	 */
 	public static void main(String[] args) {
 		engine = new Engine();
 		engine.init();
 	}
 
-	public static void cleanExit() {
-		//
+	/**
+	 * Cleanly exits by disposing the JFrame
+	 * and exiting the program.
+	 */
+	public void cleanExit() {
+		//frame.dispose();
 		System.exit(0);
 	}
 
-}
-
-class EngineWindowListener implements WindowListener {
-	@Override
-	public void windowOpened(WindowEvent e) {
+	/**
+	 * Private inner class to handle window closing event.
+	 * Calls {@link Engine#cleanExit()} on window close.
+	 */
+	private class EngineWindowListener implements WindowListener {
+		@Override
+		public void windowOpened(WindowEvent e) {
+		}
+		
+		@Override
+		public void windowClosing(WindowEvent e) {
+			cleanExit();
+		}
+		
+		@Override
+		public void windowClosed(WindowEvent e) {
+		}
+		
+		@Override
+		public void windowIconified(WindowEvent e) {
+		}
+		
+		@Override
+		public void windowDeiconified(WindowEvent e) {
+		}
+		
+		@Override
+		public void windowActivated(WindowEvent e) {
+		}
+		
+		@Override
+		public void windowDeactivated(WindowEvent e) {
+		}
 	}
 	
-	@Override
-	public void windowClosing(WindowEvent e) {
-		Engine.cleanExit();
-	}
-	
-	@Override
-	public void windowClosed(WindowEvent e) {
-	}
-	
-	@Override
-	public void windowIconified(WindowEvent e) {
-	}
-	
-	@Override
-	public void windowDeiconified(WindowEvent e) {
-	}
-	
-	@Override
-	public void windowActivated(WindowEvent e) {
-	}
-	
-	@Override
-	public void windowDeactivated(WindowEvent e) {
-	}
 }

@@ -151,7 +151,7 @@ public class Field extends Container {
 	@Override
 	public void render(Graphics g) {
 		g.translate(-camX, -camY);
-		g.drawImage(ImageBank.grassback, 0, 0, FIELD_WIDTH, FIELD_HEIGHT, null);
+		//g.drawImage(ImageBank.grassback, 0, 0, FIELD_WIDTH, FIELD_HEIGHT, null);
 		g.translate(camX, camY);
 	}
 	
