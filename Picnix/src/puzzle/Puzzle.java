@@ -285,49 +285,128 @@ public class Puzzle {
 			lastMark = mark;
 		}
 		/* array of blob sizes - negative blob indicates "free space",
-		 * i.e., a blob that has at least one open cell and therefore
-		 * is not a complete/punctuated blob. we only try to cross
-		 * hints for punctuated blobs, and use the free space to
-		 * test how many p-blobs fit with a matching hint number
-		 */
+		* i.e., a blob that has at least one open cell and therefore
+		* is not a complete/punctuated blob. we only try to cross
+		* hints for punctuated blobs, and use the free space to
+		* test how many p-blobs fit with a matching hint number
+		*/
 		int[] blobs = new int[numBlobs];
+		int blobNum = -1;
 		int blobSize = 0;
-		int blobNum = 0;
-		lastMark = marks[row][0];
+		boolean punctuated = true;
+		lastMark = FLAGGED;
 		for (int c = 0; c < rows; c++) {
 			int mark = marks[row][c];
-			if (lastMark == mark)
+			// went from non-blob to blob
+			if (lastMark != mark && lastMark == FLAGGED) {
+				// reset everything
+				blobNum++;
+				blobSize = 0;
+				punctuated = true;
+			}
+			// if a blob cell
+			if (mark != FLAGGED) {
+				if (mark == UNCLEARED) // if any in this blob is uncleared...
+					punctuated = false;
+				// another cell of blob reached
 				blobSize++;
-			else {
-				blobs[blobNum++] = blobSize;
-				blobSize = 1;
+				// if an unpunctuated blob, mark as negative
+				blobs[blobNum] = punctuated ? blobSize : -blobSize;
 			}
 			lastMark = mark;
 		}
+		// keeps track of which hint a blob has been matched to
+		// if an already matched blob tries to match another hint,
+		// then unmatch the first hint and prevent further matches
+		final int NEVER_MATCHED = -1;
+		final int MATCH_BANNED = -2;
+		int[] blobHintMatch = new int[numBlobs];
+		for (int i = 0; i < numBlobs; i++)
+			blobHintMatch[i] = NEVER_MATCHED;
 		// match hints to blobs
 		for (int i = 0; i < hints.length; i++) {
-			int hintMatches = 0;
+			int matchedBlob = NEVER_MATCHED;
 			for (int j = 0; j < blobs.length; j++) {
-				if (hints[i] > 0 && hints[i] == blobs[j]) {
-					// blob matches to this hint. see if it fits in this spot
-					
+				if (hints[i] == blobs[j]) {	// blob matches to this hint. see if it fits in this spot
+					boolean fitsLeft = matches(hints, blobs, 0, i, 0, j);
+					boolean fitsRight = matches(hints, blobs, i + 1, hints.length, j + 1, blobs.length);
+					if (fitsLeft && fitsRight) {
+						if (blobHintMatch[j] != NEVER_MATCHED) { // this blob has matched more than one hint
+							if (blobHintMatch[j] != MATCH_BANNED) { // need to undo & ban match
+								int oldIndex = blobHintMatch[j]; // the previous matched hint
+								hints[oldIndex] = Math.abs(hints[oldIndex]); // uncross the hint (ambiguous!)
+								blobHintMatch[j] = MATCH_BANNED; // ban this blob from matches
+							}
+							matchedBlob = MATCH_BANNED; // this hint can't be crossed - ambiguous
+							//break; // force quit hint matching
+						}
+						else { // blob's first match
+							blobHintMatch[j] = i;
+							matchedBlob = matchedBlob == NEVER_MATCHED ? j : MATCH_BANNED;
+						}
+					}
 				}
 			}
-			if (hintMatches == 1) // if exactly one match
-				hints[i] = -hints[i];
+			if (matchedBlob > NEVER_MATCHED)// if exactly one match found:
+				hints[i] = -hints[i]; // cross out the hint
 		}
 	}
 	
-	private boolean matches(int[] hints, int[] blobs, int hintmin, int hintmax, int blobmin, int blobmax) {
+	private boolean matches(int[] hints, int[] blobs, int hintLow, int hintHigh, int blobLow, int blobHigh) {
+		/**
+		 * Based on the hint list, try all blobs
+		 * that match a given hint to see if any match.
+		 * The result is true if any match, otherwise false.
+		 * For each attempted match, recurse to test.
+		 * At a base case, if there are only unpunctuated
+		 * blobs, then we only need to see if the hints
+		 * can fit within this free space blob.
+		 * Also, if there are no hints, the match is
+		 * trivially successful.
+		 */
+		if (hintHigh - hintLow < 1) { // no hints to fit!
+			for (int i = blobLow; i < blobHigh; i++)
+				if (blobs[i] > 0) // if there are any punctuated blobs
+					return false; // then this must not be a match
+			return true; // otherwise, no hints means nothing to match
+		}
+		else if (blobHigh - blobLow < 1) // hints, but no blobs
+			return false;
+		int matchingBlobs = 0;
 		// match hints to blobs
-		for (int i = hintmin; i < hintmax; i++) {
-			for (int j = blobmin; j < blobmax; j++) {
-				
+		for (int i = hintLow; i < hintHigh; i++) {
+			for (int j = blobLow; j < blobHigh; j++) {
+				// blob matches to this hint, see if it fits in this spot
+				if (Math.abs(hints[i]) == blobs[j]) {
+					matchingBlobs++;
+					boolean matchLeft = matches(hints, blobs, hintLow, i, blobLow, j);
+					boolean matchRight = matches(hints, blobs, i + 1, hintHigh, j + 1, blobHigh);
+					if (matchLeft && matchRight)
+						return true;
+				}
 			}
 		}
-		return false;
+		// blobs matched hint, but didn't fit
+		if (matchingBlobs > 0)
+			return false;
+		else { // no more matching blobs - just fit hints within space
+			int curHint = hintLow; // the current hint we're fitting hints into a blob
+			for (int i = blobLow; i < blobHigh; i++) {
+				if (blobs[i] > 0) // not a free space blob
+					continue;
+				int blobBuf = Math.abs(blobs[i]); // amount of space
+				while (blobBuf >= hints[curHint]) { // at least enough room for a hint
+					// subtract room taken for this hint, plus one for punctuation
+					blobBuf -= hints[curHint++] + 1; // (also increment hint index)
+					if (curHint >= hintHigh) // fit all the hints needed
+						return true;
+				}
+			}
+			// couldn't fit into blobs
+			return false;
+		}
 	}
-	
+
 	public void tryCrossingClueColumn(int col) {
 	//	tryCrossing(colClues, col);
 	}
