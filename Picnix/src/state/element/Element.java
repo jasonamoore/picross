@@ -172,6 +172,16 @@ public abstract class Element implements Comparable<Element> {
 	}
 	
 	/**
+	 * Sets whether this Element is both
+	 * enabled AND visible.
+	 * @param exists True if the Element should become enabled/visible.
+	 */
+	public void setExisting(boolean exists) {
+		this.visible = exists;
+		this.enabled = exists;
+	}
+	
+	/**
 	 * Sets the {@code enabled} status of all
 	 * of this Element's children.
 	 * @see #setEnabled(boolean)

@@ -19,8 +19,9 @@ public class Puzzle {
 	// clue lists for rows and columns
 	private int[][] rowClues;
 	private int[][] colClues;
-	
+
 	private int correctCells;
+	private int clearedCells;
 	private int totalFilled;
 	
 	// maintains whether the user's marks are a solution for the puzzle
@@ -175,30 +176,27 @@ public class Puzzle {
 	public double getCorrectCells() {
 		return correctCells;
 	}
+
+	public int getRemainingClearCount() {
+		return totalFilled - clearedCells;
+	}
 	
 	public void markSpot(int row, int col, int flag) {
-		int oldFlag = getMark(row, col);
+		int oldMark = getMark(row, col);
 		marks[row][col] = flag;
-		if (oldFlag != CLEARED && flag == CLEARED && solution[row][col])
-			correctCells++;
-		else if (oldFlag == CLEARED && flag != CLEARED && solution[row][col])
-			correctCells--;
-		tryCrossingClueRow(row);
+		if (oldMark != CLEARED && flag == CLEARED) {
+			clearedCells++;
+			if (solution[row][col])
+				correctCells++;
+		}
+		else if (oldMark == CLEARED && flag != CLEARED) {
+			clearedCells--;
+			if (solution[row][col])
+				correctCells--;
+		}
+		tryCrossingRowClues(row);
+		tryCrossingColumnClues(col);
 		solvedStateDirty = true;
-	}
-	
-	public void toggleCleared(int row, int col) {
-		if (marks[row][col] == CLEARED)
-			markSpot(row, col, UNCLEARED);
-		else
-			markSpot(row, col, CLEARED);
-	}
-	
-	public void toggleFlagged(int row, int col) {
-		if (marks[row][col] == FLAGGED)
-			markSpot(row, col, UNCLEARED);
-		else
-			markSpot(row, col, FLAGGED);
 	}
 	
 	public int getMark(int row, int col) {
@@ -268,17 +266,41 @@ public class Puzzle {
 		}
 		solved = true;
 	}
+
+	/**
+	 * Auto-crosses clues for the given row.
+	 * @param row The row whose clues to cross.
+	 * @see #tryCrossing(boolean, int)
+	 */
+	public void tryCrossingRowClues(int row) {
+		tryCrossing(true, row);
+	}
 	
-	public void tryCrossingClueRow(int row) {
-		int[] hints = rowClues[row];
-		// go ahead and reset all hints to non-cleared
-		for (int i = 0; i < hints.length; i++)
-			hints[i] = Math.abs(hints[i]);
+	/**
+	 * Auto-crosses clues for the given column.
+	 * @param row The column whose clues to cross.
+	 * @see #tryCrossing(boolean, int)
+	 */
+	public void tryCrossingColumnClues(int col) {
+		tryCrossing(false, col);
+	}
+	
+	/**
+	 * Auto-crosses clues for a given row or column.
+	 * @param rowMode If true, crosses a row. Otherwise a column.
+	 * @param pos The number of the row or column to try crossing.
+	 */
+	public void tryCrossing(boolean rowMode, int pos) {
+		int[] clues = rowMode ? rowClues[pos] : colClues[pos];
+		// go ahead and reset all clues to non-cleared
+		for (int i = 0; i < clues.length; i++)
+			clues[i] = Math.abs(clues[i]);
 		// count number of blobs
 		int numBlobs = 0;
 		int lastMark = FLAGGED; // so a blob starting at the left is counted
-		for (int c = 0; c < rows; c++) {
-			int mark = marks[row][c];
+		int length = rowMode ? rows : columns;
+		for (int g = 0; g < length; g++) {
+			int mark = rowMode ? marks[pos][g] : marks[g][pos];
 			// went from non-blob to blob
 			if (lastMark != mark && lastMark == FLAGGED)
 				numBlobs++;
@@ -287,16 +309,16 @@ public class Puzzle {
 		/* array of blob sizes - negative blob indicates "free space",
 		* i.e., a blob that has at least one open cell and therefore
 		* is not a complete/punctuated blob. we only try to cross
-		* hints for punctuated blobs, and use the free space to
-		* test how many p-blobs fit with a matching hint number
+		* clues for punctuated blobs, and use the free space to
+		* test how many p-blobs fit with a matching clue number
 		*/
 		int[] blobs = new int[numBlobs];
 		int blobNum = -1;
 		int blobSize = 0;
 		boolean punctuated = true;
 		lastMark = FLAGGED;
-		for (int c = 0; c < rows; c++) {
-			int mark = marks[row][c];
+		for (int g = 0; g < length; g++) {
+			int mark = rowMode ? marks[pos][g] : marks[g][pos];
 			// went from non-blob to blob
 			if (lastMark != mark && lastMark == FLAGGED) {
 				// reset everything
@@ -306,7 +328,7 @@ public class Puzzle {
 			}
 			// if a blob cell
 			if (mark != FLAGGED) {
-				if (mark == UNCLEARED) // if any in this blob is uncleared...
+				if (mark != CLEARED) // if any in this blob is uncleared...
 					punctuated = false;
 				// another cell of blob reached
 				blobSize++;
@@ -315,100 +337,106 @@ public class Puzzle {
 			}
 			lastMark = mark;
 		}
-		// keeps track of which hint a blob has been matched to
-		// if an already matched blob tries to match another hint,
-		// then unmatch the first hint and prevent further matches
+		// keeps track of which clue a blob has been matched to
+		// if an already matched blob tries to match another clue,
+		// then unmatch the first clue and prevent further matches
 		final int NEVER_MATCHED = -1;
 		final int MATCH_BANNED = -2;
-		int[] blobHintMatch = new int[numBlobs];
+		int[] blobClueMatch = new int[numBlobs];
 		for (int i = 0; i < numBlobs; i++)
-			blobHintMatch[i] = NEVER_MATCHED;
-		// match hints to blobs
-		for (int i = 0; i < hints.length; i++) {
+			blobClueMatch[i] = NEVER_MATCHED;
+		// match clues to blobs
+		for (int i = 0; i < clues.length; i++) {
 			int matchedBlob = NEVER_MATCHED;
 			for (int j = 0; j < blobs.length; j++) {
-				if (hints[i] == blobs[j]) {	// blob matches to this hint. see if it fits in this spot
-					boolean fitsLeft = matches(hints, blobs, 0, i, 0, j);
-					boolean fitsRight = matches(hints, blobs, i + 1, hints.length, j + 1, blobs.length);
+				if (clues[i] == blobs[j]) {	// blob matches to this clue. see if it fits in this spot
+					boolean fitsLeft = matches(clues, blobs, 0, i, 0, j);
+					boolean fitsRight = matches(clues, blobs, i + 1, clues.length, j + 1, blobs.length);
+					// the blob is a match for this clue
 					if (fitsLeft && fitsRight) {
-						if (blobHintMatch[j] != NEVER_MATCHED) { // this blob has matched more than one hint
-							if (blobHintMatch[j] != MATCH_BANNED) { // need to undo & ban match
-								int oldIndex = blobHintMatch[j]; // the previous matched hint
-								hints[oldIndex] = Math.abs(hints[oldIndex]); // uncross the hint (ambiguous!)
-								blobHintMatch[j] = MATCH_BANNED; // ban this blob from matches
+						if (blobClueMatch[j] != NEVER_MATCHED) { // this blob has matched more than one clue
+							if (blobClueMatch[j] != MATCH_BANNED) { // need to undo & ban match
+								int oldIndex = blobClueMatch[j]; // the previous matched clue
+								clues[oldIndex] = Math.abs(clues[oldIndex]); // uncross the clue (ambiguous!)
+								blobClueMatch[j] = MATCH_BANNED; // ban this blob from matches
 							}
-							matchedBlob = MATCH_BANNED; // this hint can't be crossed - ambiguous
-							//break; // force quit hint matching
+							matchedBlob = MATCH_BANNED; // this clue can't be crossed - ambiguous
 						}
 						else { // blob's first match
-							blobHintMatch[j] = i;
+							blobClueMatch[j] = i;
 							matchedBlob = matchedBlob == NEVER_MATCHED ? j : MATCH_BANNED;
 						}
 					}
 				}
 			}
 			if (matchedBlob > NEVER_MATCHED)// if exactly one match found:
-				hints[i] = -hints[i]; // cross out the hint
+				clues[i] = -clues[i]; // cross out the clue
 		}
 	}
 	
-	private boolean matches(int[] hints, int[] blobs, int hintLow, int hintHigh, int blobLow, int blobHigh) {
+	/**
+	 * This is a work of art.
+	 * @param clues
+	 * @param blobs
+	 * @param clueLow
+	 * @param clueHigh
+	 * @param blobLow
+	 * @param blobHigh
+	 * @return A work of art.
+	 */
+	private boolean matches(int[] clues, int[] blobs, int clueLow, int clueHigh, int blobLow, int blobHigh) {
 		/**
-		 * Based on the hint list, try all blobs
-		 * that match a given hint to see if any match.
+		 * Based on the clue list, try all blobs
+		 * that match a given clue to see if any match.
 		 * The result is true if any match, otherwise false.
 		 * For each attempted match, recurse to test.
 		 * At a base case, if there are only unpunctuated
-		 * blobs, then we only need to see if the hints
+		 * blobs, then we only need to see if the clues
 		 * can fit within this free space blob.
-		 * Also, if there are no hints, the match is
+		 * Also, if there are no clues, the match is
 		 * trivially successful.
 		 */
-		if (hintHigh - hintLow < 1) { // no hints to fit!
+		if (clueHigh - clueLow < 1) { // no clues to fit!
 			for (int i = blobLow; i < blobHigh; i++)
 				if (blobs[i] > 0) // if there are any punctuated blobs
 					return false; // then this must not be a match
-			return true; // otherwise, no hints means nothing to match
+			return true; // otherwise, no clues means nothing to match
 		}
-		else if (blobHigh - blobLow < 1) // hints, but no blobs
+		else if (blobHigh - blobLow < 1) // clues, but no blobs
 			return false;
 		int matchingBlobs = 0;
-		// match hints to blobs
-		for (int i = hintLow; i < hintHigh; i++) {
+		// match clues to blobs
+		for (int i = clueLow; i < clueHigh; i++) {
 			for (int j = blobLow; j < blobHigh; j++) {
-				// blob matches to this hint, see if it fits in this spot
-				if (Math.abs(hints[i]) == blobs[j]) {
+				// blob matches to this clue, see if it fits in this spot
+				if (Math.abs(clues[i]) == blobs[j]) {
 					matchingBlobs++;
-					boolean matchLeft = matches(hints, blobs, hintLow, i, blobLow, j);
-					boolean matchRight = matches(hints, blobs, i + 1, hintHigh, j + 1, blobHigh);
+					boolean matchLeft = matches(clues, blobs, clueLow, i, blobLow, j);
+					boolean matchRight = matches(clues, blobs, i + 1, clueHigh, j + 1, blobHigh);
 					if (matchLeft && matchRight)
 						return true;
 				}
 			}
 		}
-		// blobs matched hint, but didn't fit
+		// blobs matched clue, but didn't fit
 		if (matchingBlobs > 0)
 			return false;
-		else { // no more matching blobs - just fit hints within space
-			int curHint = hintLow; // the current hint we're fitting hints into a blob
+		else { // no more matching blobs - just fit clues within space
+			int curClue = clueLow; // the current clue we're fitting clues into a blob
 			for (int i = blobLow; i < blobHigh; i++) {
 				if (blobs[i] > 0) // not a free space blob
 					continue;
 				int blobBuf = Math.abs(blobs[i]); // amount of space
-				while (blobBuf >= hints[curHint]) { // at least enough room for a hint
-					// subtract room taken for this hint, plus one for punctuation
-					blobBuf -= hints[curHint++] + 1; // (also increment hint index)
-					if (curHint >= hintHigh) // fit all the hints needed
+				while (blobBuf >= clues[curClue]) { // at least enough room for a clue
+					// subtract room taken for this clue, plus one for punctuation
+					blobBuf -= clues[curClue++] + 1; // (also increment clue index)
+					if (curClue >= clueHigh) // fit all the clues needed
 						return true;
 				}
 			}
 			// couldn't fit into blobs
 			return false;
 		}
-	}
-
-	public void tryCrossingClueColumn(int col) {
-	//	tryCrossing(colClues, col);
 	}
 
 	/**

@@ -129,6 +129,8 @@ public class Blanket extends Element {
 		int drawY = getRelativeMouseY();
 		int mrow = getCellAtPoint(drawY);
 		int mcol = getCellAtPoint(drawX);
+		if (drawMode == Puzzle.CLEARED && puzzle.getRemainingClearCount() < 1) // no plates left
+			stopDraw();
 		if (drawing && beingHovered() && puzzle.validSpot(mrow, mcol)) {
 			// DO FADE TIMER IF ENOUGH TIME PASSED
 			if (fadeTimer.elapsed() >= FADE_TIME) {
@@ -198,7 +200,10 @@ public class Blanket extends Element {
 		boolean hov = beingHovered();
 		int highRow = getCellAtPoint(getRelativeMouseY());
 		int highCol = getCellAtPoint(getRelativeMouseX());
-		
+		int mode = puzzle.validSpot(highRow, highCol) ? getDrawMode(Input.LEFT_CLICK, puzzle.getMark(highRow, highCol)) : 0;
+
+		Graphics2D gg = (Graphics2D) g;
+		Composite oldComp = gg.getComposite();
 		for (int r = 0; r < puzzle.getRows(); r++) {
 			for (int c = 0; c < puzzle.getColumns(); c++) {
 				BufferedImage cell = cells[r % 2 + c % 2];
@@ -209,6 +214,12 @@ public class Blanket extends Element {
 				int pyl = (int) Math.round(plateYLeeway * seed);
 				int fxl = (int) Math.round(forkXLeeway * seed);
 				int fyl = (int) Math.round(forkYLeeway * seed);
+				boolean hovered = r == highRow && c == highCol;
+				if (hovered && mark == Puzzle.UNCLEARED && // draw half opacity hover hint
+					(mode != Puzzle.CLEARED || puzzle.getRemainingClearCount() > 0)) { // don't if not enough plates
+					gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+					mark = mode;
+				}
 				if (mark == Puzzle.CLEARED)
 					g.drawImage(plates[puzState.getActiveLayerId()+1], c * cellSize+pxl, r * cellSize+pyl, null);
 				else if (mark == Puzzle.FLAGGED)
@@ -217,11 +228,11 @@ public class Blanket extends Element {
 					g.drawImage(plates[guessIndex], c * cellSize+pxl, r * cellSize+pyl, null);
 				else if (mark == Puzzle.MAYBE_FLAGGED)
 					g.drawImage(forks[2], c * cellSize+fxl, r * cellSize+fyl, null);
+				if (hovered) // reset opacity
+					gg.setComposite(oldComp);
 			}
 		}
 		// set opacity to hint fade anim
-		Graphics2D gg = (Graphics2D) g;
-		Composite oldComp = gg.getComposite();
 		gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) hintFade.getValue()));
 		for (int r = 0; r < puzzle.getRows(); r++) {
 			int[] hints = puzzle.getClueRow(r);
@@ -233,7 +244,7 @@ public class Blanket extends Element {
 				if (hintnum < 0) {
 					g.setColor(Palette.RED);
 					g.drawLine(-hgridW * (i+1) + rowXOff, r * cellSize + rowYOff,
-							-hgridW * (i+1) + rowXOff + cellSize, r * cellSize + rowYOff + cellSize);
+							-hgridW * i - rowXOff, (r+1) * cellSize - rowYOff);
 				}
 			}
 			g.drawImage(scrHoriz[0 + hh], -hgridW * (hints.length+1), r * cellSize, null);
@@ -244,7 +255,12 @@ public class Blanket extends Element {
 			for (int i = 0; i < hints.length; i++) {
 				int hintnum = hints[hints.length - 1 - i];
 				g.drawImage(scrVert[1 + hh], c * cellSize, -hgridW * (i+1), null);
-				g.drawImage(nums[hintnum-1], c * cellSize + colXOff, -hgridW * (i+1) + colYOff, null);
+				g.drawImage(nums[Math.abs(hintnum)-1], c * cellSize + colXOff, -hgridW * (i+1) + colYOff, null);
+				if (hintnum < 0) {
+					g.setColor(Palette.RED);
+					g.drawLine(c * cellSize + colXOff, -hgridW * (i+1) + colYOff,
+							(c+1) * cellSize - colXOff, -hgridW * i - colYOff);
+				}
 			}
 			g.drawImage(scrVert[0 + hh], c * cellSize, -hgridW * (hints.length+1), null);
 		}

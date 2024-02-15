@@ -82,6 +82,8 @@ public class ToolButton extends Button {
 	
 	@Override
 	public void render(Graphics g) {
+		if (!shouldRender())
+			return;
 		super.render(g);
 		setRenderClips(g);
 		Composite oldComp = setRenderComposite(g);
@@ -89,11 +91,59 @@ public class ToolButton extends Button {
 		int yp = getDisplayY();
 		g.drawImage(toolImage, xp, yp, null);
 		g.setClip(null);
+		
 		parent.setRenderClips(g);
 		if (puzState.getCurrentTool() == toolId)
 			g.drawImage(ImageBank.toolarrows[0], xp - 12, yp + 10, null);
 		g.setClip(null);
+		
+		// render mini popups
+		final int popupX = 40;
+		final int popupY = 2;
+		BufferedImage popback = getPopupBackground();
+		if (popback != null) {
+			g.drawImage(popback, xp + popupX, yp + popupY, null);
+			if (toolId == PLATE) { // gotta render the plate count
+				final int pWidth = 18;
+				final int cWidth = 5;
+				String count = Integer.toString(Math.max(0, puzState.getActivePuzzle().getRemainingClearCount()));
+				int xOff = (pWidth - cWidth * count.length() + 1) / 2;
+				for (int c = 0; c < count.length(); c++)
+					g.drawImage(ImageBank.smallrednums[count.charAt(c) - '0'],
+							xp + popupX + c * cWidth + xOff, yp + popupY + 2, null);
+			}
+		}
 		((Graphics2D) g).setComposite(oldComp);
+	}
+	
+	private boolean shouldRender() {
+		if (toolId == PLATE || toolId == FORKS)
+			return !puzState.isGuessing();
+		else if (toolId == MAYBE_PLATE || toolId == MAYBE_FORKS)
+			return puzState.isGuessing();
+		return true;
+	}
+
+	private BufferedImage getPopupBackground() {
+		int index;
+		boolean guess = puzState.isGuessing();
+		switch (toolId) {
+		case PLATE:
+			index = 0;
+			break;
+		case GUESS:
+			index = !guess ? 4 : 1;
+			break;
+		case CLEAR:
+			index = !guess ? 2 : 5;
+			break;
+		case MAYBE_PLATE:
+			index = 3;
+			break;
+		default:
+			return null;
+		}
+		return ImageBank.toolpopups[index];
 	}
 	
 }

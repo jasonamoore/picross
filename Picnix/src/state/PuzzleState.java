@@ -61,6 +61,7 @@ public class PuzzleState extends State {
 	private int currentToolId;
 
 	// dynamic sequences of Strokes, used to undo/redo draws
+	private static final int MAX_UNDO_HISTORY = 50;
 	private ArrayList<Stroke> undo;
 	private ArrayList<Stroke> redo;
 
@@ -137,6 +138,9 @@ public class PuzzleState extends State {
 			tools[i] = new ToolButton(this, i, 16, 24 + (44 * (i % 6)), 45, 40);
 			toolbar.add(tools[i]);
 		}
+		// disable guess tools
+		tools[ToolButton.MAYBE_PLATE].setExisting(false);
+		tools[ToolButton.MAYBE_FORKS].setExisting(false);
 		// make undo and redo
 		for (int i = 0; i <= 1; i++) {
 			ToolButton urdo = new ToolButton(this, ToolButton.UNDO + i, 15 + (i * 24), 288, 23, 40);
@@ -268,15 +272,16 @@ public class PuzzleState extends State {
 		activeLayerId = layerId;
 		activePuzzle = getPuzzleByLayerId(layerId);
 		layers[layerId].setActive(true);
+		updatePlateEnabled();
 		updateClearEnabled();
 	}
 	
 	private void toggleGuess() {
 		guessing = !guessing;
-		tools[ToolButton.PLATE].setVisible(!guessing);
-		tools[ToolButton.FORKS].setVisible(!guessing);
-		tools[ToolButton.MAYBE_PLATE].setVisible(guessing);
-		tools[ToolButton.MAYBE_FORKS].setVisible(guessing);
+		tools[ToolButton.PLATE].setExisting(!guessing);
+		tools[ToolButton.FORKS].setExisting(!guessing);
+		tools[ToolButton.MAYBE_PLATE].setExisting(guessing);
+		tools[ToolButton.MAYBE_FORKS].setExisting(guessing);
 		switch (currentToolId) {
 		case ToolButton.PLATE:
 			currentToolId = ToolButton.MAYBE_PLATE;
@@ -291,6 +296,11 @@ public class PuzzleState extends State {
 			currentToolId = ToolButton.FORKS;
 			break;
 		}
+		if (!guessing) // make sure to deactivate plate if necessary
+			updatePlateEnabled();
+		// guess clear mode - only clears guesses
+		// so clear button is disabled if no guess marks
+		updateClearEnabled();
 	}
 	
 	private void centerCam() {
@@ -303,9 +313,11 @@ public class PuzzleState extends State {
 		for (int r = 0; r < activePuzzle.getRows(); r++) {
 			for (int c = 0; c < activePuzzle.getColumns(); c++) {
 				int oldMark = activePuzzle.getMark(r, c);
-				if (oldMark != Puzzle.UNCLEARED)
+				if (!guessing && oldMark != Puzzle.UNCLEARED ||
+					oldMark == Puzzle.MAYBE_CLEARED || oldMark == Puzzle.MAYBE_FLAGGED) {
 					clear.addChange(r, c, activePuzzle.getMark(r, c));
-				activePuzzle.markSpot(r, c, Puzzle.UNCLEARED);
+					activePuzzle.markSpot(r, c, Puzzle.UNCLEARED);
+				}
 			}
 		}
 		// disable the button
@@ -317,8 +329,12 @@ public class PuzzleState extends State {
 		if (s.size() < 1) // empty stroke
 			return;
 		undo.add(s);
+		// maintain undo history limit
+		if (undo.size() > MAX_UNDO_HISTORY)
+			undo.remove(0);
 		// clear redo history
 		redo = new ArrayList<Stroke>();
+		updatePlateEnabled();
 		updateClearEnabled();
 		updateUndoRedoEnabled();
 	}
@@ -344,6 +360,7 @@ public class PuzzleState extends State {
 			revPuzzle.markSpot(crow, ccol, chngd[Stroke.MARK]);
 		}
 		to.add(toSave);
+		updatePlateEnabled();
 		updateClearEnabled();
 		updateUndoRedoEnabled();
 		// change to layer that was changed
@@ -356,13 +373,25 @@ public class PuzzleState extends State {
 	 * ~~~~~~~~~~~~~~~~~~~~
 	 */
 	
+	public void updatePlateEnabled() {
+		boolean enabled = activePuzzle.getRemainingClearCount() > 0;
+		tools[ToolButton.PLATE].setEnabled(enabled);
+		// switch from this tool if disabled
+		//if (!enabled && currentToolId == ToolButton.PLATE)
+		//	toolClicked(ToolButton.FORKS);
+	}
+	
 	public void updateClearEnabled() {
-		for (int r = 0; r < activePuzzle.getRows(); r++)
-			for (int c = 0; c < activePuzzle.getColumns(); c++)
-				if (activePuzzle.getMark(r, c) != Puzzle.UNCLEARED) {
+		for (int r = 0; r < activePuzzle.getRows(); r++) {
+			for (int c = 0; c < activePuzzle.getColumns(); c++) {
+				int mark = activePuzzle.getMark(r, c);
+				if (mark != Puzzle.UNCLEARED && !guessing ||
+					mark == Puzzle.MAYBE_CLEARED || mark == Puzzle.MAYBE_FLAGGED) {
 					tools[ToolButton.CLEAR].setEnabled(true);
 					return;
 				}
+			}
+		}
 		tools[ToolButton.CLEAR].setEnabled(false);
 	}
 
