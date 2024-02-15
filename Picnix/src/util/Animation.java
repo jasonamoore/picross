@@ -76,6 +76,22 @@ public class Animation {
 	}
 	
 	/**
+	 * Updates the "from" value.
+	 * @param from The new keyframe value.
+	 */
+	public void setFrom(double from) {
+		this.from = from;
+	}
+	
+	/**
+	 * Updates the "to" value.
+	 * @param to The new keyframe value.
+	 */
+	public void setTo(double to) {
+		this.to = to;
+	}
+	
+	/**
 	 * Pauses the animation.
 	 */
 	public void pause() {

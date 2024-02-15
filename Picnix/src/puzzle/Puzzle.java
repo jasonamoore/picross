@@ -180,6 +180,40 @@ public class Puzzle {
 	public int getRemainingClearCount() {
 		return totalFilled - clearedCells;
 	}
+
+	public int[] getHorizontalBlob(int row, int col, int drawMode) {
+		if (getMark(row, col) != drawMode)
+			return null;
+		int blobStart = col;
+		for (int c = col; c >= 0; c--, blobStart--) {
+			if (getMark(row, c) != drawMode)
+				break;
+		}
+		blobStart++;
+		int blobSize = col - blobStart;
+		for (int c = col; c < columns; c++, blobSize++) {
+			if (getMark(row, c) != drawMode)
+				break;
+		}
+		return new int[] {blobStart, blobSize};
+	}
+	
+	public int[] getVerticalBlob(int row, int col, int drawMode) {
+		if (getMark(row, col) != drawMode)
+			return null;
+		int blobStart = row;
+		for (int r = row; r >= 0; r--, blobStart--) {
+			if (getMark(r, col) != drawMode)
+				break;
+		}
+		blobStart++;
+		int blobSize = row - blobStart;
+		for (int r = row; r < rows; r++, blobSize++) {
+			if (getMark(r, col) != drawMode)
+				break;
+		}
+		return new int[] {blobStart, blobSize};
+	}
 	
 	public void markSpot(int row, int col, int flag) {
 		int oldMark = getMark(row, col);

@@ -30,7 +30,7 @@ public class Stroke {
 		if (lookback >= numChanged)
 			return null;
 		else
-			return changed[numChanged - lookback];
+			return changed[numChanged - lookback - 1];
 	}
 	
 	public int[] getChange(int index) {

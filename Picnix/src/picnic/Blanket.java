@@ -1,6 +1,7 @@
 package picnic;
 
 import java.awt.AlphaComposite;
+import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -29,13 +30,28 @@ public class Blanket extends Element {
 	private int drawMode;
 	// the stroke data for the current draw
 	private Stroke drawStroke;
-	
+	// used for mouse ray tracing
+	private int lastDrawX, lastDrawY;
+	// used for inferring which blob to size up when drawing
+	private static final int ROW = 0, COL = 1;
+	private int[] lastCell;
+	private int[] currCell;
+	// animation blob size helper smooth movement
+	private Animation[] blobSizeAnim;
+
 	// animation for hints fading in/out
 	private Animation hintFade;
+	
+	// used to fade sidebars when drawing
+	private final int FADE_TIME = 550;
+	private Timer fadeTimer;
 	
 	public Blanket(Field field) {
 		this.field = field;
 		puzState = field.getPuzzleState();
+		lastCell = new int[] {-1, -1};
+		currCell = new int[] {-1, -1};
+		blobSizeAnim = new Animation[2];
 		hintFade = new Animation(0, 1, 350, Animation.CUBIC, Animation.LOOP_NONE, true);
 		fadeTimer = new Timer(false);
 	}
@@ -92,6 +108,15 @@ public class Blanket extends Element {
 		}
 	}
 	
+	@Override
+	public void onLeave() {
+		super.onLeave();
+		// make sure mouse wont leave and return somewhere else,
+		// causing a janky blob size hint animation
+		blobSizeAnim[0] = null;
+		blobSizeAnim[1] = null;
+	}
+	
 	private void startDraw(int mode) {
 		if (drawing)
 			return;
@@ -109,16 +134,18 @@ public class Blanket extends Element {
 		drawing = false;
 		drawMode = -1;
 		drawStroke = null;
+		currCell[ROW] = -1;
+		currCell[COL] = -1;
+		lastCell[ROW] = -1;
+		lastCell[COL] = -1;
+		blobSizeAnim[0] = null;
+		blobSizeAnim[1] = null;
 		puzState.fadeSidebars(false);
 	}
 	
 	private int getCellAtPoint(int xory) {
 		return Math.floorDiv(xory, puzState.getPuzzleCellSize());
 	}
-
-	private final int FADE_TIME = 550;
-	private Timer fadeTimer;
-	private int lastDrawX, lastDrawY;
 	
 	@Override
 	public void tick() {
@@ -129,6 +156,12 @@ public class Blanket extends Element {
 		int drawY = getRelativeMouseY();
 		int mrow = getCellAtPoint(drawY);
 		int mcol = getCellAtPoint(drawX);
+		if (currCell[ROW] != mrow || currCell[COL] != mcol) {
+			lastCell[ROW] = currCell[ROW];
+			currCell[ROW] = mrow;
+			lastCell[COL] = currCell[COL];
+			currCell[COL] = mcol;
+		}
 		if (drawMode == Puzzle.CLEARED && puzzle.getRemainingClearCount() < 1) // no plates left
 			stopDraw();
 		if (drawing && beingHovered() && puzzle.validSpot(mrow, mcol)) {
@@ -170,7 +203,7 @@ public class Blanket extends Element {
 			lastDrawY = drawY;
 		}
 	}
-
+	
 	@Override
 	public void render(Graphics g) {
 		g.translate(getDisplayX(), getDisplayY());
@@ -197,10 +230,10 @@ public class Blanket extends Element {
 		int forkYLeeway = cellSize - forks[0].getHeight();
 
 		// the highlighted row and column hints
-		boolean hov = beingHovered();
 		int highRow = getCellAtPoint(getRelativeMouseY());
 		int highCol = getCellAtPoint(getRelativeMouseX());
-		int mode = puzzle.validSpot(highRow, highCol) ? getDrawMode(Input.LEFT_CLICK, puzzle.getMark(highRow, highCol)) : 0;
+		boolean hov = puzzle.validSpot(highRow, highCol);
+		int mode = hov ? getDrawMode(Input.LEFT_CLICK, puzzle.getMark(highRow, highCol)) : 0;
 
 		Graphics2D gg = (Graphics2D) g;
 		Composite oldComp = gg.getComposite();
@@ -215,7 +248,7 @@ public class Blanket extends Element {
 				int fxl = (int) Math.round(forkXLeeway * seed);
 				int fyl = (int) Math.round(forkYLeeway * seed);
 				boolean hovered = r == highRow && c == highCol;
-				if (hovered && mark == Puzzle.UNCLEARED && // draw half opacity hover hint
+				if (!drawing && hovered && mark == Puzzle.UNCLEARED && // draw half opacity hover hint
 					(mode != Puzzle.CLEARED || puzzle.getRemainingClearCount() > 0)) { // don't if not enough plates
 					gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
 					mark = mode;
@@ -230,6 +263,65 @@ public class Blanket extends Element {
 					g.drawImage(forks[2], c * cellSize+fxl, r * cellSize+fyl, null);
 				if (hovered) // reset opacity
 					gg.setComposite(oldComp);
+			}
+		}
+		// if there is a current stroke w/ at least 2 changes
+		if (hov && drawStroke != null && drawStroke.size() > 1) {
+			if (lastCell[ROW] == currCell[ROW]) { // horizontal movement
+				int[] blob = puzzle.getHorizontalBlob(currCell[ROW], currCell[COL], drawMode);
+				int start = blob[0];
+				int size = blob[1];
+				boolean hintCover = currCell[ROW] == 0;
+				int sx = start * cellSize + 1;
+				int nx = highCol * cellSize + (cellSize - nums[0].getWidth()) / 2;
+				int sy = !hintCover ? highRow * cellSize - 1 : (highRow + 1) * cellSize + 1;
+				int ny = !hintCover ? sy - nums[0].getHeight() : sy;
+				if (blobSizeAnim[0] == null || blobSizeAnim[1] == null)
+					setBlobSizeAnim(nx, ny);
+				else {
+					int tnx = nx;
+					int tny = ny;
+					nx = blobSizeAnim[0].getIntValue();
+					ny = blobSizeAnim[1].getIntValue();
+					setBlobSizeAnim(tnx, tny);
+				}
+				int nex = nx + nums[0].getWidth();
+				int ey = !hintCover ? sy + (ny - sy) / 2 : sy + nums[0].getHeight() / 2;
+				int ex = (start + size) * cellSize - 1;
+				g.setColor(Color.BLACK);
+				g.drawLine(sx, sy, sx, ey);
+				g.drawLine(sx, ey, nx - 2, ey);
+				g.drawLine(nex + 2, ey, ex, ey);
+				g.drawLine(ex, ey, ex, sy);
+				g.drawImage(nums[size - 1], nx, ny, null);
+			}
+			else if (lastCell[COL] == currCell[COL]) { // vertical movement
+				int[] blob = puzzle.getVerticalBlob(currCell[ROW], currCell[COL], drawMode);
+				int start = blob[0];
+				int size = blob[1];
+				boolean hintCover = currCell[COL] == 0;
+				int sy = start * cellSize + 1;
+				int ny = highRow * cellSize + (cellSize - nums[0].getHeight()) / 2;
+				int sx = !hintCover ? highCol * cellSize - 1 : (highCol + 1) * cellSize + 1;
+				int nx = !hintCover ? sx - nums[0].getWidth() : sx;
+				if (blobSizeAnim[0] == null || blobSizeAnim[1] == null)
+					setBlobSizeAnim(nx, ny);
+				else {
+					int tnx = nx;
+					int tny = ny;
+					nx = blobSizeAnim[0].getIntValue();
+					ny = blobSizeAnim[1].getIntValue();
+					setBlobSizeAnim(tnx, tny);
+				}
+				int ney = ny + nums[0].getHeight();
+				int ex = !hintCover ? sx + (nx - sx) / 2 : sx + nums[0].getWidth() / 2;
+				int ey = (start + size) * cellSize - 1;
+				g.setColor(Color.BLACK);
+				g.drawLine(sx, sy, ex, sy);
+				g.drawLine(ex, sy, ex, ny - 2);
+				g.drawLine(ex, ney + 2, ex, ey);
+				g.drawLine(ex, ey, sx, ey);
+				g.drawImage(nums[size - 1], nx, ny, null);
 			}
 		}
 		// set opacity to hint fade anim
@@ -266,6 +358,21 @@ public class Blanket extends Element {
 		}
 		gg.setComposite(oldComp);
 		g.translate(-getDisplayX(), -getDisplayY());
+	}
+
+	private void setBlobSizeAnim(int x, int y) {
+		if (blobSizeAnim[0] == null || blobSizeAnim[1] == null) {
+			blobSizeAnim[0] = new Animation(x, x, 100, Animation.EASE_OUT, Animation.LOOP_NONE, false);
+			blobSizeAnim[1] = new Animation(y, y, 100, Animation.EASE_OUT, Animation.LOOP_NONE, false);
+		}
+		else {
+			blobSizeAnim[0].setFrom(blobSizeAnim[0].getValue());
+			blobSizeAnim[1].setFrom(blobSizeAnim[1].getValue());
+			blobSizeAnim[0].setTo(x);
+			blobSizeAnim[1].setTo(y);
+			blobSizeAnim[0].reset(true);
+			blobSizeAnim[1].reset(true);
+		}
 	}
 
 	private static double randomConsistent(int id, int row, int col) {
