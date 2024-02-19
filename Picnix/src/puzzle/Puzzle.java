@@ -2,10 +2,10 @@ package puzzle;
 
 public class Puzzle {
 
-	public static final int UNCLEARED = -1;
-	public static final int CLEARED = 0;
+	public static final int EMPTY = -1;
+	public static final int FILLED = 0;
 	public static final int FLAGGED = 1;
-	public static final int MAYBE_CLEARED = 6;
+	public static final int MAYBE_FILLED = 6;
 	public static final int MAYBE_FLAGGED = 7;
 
 	private int rows;
@@ -20,9 +20,10 @@ public class Puzzle {
 	private int[][] rowClues;
 	private int[][] colClues;
 
-	private int correctCells;
-	private int clearedCells;
-	private int totalFilled;
+	// counters for various info about cells and user marks
+	private int correctFilledCells;
+	private int filledCells;
+	private int solutionFilledCells;
 	
 	// maintains whether the user's marks are a solution for the puzzle
 	private boolean solved;
@@ -43,7 +44,7 @@ public class Puzzle {
 		// initialize marks to -1
 		for (int r = 0; r < rows; r++)
 			for (int c = 0; c < columns; c++)
-				marks[r][c] = UNCLEARED;
+				marks[r][c] = EMPTY;
 		// meaning: it's not known if the puzzle is currently solved
 		solvedStateDirty = true;
 		// calculate clues
@@ -144,7 +145,7 @@ public class Puzzle {
 		// count filled squares
 		for (int i = 0; i < rowClues.length; i++)
 			for (int j = 0; j < rowClues[i].length; j++)
-				totalFilled += rowClues[i][j];
+				solutionFilledCells += rowClues[i][j];
 	}
 
 	public int[] getClueRow(int row) {
@@ -169,20 +170,24 @@ public class Puzzle {
 		return max;
 	}
 	
-	public int getTotalCellsInSolution() {
-		return totalFilled;
+	public int getFilledCellsInSolution() {
+		return solutionFilledCells;
 	}
 
+	public double getIncorrectCells() {
+		return filledCells - correctFilledCells;
+	}
+	
 	public double getCorrectCells() {
-		return correctCells;
+		return correctFilledCells;
 	}
 
-	public int getRemainingClearCount() {
-		return totalFilled - clearedCells;
+	public int getRemainingFillCount() {
+		return solutionFilledCells - filledCells;
 	}
 
 	public int[] getHorizontalBlob(int row, int col, int drawMode) {
-		if (getMark(row, col) != drawMode)
+		if (!validSpot(row, col) || getMark(row, col) != drawMode)
 			return null;
 		int blobStart = col;
 		for (int c = col; c >= 0; c--, blobStart--) {
@@ -199,7 +204,7 @@ public class Puzzle {
 	}
 	
 	public int[] getVerticalBlob(int row, int col, int drawMode) {
-		if (getMark(row, col) != drawMode)
+		if (!validSpot(row, col) || getMark(row, col) != drawMode)
 			return null;
 		int blobStart = row;
 		for (int r = row; r >= 0; r--, blobStart--) {
@@ -215,22 +220,26 @@ public class Puzzle {
 		return new int[] {blobStart, blobSize};
 	}
 	
-	public void markSpot(int row, int col, int flag) {
+	public boolean markSpot(int row, int col, int flag) {
+		boolean mistake = false;
 		int oldMark = getMark(row, col);
 		marks[row][col] = flag;
-		if (oldMark != CLEARED && flag == CLEARED) {
-			clearedCells++;
+		if (oldMark != FILLED && flag == FILLED) {
+			filledCells++;
 			if (solution[row][col])
-				correctCells++;
+				correctFilledCells++;
+			else
+				mistake = true;
 		}
-		else if (oldMark == CLEARED && flag != CLEARED) {
-			clearedCells--;
+		else if (oldMark == FILLED && flag != FILLED) {
+			filledCells--;
 			if (solution[row][col])
-				correctCells--;
+				correctFilledCells--;
 		}
 		tryCrossingRowClues(row);
 		tryCrossingColumnClues(col);
 		solvedStateDirty = true;
+		return mistake;
 	}
 	
 	public int getMark(int row, int col) {
@@ -251,7 +260,7 @@ public class Puzzle {
 			int num = 0;
 			int chain = 0;
 			for (int c = 0; c < columns; c++) {
-				if (marks[r][c] == CLEARED) {
+				if (marks[r][c] == FILLED) {
 					if (chain == 0)
 						num++;
 					chain++;
@@ -277,7 +286,7 @@ public class Puzzle {
 			int num = 0;
 			int chain = 0;
 			for (int r = 0; r < rows; r++) {
-				if (marks[r][c] == CLEARED) {
+				if (marks[r][c] == FILLED) {
 					if (chain == 0)
 						num++;
 					chain++;
@@ -332,7 +341,7 @@ public class Puzzle {
 		// count number of blobs
 		int numBlobs = 0;
 		int lastMark = FLAGGED; // so a blob starting at the left is counted
-		int length = rowMode ? rows : columns;
+		int length = rowMode ? columns : rows;
 		for (int g = 0; g < length; g++) {
 			int mark = rowMode ? marks[pos][g] : marks[g][pos];
 			// went from non-blob to blob
@@ -362,7 +371,7 @@ public class Puzzle {
 			}
 			// if a blob cell
 			if (mark != FLAGGED) {
-				if (mark != CLEARED) // if any in this blob is uncleared...
+				if (mark != FILLED) // if any in this blob is uncleared...
 					punctuated = false;
 				// another cell of blob reached
 				blobSize++;
@@ -479,12 +488,12 @@ public class Puzzle {
 	 * @param height Height of the puzzle to generate.
 	 * @return
 	 */
-	public static boolean[][] genPuzzle(int width, int height) {
+	public static Puzzle genPuzzle(int width, int height) {
 		boolean[][] grid = new boolean[height][width];
 		for (int i = 0; i < height; i++)
 			for (int j = 0; j < width; j++)
 				grid[i][j] = Math.random() < 0.6;
-		return grid;
+		return new Puzzle(grid);
 	}
 	
 }

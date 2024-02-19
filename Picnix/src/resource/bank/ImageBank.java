@@ -9,8 +9,16 @@ public class ImageBank {
 
 	public static BufferedImage title;
 	public static BufferedImage grassback;
+	public static BufferedImage island;
 
 	public static BufferedImage[] topbar;
+	public static BufferedImage time;
+	public static BufferedImage score;
+	public static BufferedImage mistakes;
+	public static BufferedImage[] digits;
+	public static BufferedImage comma;
+	public static BufferedImage colon;
+	public static BufferedImage[] mistakeLives;
 	// --
 	public static BufferedImage[] minimaxers;
 	public static BufferedImage toolbar;
@@ -61,11 +69,19 @@ public class ImageBank {
 	
 	public static void loadGlobalResources() throws IOException {
 		// tests
-		title =			loadSheet("splash.png");
+		title =			loadSheet("title.png");
 		grassback = 	loadSheet("grasstest.png");
+		island = 	loadSheet("island.png");
 		// ui sprite sheet
 		BufferedImage uiSheet = loadSheet("ui.png");
 		topbar = loadMany(uiSheet, 0, 0, 24, 32, 4, 1);
+		time = loadOne(uiSheet, 267, 94, 55, 19);
+		score = loadOne(uiSheet, 267, 113, 71, 19);
+		mistakes = loadOne(uiSheet, 267, 132, 97, 19);
+		digits = loadMany(uiSheet, 267, 60, 11, 17, 5, 2);
+		comma = loadOne(uiSheet, 322, 60, 3, 5);
+		colon = loadOne(uiSheet, 325, 60, 4, 10);
+		mistakeLives = loadMany(uiSheet, 322, 93, 19, 20, 2, 1);
 		minimaxers = loadMany(uiSheet, 96, 18, 14, 11, 4, 1);
 		toolbar = loadOne(uiSheet, 0, 32, 80, 333);
 		toolbarbottom = loadOne(uiSheet, 0, 365, 80, 3);

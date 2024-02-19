@@ -1,7 +1,6 @@
 package engine;
 
 import java.awt.Canvas;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
@@ -12,16 +11,19 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferStrategy;
 import java.awt.image.VolatileImage;
-
 import java.io.IOException;
 
 import javax.swing.JFrame;
 
+import picnic.Particle;
+import puzzle.PuzzleFileReader;
 import resource.bank.AudioBank;
 import resource.bank.FontBank;
 import resource.bank.ImageBank;
+import state.LevelSelectState;
+import state.PuzzleState;
 import state.State;
-import state.TitleState;
+import util.Debug;
 
 /**
  * Singleton class that handles all system-level jobs. Creates the native UI
@@ -40,7 +42,7 @@ public class Engine {
 	private int displayScale;
 
 	// target time for updates/sec; cap for max frames to render/second
-	public static final double TICK_TIME = 1_000_000_000 / 45.0;
+	public static final double TICK_TIME = 1_000_000_000 / 60.0;
 	public static final double RENDER_CAP = 1_000_000_000 / 60.0;
 	
 	// JFrame title
@@ -102,30 +104,14 @@ public class Engine {
 	public int getDisplayHeight() {
 		return SCREEN_HEIGHT * displayScale;
 	}
-
-	/**
-	 * Opens a new state by requesting the
-	 * {@link StateManager} to add this state to its stack.
-	 * @param state The new state to open.
-	 */
-	public void openState(State state) {
-		stateManager.openState(state);
-	}
 	
 	/**
-	 * Closes the current state by requesting the
-	 * {@link StateManager} to pop this state off its stack.
+	 * Accessor for the State Manager, which
+	 * may be needed to open or close states.
+	 * @return The State Manager for this engine.
 	 */
-	public void exitTopState() {
-		stateManager.exitTopState();
-	}
-
-	/**
-	 * Provides the currently active state.
-	 * @return The current state of the engine's {@link StateManager}.
-	 */
-	public State getActiveState() {
-		return stateManager.getTopState();
+	public StateManager getStateManager() {
+		return stateManager;
 	}
 	
 	/**
@@ -239,7 +225,7 @@ public class Engine {
 		// create state manager
 		//TODO THIS IS AN EXPLICIT TESTING PLUG-IN
 		//stateManager = new StateManager(new PuzzleState(new Puzzle(Puzzle.genPuzzle(5, 5))));
-		stateManager = new StateManager(new TitleState());
+		stateManager = new StateManager(new LevelSelectState(PuzzleFileReader.readWorld("L:\\Users\\Jason\\Documents\\Programming\\picross\\levels\\world\\philosophy.pwr")));
 		// enter game loop
 		running = true;
 		loop();
@@ -255,34 +241,57 @@ public class Engine {
 	 * between batches of ticks.
 	 */
 	private void loop() {
-		final int SLEEP = 4; //(int) Math.floor((RENDER_CAP / 1_000_000) / 2);
+		final int SLEEP = 3; //(int) Math.floor((RENDER_CAP / 1_000_000) / 2);
 		// game loop stuff
 		long lastTime = System.nanoTime();
 		double queuedTicks = 0;
+		long lastTick = System.nanoTime();
+		long lastRender = System.nanoTime();
+		//util.Timer timer = new util.Timer(true);
+        VolatileImage image;
 		
 		while (running) {
 			// calculate unprocessed ticks
 			long now = System.nanoTime();
 			queuedTicks += (now - lastTime) / TICK_TIME;
+			lastTime = now;
 			// do ticks
-			while (queuedTicks >= 1) {
-				getActiveState().tick();
+			while (queuedTicks > 0) {
+				Debug.doTickDebug(now, lastTick);
+				stateManager.getTopState().tick();
 				queuedTicks -= 1;
+				lastTick = now;
 			}
+			
+            // sleep to save CPU for next cycle
+            try {
+				Thread.sleep(SLEEP);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+            /*
+            if (timer.elapsedSec() >= 1) {
+            	Debug.printDebug();
+            	timer.reset(true);
+            }*/
+            
 			// render setup
 			BufferStrategy bs = canvas.getBufferStrategy();
 			if (bs == null) {
 				canvas.createBufferStrategy(2);
 				continue;
 			}
-	        VolatileImage image = canvas.createVolatileImage(Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
-	        
+			image = canvas.createVolatileImage(Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
+
+			long nowR = System.nanoTime();
+			Debug.doRenderDebug(nowR, lastRender);
+            lastRender = nowR;
             Graphics g = image.getGraphics();
             // render game
-			State state = engine.getActiveState();
-			g.setColor(Color.PINK);
-			g.fillRect(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
+			State state = stateManager.getTopState();
 			state.render(g);
+			Particle.renderParticles(g);
+			//Debug.drawDebug((java.awt.Graphics2D) g);
             g.dispose();
             // present frame
             g = bs.getDrawGraphics();
@@ -290,12 +299,6 @@ public class Engine {
             g.dispose();
             bs.show();
             
-            // sleep to save CPU for next cycle
-            try {
-				Thread.sleep(SLEEP);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
 		}
 	}
 	

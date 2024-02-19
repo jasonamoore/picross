@@ -93,6 +93,7 @@ public class Scroller extends Element {
 		thumbSize = ratio * railSize;
 		realRailSize = railSize - thumbSize;
 		thumbOffset = 0;
+		nudgeAnim = new Animation(100, Animation.EASE_OUT, Animation.LOOP_NONE);
 	}
 
 	public int getViewportOffset() {
@@ -144,19 +145,17 @@ public class Scroller extends Element {
 	public void nudgeSmooth(int amount) {
 		// find where to nudge to from the current offset (and keep in bounds!)
 		double end = Math.max(0, Math.min(realRailSize, thumbOffset + amount));
-		nudgeAnim = new Animation(thumbOffset, end, 100, Animation.EASE_OUT, Animation.LOOP_NONE, true);
+		nudgeAnim.setFrom(thumbOffset);
+		nudgeAnim.setTo(end);
+		nudgeAnim.reset(true);
 	}
 
 	@Override
 	public void tick() {
 		super.tick();
-		// update thumb to nudge anim, if applicable
-		if (nudgeAnim != null) {
+		// update thumb to nudge anim, if observing
+		if (nudgeAnim.active())
 			thumbOffset = nudgeAnim.getValue();
-			// if the nudge has finished, clear the anim
-			if (!nudgeAnim.isPlaying())
-				nudgeAnim = null;
-		}
 		// update scroll position if its being dragged
 		if (dragging) {
 			//    relMouse = 0
@@ -165,7 +164,7 @@ public class Scroller extends Element {
 			double newDragPos = getMouseRailPosition() - dragStartOffset;
 			// put thumb at mouse pos, or min of 0 / max of realRailSize
 			thumbOffset = Math.max(0, Math.min(realRailSize, newDragPos));
-			nudgeAnim = null; // clear any current nudge if needed
+			nudgeAnim.setActive(false); // clear any current nudge if needed
 		}
 	}
 	

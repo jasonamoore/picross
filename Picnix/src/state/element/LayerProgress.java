@@ -44,7 +44,7 @@ public class LayerProgress extends Element {
 	 * @return Progress, as a percentage (0 to 1).
 	 */
 	public double getProgress() {
-		return observed.getCorrectCells() / (double) observed.getTotalCellsInSolution();
+		return observed.getCorrectCells() / (double) observed.getFilledCellsInSolution();
 	}
 	
 	/**

@@ -45,9 +45,11 @@ public class Animation {
 	private double to;
 	private int duration;
 	private double[] transition;
-	
+
 	// is the animation currently running
 	private boolean playing = false;
+	// is the animation currently "active" - a user set flag
+	private boolean active = false;
 	// the direction (forward/backward) of playback
 	private boolean forward = true;
 	// whether the animation should loop
@@ -73,6 +75,50 @@ public class Animation {
 		this.transition = transition;
 		this.loopMode = loopMode;
 		if (start) resume(); // start anim
+	}
+	
+	/**
+	 * Creates an incomplete animation with the specified parameters.
+	 * This is uses for setting up timing and transition for an Animation
+	 * that will be reused (reassigned keyframes) over its lifetime.
+	 * The "from" and "to" values will be initialized to zero, but the
+	 * animation will not begin playing, since the use of this
+	 * constructor is likely to assign keyframes later on and then play.
+	 * @param duration The duration of the animation, in milliseconds.
+	 * @param transition The bezier function describing how to interoplate between keyframes.
+	 * @param loopMode The loop mode; use loop constants.
+	 */
+	public Animation(int duration, double[] transition, int loopMode) {
+		this(0, 0, duration, transition, loopMode, false);
+	}
+
+	/**
+	 * Returns whether the Animation is currently active.
+	 * "Active" is a user-defined flag, which can be useful
+	 * when another Object is observing this Animation to
+	 * update some value, such as its position. Once that
+	 * Object no longer needs to observe the Animation,
+	 * it may mark it as inactive to keep note.
+	 * This is a convenience compared to storing a boolean
+	 * alongside each Animation field in that Object's class.
+	 * @return True if the Animation is "active" (needs observation).
+	 */
+	public boolean active() {
+		return active;
+	}
+	
+	/**
+	 * Sets whether the Animation is currently active.
+	 * It is not necessary to explicitly set an Animation
+	 * as inactive to stop observing it. The first call to
+	 * getValue after the Animation has stopped playing will
+	 * automatically deactivates the Animation. This can be
+	 * overridden if needed using this function to reactivate.
+	 * @param active True to activate, false to deactivate the Animation.
+	 * @see #active()
+	 */
+	public void setActive(boolean active) {
+		this.active = active;
 	}
 	
 	/**
@@ -103,6 +149,7 @@ public class Animation {
 	 * Resumes the animation.
 	 */
 	public void resume() {
+		active = true;
 		playing = true;
 		timer.resume();
 	}
@@ -121,10 +168,13 @@ public class Animation {
 	 * @param restart If true, the animation resumes playing.
 	 */
 	public void reset(boolean restart) {
-		playing = restart;
+		timer.reset(restart);
 		// reset playback offset
 		offset = 0;
-		timer.reset(restart);
+		if (restart)
+			resume();
+		else
+			pause();
 	}
 	
 	/**
@@ -154,7 +204,10 @@ public class Animation {
 	 * @return The animation's current {@code double} value.
 	 */
 	public double getValue() {
-		return calculateValue();
+		double val = calculateValue();
+		if (!playing)
+			active = false;
+		return val;
 	}
 
 	/**
@@ -235,7 +288,7 @@ public class Animation {
 	 * @param anchors The bezier anchors used to construct the curve function.
 	 * @return The y-value of the bezier curve at the given x.
 	 */
-	private static double bezier(double x, double[] anchors) {
+	public static double bezier(double x, double[] anchors) {
 		// note the ternary expressions; saves calculation time
 		// (Math.pow time) if result will be multiplied by 0
 		return 	(anchors[0] == 0 ? 0 : anchors[0] * Math.pow(1 - x, 3)) +

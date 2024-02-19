@@ -112,7 +112,7 @@ public class LayerButton extends Button {
 		for (int r = 0; r < nr; r++) {
 			for (int c = 0; c < nc; c++) {
 				int mark = toPreview.getMark(r, c);
-				if (mark == Puzzle.CLEARED)
+				if (mark == Puzzle.FILLED)
 					g.setColor(plateCol); // plate color
 				else if (mark == Puzzle.FLAGGED)
 					g.setColor(Palette.STONE); // fork color

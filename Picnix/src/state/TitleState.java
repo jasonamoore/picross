@@ -9,12 +9,12 @@ public class TitleState extends State {
 	
 	public TitleState() {
 		Icon titleIcon = new Icon(ImageBank.title);
-		titleIcon.setBounds(50, 50, 300, 150);
+		titleIcon.setBounds(50, 50, 350, 125);
 		Button play = new Button(100, 250, 200, 100) {
 			public void onRelease(int mbutton) {
 				super.onRelease(mbutton);
-				Engine.getEngine().openState(
-						new TestScrollState(1000, 600)
+				Engine.getEngine().getStateManager().openState(
+						new WorldSelectState()
 					);
 			}
 			public void render(java.awt.Graphics g) {
@@ -29,7 +29,6 @@ public class TitleState extends State {
 	@Override
 	public void focus(int status) {
 		// TODO Auto-generated method stub
-		
 	}
 
 }

@@ -23,7 +23,7 @@ public class StateManager {
 	 */
 	public StateManager(State start) {
 		this();
-		stateStack.push(start);
+		openState(start);
 	}
 
 	/**
@@ -40,6 +40,7 @@ public class StateManager {
 	 */
 	public void openState(State state) {
 		stateStack.push(state);
+		state.focus(State.NEWLY_OPENED);
 	}
 
 	/**
@@ -47,6 +48,8 @@ public class StateManager {
 	 */
 	public void exitTopState() {
 		stateStack.pop();
+		if (!stateStack.empty())
+			stateStack.peek().focus(State.RETURNING);
 	}
 	
 }

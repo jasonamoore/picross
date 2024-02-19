@@ -1,13 +1,18 @@
 package state;
 
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import engine.Engine;
 import picnic.Blanket;
 import picnic.Field;
+import picnic.Particle;
 import picnic.Stroke;
+import puzzle.Level;
 import puzzle.Puzzle;
 import resource.bank.ImageBank;
 import resource.bank.Palette;
@@ -16,6 +21,8 @@ import state.element.LayerButton;
 import state.element.LayerProgress;
 import state.element.Sidebar;
 import state.element.ToolButton;
+import util.Animation;
+import util.Timer;
 
 /**
  * A State the handles all the puzzling.
@@ -44,6 +51,12 @@ public class PuzzleState extends State {
 	// layer id of the active puzzle
 	private int activeLayerId;
 	
+	// clock for hwo long the puzzle has been running
+	private Timer clock; 
+	// keeps track of mistakes
+	private int allowedMistakes = 3;
+	private int mistakeCount;
+	
 	// stores field data, like the picnic blanket and critters
 	private Field field;
 	
@@ -59,9 +72,11 @@ public class PuzzleState extends State {
 	private boolean guessing;
 	// id of the selected tool
 	private int currentToolId;
+	// for smooth tool arrow movement
+	private Animation toolArrowAnim;
 
 	// dynamic sequences of Strokes, used to undo/redo draws
-	private static final int MAX_UNDO_HISTORY = 50;
+	private static final int MAX_UNDO_HISTORY = Stroke.STROKE_BANK_SIZE;
 	private ArrayList<Stroke> undo;
 	private ArrayList<Stroke> redo;
 
@@ -76,23 +91,14 @@ public class PuzzleState extends State {
 	// the cell size for puzzles in this State
 	private int cellSize;
 	
-	public PuzzleState(Puzzle puzzle) {
-		layered = false;
-		puzzleLayers = new Puzzle[] {puzzle};
-		activeLayerId = NO_LAYER;
-		activePuzzle = puzzle;
-		setup();
-	}
-	
-	public PuzzleState(Puzzle magenta, Puzzle yellow, Puzzle cyan) {
-		layered = true;
-		puzzleLayers = new Puzzle[] {magenta, yellow, cyan};
-		activeLayerId = MAGENTA;
+	public PuzzleState(Level level) {
+		layered = level.isLayered();
+		puzzleLayers = level.getPuzzles();
+		activeLayerId = layered ? MAGENTA : NO_LAYER;
 		activePuzzle = puzzleLayers[activeLayerId];
 		setup();
 	}
-	
-	
+		
 	@Override
 	public void focus(int status) {
 		// TODO Auto-generated method stub
@@ -117,9 +123,11 @@ public class PuzzleState extends State {
 			/*msize>15?*/ CELL_SIZE_20x20;
 		field = new Field(this);
 		add(field);
-		currentToolId = ToolButton.PLATE;
+		toolArrowAnim = new Animation(100, Animation.EASE_OUT, Animation.LOOP_NONE);
+		toolClicked(ToolButton.PLATE);
 		undo = new ArrayList<Stroke>();
 		redo = new ArrayList<Stroke>();
+		clock = new Timer(true);
 		generateUI();
 	}
 	
@@ -153,7 +161,7 @@ public class PuzzleState extends State {
 			layerbar.setBackground(ImageBank.layerbar);
 			layers = new LayerButton[NUM_LAYERS];
 			layerProgs = new LayerProgress[NUM_LAYERS];
-			for (int i = MAGENTA; i <= CYAN; i++) {
+			for (int i = MAGENTA; i < TOTAL; i++) {
 				layers[i] = new LayerButton(this, i, 10, 27 + (i * 86), 62, 65);
 				layerbar.add(layers[i]);
 				layerProgs[i] = new LayerProgress(puzzleLayers[i], getColorByLayerId(i), 10, 94 + (i * 86), 62, 15);
@@ -244,8 +252,12 @@ public class PuzzleState extends State {
 	 */
 	
 	public void toolClicked(int id) {
-		if (selectable(id))
+		if (selectable(id)) {
 			currentToolId = id;
+			toolArrowAnim.setFrom(toolArrowAnim.getValue());
+			toolArrowAnim.setTo(Sidebar.SIDEBAR_Y + 24 + (44 * (id % 6)) + 10);
+			toolArrowAnim.reset(true);
+		}
 		else {
 			switch(id) {
 			case ToolButton.GUESS:
@@ -309,20 +321,20 @@ public class PuzzleState extends State {
 	}
 
 	private void clearMarks() {
-		Stroke clear = new Stroke(activeLayerId);
+		Stroke clear = Stroke.newStroke(activeLayerId);
 		for (int r = 0; r < activePuzzle.getRows(); r++) {
 			for (int c = 0; c < activePuzzle.getColumns(); c++) {
 				int oldMark = activePuzzle.getMark(r, c);
-				if (!guessing && oldMark != Puzzle.UNCLEARED ||
-					oldMark == Puzzle.MAYBE_CLEARED || oldMark == Puzzle.MAYBE_FLAGGED) {
-					clear.addChange(r, c, activePuzzle.getMark(r, c));
-					activePuzzle.markSpot(r, c, Puzzle.UNCLEARED);
+				if (!guessing && oldMark != Puzzle.EMPTY ||
+					oldMark == Puzzle.MAYBE_FILLED || oldMark == Puzzle.MAYBE_FLAGGED) {
+					clear.addChange(r, c, oldMark, false); // false bc clearing cannot cause mistakes
+					activePuzzle.markSpot(r, c, Puzzle.EMPTY);
 				}
 			}
 		}
 		// disable the button
 		tools[ToolButton.CLEAR].setEnabled(false);
-		pushStroke(clear, Puzzle.UNCLEARED);
+		pushStroke(clear, Puzzle.EMPTY);
 	}
 	
 	public void pushStroke(Stroke s, int drawMode) {
@@ -333,10 +345,11 @@ public class PuzzleState extends State {
 		if (undo.size() > MAX_UNDO_HISTORY)
 			undo.remove(0);
 		// clear redo history
-		redo = new ArrayList<Stroke>();
+		redo.clear();
 		updatePlateEnabled();
 		updateClearEnabled();
 		updateUndoRedoEnabled();
+		handleMistake(s.getMistakes());
 	}
 	
 	public void undo() {
@@ -350,14 +363,18 @@ public class PuzzleState extends State {
 	public void doHistory(ArrayList<Stroke> from, ArrayList<Stroke> to) {
 		Stroke toRevert = from.remove(from.size() - 1);
 		int changedLayer = toRevert.getLayerId();
-		Stroke toSave = new Stroke(changedLayer);
+		Stroke toSave = Stroke.newStroke(changedLayer);
 		Puzzle revPuzzle = getPuzzleByLayerId(changedLayer);
+		int mistakesDuringRevert = 0;
 		for (int i = 0; i < toRevert.size(); i++) {
 			int[] chngd = toRevert.getChange(i);
 			int crow = chngd[Stroke.ROW];
 			int ccol = chngd[Stroke.COL];
-			toSave.addChange(crow, ccol, revPuzzle.getMark(crow, ccol));
-			revPuzzle.markSpot(crow, ccol, chngd[Stroke.MARK]);
+			// don't save mistakes in history; will be checked here when reverting
+			toSave.addChange(crow, ccol, revPuzzle.getMark(crow, ccol), false); // <- hence, false
+			boolean mistake = revPuzzle.markSpot(crow, ccol, chngd[Stroke.MARK]);
+			if (mistake)
+				mistakesDuringRevert++;
 		}
 		to.add(toSave);
 		updatePlateEnabled();
@@ -366,15 +383,16 @@ public class PuzzleState extends State {
 		// change to layer that was changed
 		if (activeLayerId != changedLayer)
 			layerClicked(changedLayer);
+		handleMistake(mistakesDuringRevert);
 	}
 	
 	/* ~~~~~~~~~~~~~~~~~~~~
 	 * 	UI UPDATES
 	 * ~~~~~~~~~~~~~~~~~~~~
 	 */
-	
+
 	public void updatePlateEnabled() {
-		boolean enabled = activePuzzle.getRemainingClearCount() > 0;
+		boolean enabled = activePuzzle.getRemainingFillCount() > 0;
 		tools[ToolButton.PLATE].setEnabled(enabled);
 		// switch from this tool if disabled
 		//if (!enabled && currentToolId == ToolButton.PLATE)
@@ -385,8 +403,8 @@ public class PuzzleState extends State {
 		for (int r = 0; r < activePuzzle.getRows(); r++) {
 			for (int c = 0; c < activePuzzle.getColumns(); c++) {
 				int mark = activePuzzle.getMark(r, c);
-				if (mark != Puzzle.UNCLEARED && !guessing ||
-					mark == Puzzle.MAYBE_CLEARED || mark == Puzzle.MAYBE_FLAGGED) {
+				if (mark != Puzzle.EMPTY && !guessing ||
+					mark == Puzzle.MAYBE_FILLED || mark == Puzzle.MAYBE_FLAGGED) {
 					tools[ToolButton.CLEAR].setEnabled(true);
 					return;
 				}
@@ -409,17 +427,67 @@ public class PuzzleState extends State {
 		toolbar.setFade(fade);
 		layerbar.setFade(fade);
 	}
-
-	// ~~~~~~~~~~ RENDER
 	
+	/* ~~~~~~~~~~~~~~~~~~~~~
+	 * GAME HOOKS (LOSING/WINNING)
+	 * ~~~~~~~~~~~~~~~~~~~~~
+	 */
+	
+	private void handleMistake(int count) {
+		if (count < 1)
+			return;
+		mistakeCount += count;
+		if (mistakeCount >= allowedMistakes)
+			lose();
+		//Particle.generateParticle(ImageBank.plates35[0], 200, 200, 100, -50, -50, -20, 30, 2000);
+	}
+	
+	private void win() {
+		
+	}
+	
+	private void lose() {
+		
+	}
+	
+	// ~~~~~~~~~~ RENDER
+
 	@Override
 	public void render(Graphics g) {
 		super.render(g);
+		// tool arrow
+		Composite oldComp = toolbar.setRenderComposite(g);
+		toolbar.setRenderClips(g);
+		if (tools[currentToolId].isEnabled())
+			g.drawImage(ImageBank.toolarrows[!guessing ? 0 : 1], 3, toolArrowAnim.getIntValue(), null);
+		g.setClip(null);
+		((Graphics2D) g).setComposite(oldComp);
+		// top bar
 		g.drawImage(ImageBank.topbar[0], 0, 0, null);
-		int i;
-		for (i = 24; i < Engine.SCREEN_WIDTH - 24; i += 24)
-			g.drawImage(ImageBank.topbar[i % 48 > 0 ? 1 : 2], i, 0, null);
-		g.drawImage(ImageBank.topbar[3], i, 0, null);
+		int b;
+		for (b = 24; b < Engine.SCREEN_WIDTH - 24; b += 24)
+			g.drawImage(ImageBank.topbar[b % 48 > 0 ? 1 : 2], b, 0, null);
+		g.drawImage(ImageBank.topbar[3], b, 0, null);
+		g.drawImage(ImageBank.time, 20, 5, null);
+		int time = (int) clock.elapsedSec();
+		int min = time / 60;
+		int sec = time % 60;
+		String timeString = String.format("%02d:%02d", min, sec);
+		int x = 0;
+		for (int i = 0; i < timeString.length(); i++) {
+			char c = timeString.charAt(i);
+			BufferedImage symbol;
+			if (c == ':')
+				symbol = ImageBank.colon;
+			else
+				symbol = ImageBank.digits[c - '0'];
+			g.drawImage(symbol, 80 + x, c == ':' ? 12 : 7, null);
+			x += symbol.getWidth() + 1;
+		}
+		g.drawImage(ImageBank.score, 160, 5, null);
+		g.drawImage(ImageBank.mistakes, 300, 5, null);
+		for (int i = 0; i < allowedMistakes; i++)
+			g.drawImage(ImageBank.mistakeLives[mistakeCount < allowedMistakes - i ? 0 : 1], 400 + i * 20, 5, null);
 	}
 	
 	/* ~~~~~~~~~~~~~~~~~~~~

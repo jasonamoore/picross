@@ -434,7 +434,7 @@ public abstract class Element implements Comparable<Element> {
 	 * from rendering outside of its defined bounds.
 	 * @param g The Graphics context to apply changes to.
 	 */
-	protected void setRenderClips(Graphics g) {
+	public void setRenderClips(Graphics g) {
 		// clip to parent bounds
 		if (parent != null)
 			g.setClip(parent.getDisplayX(), parent.getDisplayY(), parent.width, parent.height);
@@ -448,10 +448,13 @@ public abstract class Element implements Comparable<Element> {
 	 * @param g The Graphics context to apply changes to.
 	 * @return A copy of the old Composite, before this method changed it.
 	 */
-	protected Composite setRenderComposite(Graphics g) {
+	public Composite setRenderComposite(Graphics g) {
 		Graphics2D gg = (Graphics2D) g;
+		float opacity = getOpacity();
+		if (opacity == 1.0f)
+			return gg.getComposite();
 		Composite oldComp = gg.getComposite();
-		gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, getOpacity()));
+		gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
 		return oldComp;
 	}
 	

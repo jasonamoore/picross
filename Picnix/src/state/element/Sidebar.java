@@ -21,9 +21,9 @@ public class Sidebar extends Container {
 	boolean fading;
 	boolean collapsed;
 
-	private static final int SIDEBAR_Y = 56;
-	private static final int SIDEBAR_W = 80;
-	private static final int SIDEBAR_H = 336;
+	public static final int SIDEBAR_Y = 56;
+	public static final int SIDEBAR_W = 80;
+	public static final int SIDEBAR_H = 333;
 	
 	public static final int TOOLBAR_X = 0;
 	public static final int LAYERBAR_X = Engine.SCREEN_WIDTH - SIDEBAR_W;
@@ -40,7 +40,7 @@ public class Sidebar extends Container {
 		};
 		add(collapser);
 		fadeAnim = new Animation(1, 0, 100, Animation.CUBIC, Animation.LOOP_NONE, false);
-		collapseAnim = new Animation(SIDEBAR_H, 22, 500, Animation.CUBIC, Animation.LOOP_NONE, false);
+		collapseAnim = new Animation(SIDEBAR_H, 19, 500, Animation.CUBIC, Animation.LOOP_NONE, false);
 		collapsed = false; // later this might be set by user's global prefs
 		setCollapsed(collapsed);
 	}
@@ -84,7 +84,7 @@ public class Sidebar extends Container {
 		gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, getOpacity()));
 		super.render(g);
 		BufferedImage bottom = x == TOOLBAR_X ? ImageBank.toolbarbottom : ImageBank.layerbarbottom;
-		g.drawImage(bottom, getDisplayX(), getDisplayY() + height - 3, null);
+		g.drawImage(bottom, getDisplayX(), getDisplayY() + height, null);
 		gg.setComposite(oldComp);
 	}
 	
