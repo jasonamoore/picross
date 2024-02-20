@@ -7,9 +7,9 @@ package util;
 public class Animation {
 
 	// loop constants
-	public static final int LOOP_NONE = 0;
-	public static final int LOOP_CONTINUE = 1;
-	public static final int LOOP_BOUNCE = 2;
+	public static final int NO_LOOP = 0;
+	public static final int CONTINUE = 1;
+	public static final int BOUNCE = 2;
 	
 	// animation transition strategies indices (corresponds to PRESETS array)
 	private static final int HOLD_INDEX = 0;
@@ -261,7 +261,7 @@ public class Animation {
 	private long getElapsed() {
 		long ms = timer.elapsed() + offset;
 		if (ms > duration) {
-			if (loopMode == LOOP_BOUNCE) {
+			if (loopMode == BOUNCE) {
 				int bounces = (int) (ms / duration);
 				ms %= duration;
 				if (bounces % 2 == 1) {
@@ -272,7 +272,7 @@ public class Animation {
 				}
 					
 			}
-			else if (loopMode == LOOP_CONTINUE)
+			else if (loopMode == CONTINUE)
 				ms %= duration;
 			else {
 				pause();

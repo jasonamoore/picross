@@ -66,8 +66,8 @@ public class Field extends Container {
 	
 	
 	public void recenter() {
-		camXAnim = new Animation(camX, getCamCenterX(), 777, Animation.EASE_OUT, Animation.LOOP_NONE, true);
-		camYAnim = new Animation(camY, getCamCenterY(), 777, Animation.EASE_OUT, Animation.LOOP_NONE, true);
+		camXAnim = new Animation(camX, getCamCenterX(), 777, Animation.EASE_OUT, Animation.NO_LOOP, true);
+		camYAnim = new Animation(camY, getCamCenterY(), 777, Animation.EASE_OUT, Animation.NO_LOOP, true);
 	}
 	
 	public void setCamX(int newX) {

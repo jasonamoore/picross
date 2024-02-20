@@ -16,13 +16,11 @@ import java.io.IOException;
 import javax.swing.JFrame;
 
 import picnic.Particle;
-import puzzle.PuzzleFileReader;
 import resource.bank.AudioBank;
 import resource.bank.FontBank;
 import resource.bank.ImageBank;
-import state.LevelSelectState;
-import state.PuzzleState;
 import state.State;
+import state.TitleState;
 import util.Debug;
 
 /**
@@ -77,6 +75,28 @@ public class Engine {
 	public void changeFrameTitle(String newTitle) {
 		title = newTitle;
 		frame.setTitle(title);
+	}
+	
+	/**
+	 * Convenience method for getting the x position
+	 * of a horizontally centered thing of a certain
+	 * width.
+	 * @param width The width of the thing to center.
+	 * @return The x (left) position of the centered thing.
+	 */
+	public static int getScreenCenterX(int width) {
+		return (SCREEN_WIDTH - width) / 2;
+	}
+
+	/**
+	 * Convenience method for getting the y position
+	 * of a vertically centered thing of a certain
+	 * height.
+	 * @param height The height of the thing to center.
+	 * @return The y (top) position of the centered thing.
+	 */
+	public static int getScreenCenterY(int height) {
+		return (SCREEN_HEIGHT - height) / 2;
 	}
 	
 	/**
@@ -225,7 +245,8 @@ public class Engine {
 		// create state manager
 		//TODO THIS IS AN EXPLICIT TESTING PLUG-IN
 		//stateManager = new StateManager(new PuzzleState(new Puzzle(Puzzle.genPuzzle(5, 5))));
-		stateManager = new StateManager(new LevelSelectState(PuzzleFileReader.readWorld("L:\\Users\\Jason\\Documents\\Programming\\picross\\levels\\world\\philosophy.pwr")));
+		//stateManager = new StateManager(new LevelSelectState(PuzzleFileReader.readLayeredWorld("L:\\Users\\Jason\\Documents\\Programming\\picross\\levels\\world\\frutas.pwr")));
+		stateManager = new StateManager(new TitleState());
 		// enter game loop
 		running = true;
 		loop();
@@ -258,7 +279,7 @@ public class Engine {
 			// do ticks
 			while (queuedTicks > 0) {
 				Debug.doTickDebug(now, lastTick);
-				stateManager.getTopState().tick();
+				stateManager.tick();
 				queuedTicks -= 1;
 				lastTick = now;
 			}
@@ -288,9 +309,7 @@ public class Engine {
             lastRender = nowR;
             Graphics g = image.getGraphics();
             // render game
-			State state = stateManager.getTopState();
-			state.render(g);
-			Particle.renderParticles(g);
+            stateManager.render(g);
 			//Debug.drawDebug((java.awt.Graphics2D) g);
             g.dispose();
             // present frame

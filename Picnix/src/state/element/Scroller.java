@@ -93,7 +93,7 @@ public class Scroller extends Element {
 		thumbSize = ratio * railSize;
 		realRailSize = railSize - thumbSize;
 		thumbOffset = 0;
-		nudgeAnim = new Animation(100, Animation.EASE_OUT, Animation.LOOP_NONE);
+		nudgeAnim = new Animation(100, Animation.EASE_OUT, Animation.NO_LOOP);
 	}
 
 	public int getViewportOffset() {

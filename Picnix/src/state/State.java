@@ -11,8 +11,8 @@ public abstract class State {
 
 	// status code constants for focus calls
 	public static final int NEWLY_OPENED = 0;
-	public static final int RETURNING = 1;
-	public static final int ERROR_RETURN = 2;
+	public static final int RETURNING = -1;
+	public static final int ERROR_RETURN = -2;
 	
 	protected ArrayList<Element> elements;
 	
@@ -26,6 +26,8 @@ public abstract class State {
 	// i.e., an element that was clicked and not yet released.
 	// if non-null, this signals that another click event cannot occur
 	private Element activeElement;
+	// whether handling input events for elements
+	private boolean frozen;
 	
 	public abstract void focus(int status);
 	
@@ -61,6 +63,14 @@ public abstract class State {
 			activeElement = null;
 	}
 	
+	public void freezeInput(boolean freeze) {
+		frozen = true;
+	}
+	
+	public boolean isFrozen() {
+		return frozen;
+	}
+	
 	public void tick() {
 		// (first save) then reset this
 		Element lastFocus = focusElement;
@@ -71,6 +81,8 @@ public abstract class State {
 			if (e.isVisible())
 				e.tick();
 		}
+		if (frozen)
+			return;
 		Input input = Input.getInstance();
 		// call events (only if focused element has not had the event called yet)
 		if (focusElement != null) {

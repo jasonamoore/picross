@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 
 import engine.Input;
 import resource.bank.ImageBank;
+import resource.bank.Palette;
 import state.PuzzleState;
 
 /**
@@ -67,6 +68,7 @@ public class ToolButton extends Button {
 					clickBack.getSubimage(sx, 0, sw, sh),
 					disBack.getSubimage(sx, 0, sw, sh));
 		}
+		setHoverOutlineColor(Palette.PURPLE);
 	}
 	
 	@Override

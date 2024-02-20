@@ -1,7 +1,13 @@
 package engine;
 
+import java.awt.AlphaComposite;
+import java.awt.Composite;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.Stack;
 
+import picnic.Particle;
+import resource.bank.Palette;
 import state.State;
 
 public class StateManager {
@@ -23,7 +29,7 @@ public class StateManager {
 	 */
 	public StateManager(State start) {
 		this();
-		openState(start);
+		openState(start, State.NEWLY_OPENED);
 	}
 
 	/**
@@ -37,19 +43,69 @@ public class StateManager {
 	/**
 	 * Opens this state, pushing it to the top of the stack.
 	 * @param state
+	 * @param status 
 	 */
-	public void openState(State state) {
+	public void openState(State state, int status) {
 		stateStack.push(state);
-		state.focus(State.NEWLY_OPENED);
+		state.focus(status);
+	}
+	
+	
+	public void transitionToState(State toState, int type, int a, int b, int status) {
+		State oldState = getTopState();
+		transition = new Transition(toState, oldState, type, a, b, status);
+		transitioning = true;
+		oldState.freezeInput(true);
+	}
+	
+	public void transitionExitState(int type, int a, int b, int status) {
+		transitionToState(null, type, a, b, status);
 	}
 
 	/**
 	 * Pops off the active (top) state, closing it.
 	 */
-	public void exitTopState() {
+	public void exitTopState(int status) {
 		stateStack.pop();
 		if (!stateStack.empty())
-			stateStack.peek().focus(State.RETURNING);
+			stateStack.peek().focus(status);
+	}
+
+	private Transition transition;
+	private boolean transitioning;
+	
+	public void tick() {
+		if (transitioning) {
+			// if we passed part a, open the new state
+			if (transition.needsStateSwitch()) {
+				if (!transition.isExitTransition())
+					openState(transition.getToState(), transition.getStatus());
+				else
+					exitTopState(transition.getStatus());
+				getTopState().freezeInput(true); // keep its input frozen
+			}
+			if (transition.isFinished()) {
+				transitioning = false; // mark that we're done
+				getTopState().freezeInput(false); // unfreeze the new state
+			}
+		}
+		getTopState().tick();
+	}
+	
+	public void render(Graphics g) {
+		getTopState().render(g);
+		Particle.renderParticles(g);
+		if (transitioning && !transition.isFinished()) {
+			if (transition.getType() == Transition.FADE) {
+				float opacity = (float) (transition.inPartA() ? transition.getAProgress() : 1.0 - transition.getBProgress());
+				Graphics2D gg = (Graphics2D) g;
+				Composite oldComp = gg.getComposite();
+				gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
+				gg.setColor(Palette.BLACK);
+				gg.fillRect(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
+				gg.setComposite(oldComp);
+			}
+		}
 	}
 	
 }

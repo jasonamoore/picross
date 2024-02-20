@@ -53,8 +53,9 @@ public class PuzzleState extends State {
 	
 	// clock for hwo long the puzzle has been running
 	private Timer clock; 
+	private int timeSecLimit;
 	// keeps track of mistakes
-	private int allowedMistakes = 3;
+	private int mistakeCap;
 	private int mistakeCount;
 	
 	// stores field data, like the picnic blanket and critters
@@ -93,9 +94,11 @@ public class PuzzleState extends State {
 	
 	public PuzzleState(Level level) {
 		layered = level.isLayered();
+		timeSecLimit = level.getTimeLimit() * 60;
+		mistakeCap = level.getMistakeCap();
 		puzzleLayers = level.getPuzzles();
 		activeLayerId = layered ? MAGENTA : NO_LAYER;
-		activePuzzle = puzzleLayers[activeLayerId];
+		activePuzzle = puzzleLayers[Math.max(0, activeLayerId)];
 		setup();
 	}
 		
@@ -123,7 +126,7 @@ public class PuzzleState extends State {
 			/*msize>15?*/ CELL_SIZE_20x20;
 		field = new Field(this);
 		add(field);
-		toolArrowAnim = new Animation(100, Animation.EASE_OUT, Animation.LOOP_NONE);
+		toolArrowAnim = new Animation(100, Animation.EASE_OUT, Animation.NO_LOOP);
 		toolClicked(ToolButton.PLATE);
 		undo = new ArrayList<Stroke>();
 		redo = new ArrayList<Stroke>();
@@ -437,9 +440,9 @@ public class PuzzleState extends State {
 		if (count < 1)
 			return;
 		mistakeCount += count;
-		if (mistakeCount >= allowedMistakes)
+		if (mistakeCount >= mistakeCap)
 			lose();
-		//Particle.generateParticle(ImageBank.plates35[0], 200, 200, 100, -50, -50, -20, 30, 2000);
+		Particle.generateParticle(ImageBank.plates35[0], 200, 200, -100, -300, 0.90, 0, 10, 10000);
 	}
 	
 	private void win() {
@@ -447,7 +450,18 @@ public class PuzzleState extends State {
 	}
 	
 	private void lose() {
-		
+		freezeInput(true);
+		clearMarks();
+	}
+	
+	// ~~~~~~~~~~ TICK
+	
+	@Override
+	public void tick() {
+		super.tick();
+		// check for time failure
+		if (clock.elapsedSec() > timeSecLimit)
+			lose();
 	}
 	
 	// ~~~~~~~~~~ RENDER
@@ -469,7 +483,7 @@ public class PuzzleState extends State {
 			g.drawImage(ImageBank.topbar[b % 48 > 0 ? 1 : 2], b, 0, null);
 		g.drawImage(ImageBank.topbar[3], b, 0, null);
 		g.drawImage(ImageBank.time, 20, 5, null);
-		int time = (int) clock.elapsedSec();
+		int time = timeSecLimit - (int) clock.elapsedSec();
 		int min = time / 60;
 		int sec = time % 60;
 		String timeString = String.format("%02d:%02d", min, sec);
@@ -486,8 +500,8 @@ public class PuzzleState extends State {
 		}
 		g.drawImage(ImageBank.score, 160, 5, null);
 		g.drawImage(ImageBank.mistakes, 300, 5, null);
-		for (int i = 0; i < allowedMistakes; i++)
-			g.drawImage(ImageBank.mistakeLives[mistakeCount < allowedMistakes - i ? 0 : 1], 400 + i * 20, 5, null);
+		for (int i = 0; i < mistakeCap; i++)
+			g.drawImage(ImageBank.mistakeLives[mistakeCount < mistakeCap - i ? 0 : 1], 400 + i * 20, 5, null);
 	}
 	
 	/* ~~~~~~~~~~~~~~~~~~~~

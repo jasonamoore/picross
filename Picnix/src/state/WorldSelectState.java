@@ -3,6 +3,7 @@ package state;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
+import java.awt.geom.AffineTransform;
 
 import engine.Engine;
 import engine.Input;
@@ -12,21 +13,18 @@ import util.Animation;
 
 public class WorldSelectState extends State {
 
-	double[] locations;
+	private double[] locations;
+	private int curLoc;
 	
-	int curLoc;
+	private Animation smoothRot;
 	
-	Animation smoothRot;
-	
-	public WorldSelectState() {
-		smoothRot = new Animation(0, 0, 100, Animation.EASE_OUT, Animation.LOOP_NONE, false);
+	public WorldSelectState(double initRot) {
+		smoothRot = new Animation(initRot, 0, 500, Animation.EASE_OUT, Animation.NO_LOOP, true);
 		locations = new double[12];
 		for (int i = 0; i < locations.length / 2 + 1; i++)
 			locations[i] = i * 2 * Math.PI / 12;
 		for (int i = 0; i < locations.length / 2; i++)
 			locations[i + locations.length / 2] = -Math.PI + i * 2 * Math.PI / 12;
-		for (int i = 0; i < locations.length; i++)
-			System.out.println(locations[i]);
 	}
 	
 	@Override
@@ -53,7 +51,6 @@ public class WorldSelectState extends State {
 	}
 	
 	private void smoothRot(int oldLoc) {
-		System.out.println(smoothRot.getValue() + " -> " + locations[curLoc]);
 		double from = smoothRot.getValue();
 		if (curLoc == 6 && oldLoc == 5)
 			from = from - 2 * Math.PI;
@@ -72,12 +69,15 @@ public class WorldSelectState extends State {
 		g.setColor(Palette.PERIWINKLE);
 		g.fillRect(0, 150, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT - 150);
 		Graphics2D gg = (Graphics2D) g;
+		AffineTransform oldTrans = gg.getTransform();
 		gg.setClip(0, 150, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT - 150);
 		gg.translate(-125 + Engine.SCREEN_WIDTH / 2, 75 + Engine.SCREEN_HEIGHT / 2);
         gg.scale(1, 0.5);
         gg.rotate(-rot);
 		gg.translate(-Engine.SCREEN_WIDTH / 2, -Engine.SCREEN_HEIGHT / 2);
 		gg.drawImage(ImageBank.island, 0, 0, null);
+		gg.setClip(null);
+		gg.setTransform(oldTrans);
 	}
 	
 }

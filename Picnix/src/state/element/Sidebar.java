@@ -39,8 +39,8 @@ public class Sidebar extends Container {
 			}
 		};
 		add(collapser);
-		fadeAnim = new Animation(1, 0, 100, Animation.CUBIC, Animation.LOOP_NONE, false);
-		collapseAnim = new Animation(SIDEBAR_H, 19, 500, Animation.CUBIC, Animation.LOOP_NONE, false);
+		fadeAnim = new Animation(1, 0, 100, Animation.CUBIC, Animation.NO_LOOP, false);
+		collapseAnim = new Animation(SIDEBAR_H, 19, 500, Animation.CUBIC, Animation.NO_LOOP, false);
 		collapsed = false; // later this might be set by user's global prefs
 		setCollapsed(collapsed);
 	}

@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 import engine.Input;
+import resource.bank.Palette;
 
 /**
  * Extends the Element class by adding multiple backgrounds
@@ -16,7 +17,7 @@ import engine.Input;
 public class Button extends Element {
 
 	// color for the hover outline
-	protected Color hoverColor = Color.RED;
+	protected Color hoverColor = Palette.WHITE;
 	// backgrounds for button states
 	protected BufferedImage clickBackground;
 	protected BufferedImage disabledBackground;
@@ -76,6 +77,19 @@ public class Button extends Element {
 	}
 	
 	/**
+	 * Sets the clips to include just outside of this element's width and height,
+	 * so that button's hover outlines can render properly.
+	 */
+	@Override
+	public void setRenderClips(Graphics g) {
+		// clip to parent bounds
+		if (parent != null)
+			g.setClip(parent.getDisplayX(), parent.getDisplayY(), parent.width, parent.height);
+		// add clip to only draw bg image within this elem's bounds
+		g.clipRect(getDisplayX() - 1, getDisplayY() - 1, width + 2, height + 2);
+	}
+	
+	/**
 	 * Renders the button, using whichever of its backgrounds
 	 * is applicable to its current state and exists.
 	 * Also draws a hover outline if the button is being
@@ -98,7 +112,7 @@ public class Button extends Element {
 		else if (background != null) {
 			g.drawImage(background, xp, yp, null);
 			// if hovering, draw outline
-			if (beingHovered()) {
+			if (beingHovered() && hoverColor != null) {
 				g.setColor(hoverColor);
 				g.drawRect(xp - 1, yp - 1, width + 1, height + 1);
 			}

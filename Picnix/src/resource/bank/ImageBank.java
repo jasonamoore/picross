@@ -11,6 +11,22 @@ public class ImageBank {
 	public static BufferedImage grassback;
 	public static BufferedImage island;
 
+	public static BufferedImage[] bluebutton;
+	public static BufferedImage[] pinkbutton;
+	public static BufferedImage[] greenbutton;
+	public static BufferedImage[] goldbutton;
+	public static BufferedImage[] bluebuttonclick;
+	public static BufferedImage[] pinkbuttonclick;
+	public static BufferedImage[] greenbuttonclick;
+	public static BufferedImage[] goldbuttonclick;
+	public static BufferedImage[] buttondisabled;
+	// --
+	public static BufferedImage[] normallevelbutton;
+	public static BufferedImage[] layeredlevelbutton;
+	public static BufferedImage hiscorebar;
+	public static BufferedImage newlevelalert;
+	public static BufferedImage hiddenpreview;
+	// --
 	public static BufferedImage[] topbar;
 	public static BufferedImage time;
 	public static BufferedImage score;
@@ -58,13 +74,12 @@ public class ImageBank {
 	public static BufferedImage[] hintVert15;
 	public static BufferedImage[] hintHoriz10;
 	public static BufferedImage[] hintVert10;
-	public static BufferedImage napkin20;
-	public static BufferedImage napkin15;
-	public static BufferedImage napkin10;
 	public static BufferedImage cupmed;
 	public static BufferedImage[] numsbig;
 	public static BufferedImage[] numsmed;
 	public static BufferedImage[] numstiny;
+	
+	//
 	
 	
 	public static void loadGlobalResources() throws IOException {
@@ -74,6 +89,21 @@ public class ImageBank {
 		island = 	loadSheet("island.png");
 		// ui sprite sheet
 		BufferedImage uiSheet = loadSheet("ui.png");
+		bluebutton = loadMany(uiSheet, 267, 151, 3, 3, 3, 3);
+		pinkbutton = loadMany(uiSheet, 276, 151, 3, 3, 3, 3);
+		greenbutton = loadMany(uiSheet, 285, 151, 3, 3, 3, 3);
+		goldbutton = loadMany(uiSheet, 294, 151, 3, 3, 3, 3);
+		bluebuttonclick = loadMany(uiSheet, 267, 160, 3, 3, 3, 3);
+		pinkbuttonclick = loadMany(uiSheet, 276, 160, 3, 3, 3, 3);
+		greenbuttonclick = loadMany(uiSheet, 285, 160, 3, 3, 3, 3);
+		goldbuttonclick = loadMany(uiSheet, 294, 160, 3, 3, 3, 3);
+		buttondisabled = loadMany(uiSheet, 303, 160, 3, 3, 3, 3);
+		normallevelbutton = loadMany(uiSheet, 267, 169, 48, 48, 2, 1);
+		layeredlevelbutton = loadMany(uiSheet, 267, 217, 48, 48, 2, 1);
+		hiscorebar = loadOne(uiSheet, 303, 153, 41, 7);
+		newlevelalert = loadOne(uiSheet, 363, 169, 39, 39);
+		hiddenpreview = loadOne(uiSheet, 363, 208, 39, 31);
+		//
 		topbar = loadMany(uiSheet, 0, 0, 24, 32, 4, 1);
 		time = loadOne(uiSheet, 267, 94, 55, 19);
 		score = loadOne(uiSheet, 267, 113, 71, 19);

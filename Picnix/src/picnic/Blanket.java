@@ -52,9 +52,9 @@ public class Blanket extends Element {
 		lastCell = new int[] {-1, -1};
 		currCell = new int[] {-1, -1};
 		blobSizeAnim = new Animation[2];
-		blobSizeAnim[0] = new Animation(100, Animation.EASE_OUT, Animation.LOOP_NONE);
-		blobSizeAnim[1] = new Animation(100, Animation.EASE_OUT, Animation.LOOP_NONE);
-		hintFade = new Animation(0, 1, 350, Animation.CUBIC, Animation.LOOP_NONE, true);
+		blobSizeAnim[0] = new Animation(100, Animation.EASE_OUT, Animation.NO_LOOP);
+		blobSizeAnim[1] = new Animation(100, Animation.EASE_OUT, Animation.NO_LOOP);
+		hintFade = new Animation(0, 1, 350, Animation.CUBIC, Animation.NO_LOOP, true);
 		fadeTimer = new Timer(false);
 	}
 	
