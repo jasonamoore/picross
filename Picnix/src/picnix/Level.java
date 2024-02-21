@@ -1,7 +1,11 @@
-package puzzle;
+package picnix;
+
+import picnix.puzzle.Puzzle;
 
 public class Level {
 
+	public static int NO_SCORE = 0;
+	
 	private Puzzle[] layers;
 	private boolean layered;
 	
@@ -10,7 +14,7 @@ public class Level {
 	private int timeLimit;
 	private int mistakeCap;
 	
-	protected Level(Puzzle[] layers, int id, int timeLimit, int mistakeCap) {
+	public Level(Puzzle[] layers, int id, int timeLimit, int mistakeCap) {
 		this.layers = layers;
 		this.layered = layers.length > 1;
 		this.id = id;
@@ -18,7 +22,7 @@ public class Level {
 		this.mistakeCap = mistakeCap;
 	}
 	
-	protected Level(Puzzle puzzle, int id, int timeLimit, int mistakeCap) {
+	public Level(Puzzle puzzle, int id, int timeLimit, int mistakeCap) {
 		this(new Puzzle[] {puzzle}, id, timeLimit, mistakeCap);
 	}
 	

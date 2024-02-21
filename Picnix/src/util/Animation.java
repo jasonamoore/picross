@@ -138,6 +138,14 @@ public class Animation {
 	}
 	
 	/**
+	 * Updates the aninmation's duration.
+	 * @param duration The new duration.
+	 */
+	public void setDuration(int duration) {
+		this.duration = duration;
+	}
+	
+	/**
 	 * Pauses the animation.
 	 */
 	public void pause() {
@@ -194,9 +202,18 @@ public class Animation {
 	 * @param fwd If true, direction is set to forward.
 	 * @param play If true, resume the animation.
 	 */
-	public void setForward(boolean fwd, boolean play) {
+	public void setForward(boolean fwd) {
 		if (forward != fwd)
-			reverse(play);
+			reverse(false);
+	}
+	
+	/**
+	 * Checks whether the playback of this animation is
+	 * forwards or backwards (has been reversed).
+	 * @return True if the animation is playing forwards.
+	 */
+	public boolean isForward() {
+		return forward;
 	}
 	
 	/**

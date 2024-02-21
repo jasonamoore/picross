@@ -5,20 +5,30 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 
 import engine.Engine;
-import engine.StateManager;
 import engine.Transition;
+import picnix.Island;
+import picnix.World;
 import resource.bank.ImageBank;
-import resource.bank.Palette;
+import state.element.Container;
 import state.element.Icon;
 import state.element.TiledButton;
 import util.Animation;
 
 public class TitleState extends State {
+
+	private static final int SKY_HEIGHT = 200;
+	private static final int OFF_Y = 150;
+	private static final double SCALE = 0.75;
 	
 	private Animation smoothRot;
+	private Animation zoomToIsland;
+	
+	private Container panel;
 	
 	public TitleState() {
 		smoothRot = new Animation(0, 2 * Math.PI, 10000, Animation.LINEAR, Animation.CONTINUE, true);
+		zoomToIsland = new Animation(0, 1, 1000, Animation.EASE_OUT, Animation.NO_LOOP, false);
+		panel = new Container(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
 		Icon titleIcon = new Icon(ImageBank.title);
 		titleIcon.setBounds(Engine.getScreenCenterX(350), 50, 350, 125);
 		TiledButton play = new TiledButton(Engine.getScreenCenterX(200), 250, 200, 100) {
@@ -29,38 +39,41 @@ public class TitleState extends State {
 			}
 		};
 		play.setAllTileMaps(ImageBank.bluebutton, ImageBank.bluebuttonclick, ImageBank.buttondisabled);
-		add(titleIcon);
-		add(play);
+		panel.add(titleIcon);
+		panel.add(play);
+		add(panel);
 	}
 
 	@Override
 	public void focus(int status) {
-		// TODO Auto-generated method stub
+		for (int i = 0; i < World.NUM_WORLDS; i++)
+			World.loadWorld(i);
 	}
 	
 	private void playButtonClicked() {
-		Engine.getEngine().getStateManager().transitionToState(new WorldSelectState(smoothRot.getValue()), Transition.FADE, 1000, 1000, NEWLY_OPENED);
+		smoothRot = new Animation(smoothRot.getValue(), 0, 1000, Animation.EASE_OUT, Animation.NO_LOOP, true);
+		zoomToIsland.resume(); // play the zoom to island anim
+		// open world state, with a "part A" delay so the zoom anim plays first
+		Engine.getEngine().getStateManager().transitionToState(
+				new WorldSelectState(0), Transition.NONE, 1000, 0, NEWLY_OPENED);
 	}
 			
 	@Override
 	public void render(Graphics g) {
+		double progress = zoomToIsland.getValue();;
+		int h = (int) (SKY_HEIGHT + (WorldSelectState.SKY_HEIGHT - SKY_HEIGHT) * progress);
+		int offx = (int) (WorldSelectState.OFF_X * progress);
+		int offy = (int) (OFF_Y + (WorldSelectState.OFF_Y - OFF_Y) * progress);
+		double scl = SCALE + (WorldSelectState.SCALE - SCALE) * progress;
 		double rot = smoothRot.getValue();
-		g.setColor(Palette.SKY);
-		g.fillRect(0, 0, Engine.SCREEN_WIDTH, 150);
-		g.setColor(Palette.PERIWINKLE);
-		g.fillRect(0, 150, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT - 150);
+		Island.renderIsland(g, h, offx, offy, scl, rot);
+		// render normal stuff
+		// if sliding out of screen, translate
 		Graphics2D gg = (Graphics2D) g;
 		AffineTransform oldTrans = gg.getTransform();
-		gg.setClip(0, 150, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT - 150);
-		gg.translate(Engine.SCREEN_WIDTH / 2, 75 + Engine.SCREEN_HEIGHT / 2);
-        gg.scale(0.75, 0.35);
-        gg.rotate(-rot);
-		gg.translate(-Engine.SCREEN_WIDTH / 2, -Engine.SCREEN_HEIGHT / 2);
-		gg.drawImage(ImageBank.island, 0, 0, null);
-		gg.setClip(null);
-		gg.setTransform(oldTrans);
-		// render normal stuff
+		g.translate((int) (Engine.SCREEN_WIDTH * progress), 0);
 		super.render(g);
+		gg.setTransform(oldTrans);
 	}
 
 }

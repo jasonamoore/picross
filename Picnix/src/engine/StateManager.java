@@ -6,7 +6,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.Stack;
 
-import picnic.Particle;
+import picnix.Particle;
 import resource.bank.Palette;
 import state.State;
 
@@ -82,6 +82,7 @@ public class StateManager {
 					openState(transition.getToState(), transition.getStatus());
 				else
 					exitTopState(transition.getStatus());
+				transition.getOldState().freezeInput(false); // unfreeze previous state
 				getTopState().freezeInput(true); // keep its input frozen
 			}
 			if (transition.isFinished()) {

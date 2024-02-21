@@ -8,12 +8,12 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import engine.Engine;
-import picnic.Blanket;
-import picnic.Field;
-import picnic.Particle;
-import picnic.Stroke;
-import puzzle.Level;
-import puzzle.Puzzle;
+import picnix.Level;
+import picnix.Particle;
+import picnix.puzzle.Blanket;
+import picnix.puzzle.Field;
+import picnix.puzzle.Puzzle;
+import picnix.puzzle.Stroke;
 import resource.bank.ImageBank;
 import resource.bank.Palette;
 import state.element.Icon;

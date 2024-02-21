@@ -246,6 +246,10 @@ public abstract class Element implements Comparable<Element> {
 		height = h;
 	}
 	
+	public void setY(int y) {
+		this.y = y;
+	}
+	
 	/**
 	 * Checks if a given point (display-relative) falls within
 	 * the absolute (display) bounds of this Element.

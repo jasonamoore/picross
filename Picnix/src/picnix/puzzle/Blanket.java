@@ -1,4 +1,4 @@
-package picnic;
+package picnix.puzzle;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
@@ -8,7 +8,6 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 import engine.Input;
-import puzzle.Puzzle;
 import resource.bank.ImageBank;
 import resource.bank.Palette;
 import state.PuzzleState;
@@ -152,7 +151,8 @@ public class Blanket extends Element {
 	@Override
 	public void tick() {
 		super.tick();
-		hintFade.setForward(inHintBounds() || beingHovered(), true);
+		hintFade.setForward(inHintBounds() || beingHovered());
+		hintFade.resume();
 		Puzzle puzzle = puzState.getActivePuzzle();
 		int drawX = getRelativeMouseX();
 		int drawY = getRelativeMouseY();

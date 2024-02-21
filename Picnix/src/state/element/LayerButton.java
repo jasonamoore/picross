@@ -7,7 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 import engine.Input;
-import puzzle.Puzzle;
+import picnix.puzzle.Puzzle;
 import resource.bank.ImageBank;
 import resource.bank.Palette;
 import state.PuzzleState;

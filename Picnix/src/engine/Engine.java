@@ -15,7 +15,7 @@ import java.io.IOException;
 
 import javax.swing.JFrame;
 
-import picnic.Particle;
+import picnix.Particle;
 import resource.bank.AudioBank;
 import resource.bank.FontBank;
 import resource.bank.ImageBank;
@@ -188,6 +188,7 @@ public class Engine {
 		frame.setAutoRequestFocus(true);
 		// add input listeners
 		Input input = Input.getInstance();
+		input.setAutomaticKeyTypeIgnore(true);
 		canvas.addKeyListener(input);
 		canvas.addMouseListener(input);
 		canvas.addMouseMotionListener(input);

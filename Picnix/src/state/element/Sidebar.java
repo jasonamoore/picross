@@ -62,7 +62,8 @@ public class Sidebar extends Container {
 
 	public void setCollapsed(boolean col) {
 		collapsed = col;
-		collapseAnim.setForward(collapsed, true);
+		collapseAnim.setForward(collapsed);
+		collapseAnim.resume();
 		collapser.setBackgrounds(ImageBank.minimaxers[!collapsed ? 0 : 2],
 				ImageBank.minimaxers[!collapsed ? 1 : 3], null);
 	}

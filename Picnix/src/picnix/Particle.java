@@ -1,4 +1,4 @@
-package picnic;
+package picnix;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;

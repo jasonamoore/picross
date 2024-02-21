@@ -1,4 +1,4 @@
-package puzzle;
+package picnix.puzzle;
 
 public class Puzzle {
 

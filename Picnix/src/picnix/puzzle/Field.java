@@ -1,4 +1,4 @@
-package picnic;
+package picnix.puzzle;
 
 import java.awt.Graphics;
 

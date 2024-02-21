@@ -1,4 +1,4 @@
-package picnic;
+package picnix.puzzle;
 
 public class Stroke {
 	

@@ -5,7 +5,7 @@ import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
-import puzzle.Puzzle;
+import picnix.puzzle.Puzzle;
 import resource.bank.ImageBank;
 
 /**

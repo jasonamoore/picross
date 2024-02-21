@@ -69,6 +69,8 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	// and when they were pressed (i.e. for how long)
 	private boolean[] keysPressing = new boolean[KEY_MAX + 1];
 	private boolean[] keysReleased = new boolean[KEY_MAX + 1];
+	private boolean[] keysIgnoring = new boolean[KEY_MAX + 1];
+	private boolean autoIgnore = false;
 	private long[] keyTimestamps = new long[KEY_MAX + 1];
 
 	// a set of circular arrays holding data about the previous 'RECORD_SIZE' key presses
@@ -93,10 +95,12 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	public void keyPressed(KeyEvent e) {
 		int code = e.getKeyCode();
 		// if code is a valid key to store
-		if (code >= 0 && code <= KEY_MAX) {
+		if (code >= 0 && code <= KEY_MAX && !keysIgnoring[code]) {
 			synchronized (this) {
 				keysPressing[code] = true;
 				keysReleased[code] = false;
+				if (autoIgnore)
+					keysIgnoring[code] = true;
 				keyTimestamps[code] = e.getWhen();
 				// records
 				keyPressRecordHead = (keyPressRecordHead + 1) % RECORD_SIZE;
@@ -120,6 +124,7 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 			synchronized (this) {
 				keysPressing[code] = false;
 				keysReleased[code] = true;
+				keysIgnoring[code] = false;
 				keyTimestamps[code] = e.getWhen();
 				// records
 				keyReleaseRecordHead = (keyReleaseRecordHead + 1) % RECORD_SIZE;
@@ -969,6 +974,30 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 	 */
 	public boolean isMouseFocused() {
 		return mouseFocused;
+	}
+	
+	/**
+	 * Sets the behavior for ignoring repeated key presses
+	 * occuring before a key is released.
+	 * Repeated key presses may occur when a button is held
+	 * and the operating system "types" the button repeatedly.
+	 * @param ignore If true, automatically ignores repeated presses.
+	 */
+	public void setAutomaticKeyTypeIgnore(boolean ignore) {
+		autoIgnore = ignore;
+	}
+	
+	/**
+	 * Ignores any future presses of this key until the
+	 * key is released. Repeated key presses may occur
+	 * when a button is held and the operating system
+	 * "types" the button repeatedly.
+	 * @param code
+	 * @see 
+	 */
+	public void ignoreKey(int code) {
+		if (code >= 0 && code < keysIgnoring.length)
+			keysIgnoring[code] = true;
 	}
 	
 	// methods for consuming button press/releases that have been processed

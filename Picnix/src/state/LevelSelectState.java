@@ -3,7 +3,8 @@ package state;
 import java.awt.image.BufferedImage;
 
 import engine.Engine;
-import puzzle.Level;
+import picnix.Level;
+import picnix.World;
 import resource.bank.ImageBank;
 import state.element.LevelButton;
 
@@ -13,20 +14,20 @@ public class LevelSelectState extends ScrollableState {
 	public static final int LEVEL_BUTTON_HEIGHT = 48;
 	public static final int LEVEL_BUTTON_MARGIN = 16;
 	
-	private Level[] levels;
+	private World world;
 	
-	public LevelSelectState(Level[] list) {
-		super(Engine.SCREEN_WIDTH, calculateInnerHeight(list.length));
-		levels = list;
-		setupLevels(levels);
+	public LevelSelectState(World world) {
+		super(Engine.SCREEN_WIDTH, calculateInnerHeight(world.getLevelCount()));
+		this.world = world;
+		setupLevels(world.getLevels());
 	}
 
-	private void setupLevels(Level[] list) {
+	private void setupLevels(boolean[] levels) {
 		int xp, yp;
 		xp = yp = LEVEL_BUTTON_MARGIN;
-		for (int i = 0; i < list.length; i++) {
+		for (int i = 0; i < levels.length; i++) {
 			LevelButton lb = new LevelButton(this, i, xp, yp, LEVEL_BUTTON_WIDTH, LEVEL_BUTTON_HEIGHT);
-			BufferedImage[] sheet = list[i].isLayered() ? ImageBank.layeredlevelbutton : ImageBank.normallevelbutton;
+			BufferedImage[] sheet = levels[i] ? ImageBank.layeredlevelbutton : ImageBank.normallevelbutton;
 			lb.setBackgrounds(sheet[0], sheet[1], null);
 			add(lb);
 			xp += LEVEL_BUTTON_WIDTH + LEVEL_BUTTON_MARGIN;
@@ -50,7 +51,7 @@ public class LevelSelectState extends ScrollableState {
 	}
 
 	public void levelClicked(int id) {
-		Engine.getEngine().getStateManager().openState(new PuzzleState(levels[id]), State.NEWLY_OPENED);
+		Engine.getEngine().getStateManager().openState(new LoadLevelState(id, world.getId()), State.NEWLY_OPENED);
 	}
 	
 }

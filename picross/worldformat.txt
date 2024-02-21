@@ -1,0 +1,13 @@
+world file format:
+
+00001100 <- first byte = num of levels
+01010... <- next n bits = levels (0 is a normal level, 1 is a layered level)
+01010... <- next n bits = levels (0 is a normal level, 1 is a layered level)
+---- end metadata section (byte aligned)
+---- begin level data section ----
+00001010 <- first byte = num of rows
+00001010 <- second byte = num of cols
+00001010 <- third byte = time limit
+00001010 <- fourth byte = allowed mistakes
+01010... <- next n bits = puzzle solution (0 is clear, 1 is filled grid cell)
+-- byte aligned before next puzzle --

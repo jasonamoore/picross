@@ -79,9 +79,6 @@ public class ImageBank {
 	public static BufferedImage[] numsmed;
 	public static BufferedImage[] numstiny;
 	
-	//
-	
-	
 	public static void loadGlobalResources() throws IOException {
 		// tests
 		title =			loadSheet("title.png");

@@ -64,7 +64,7 @@ public abstract class State {
 	}
 	
 	public void freezeInput(boolean freeze) {
-		frozen = true;
+		frozen = freeze;
 	}
 	
 	public boolean isFrozen() {
@@ -81,8 +81,12 @@ public abstract class State {
 			if (e.isVisible())
 				e.tick();
 		}
-		if (frozen)
+		if (frozen) {
+			// leave hover element and don't need to check anything else
+			if (lastFocus != null)
+				lastFocus.onLeave();
 			return;
+		}
 		Input input = Input.getInstance();
 		// call events (only if focused element has not had the event called yet)
 		if (focusElement != null) {
