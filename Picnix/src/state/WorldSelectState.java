@@ -6,6 +6,8 @@ import java.awt.event.KeyEvent;
 import engine.Engine;
 import engine.Input;
 import picnix.Island;
+import picnix.World;
+import resource.bank.ImageBank;
 import state.element.WorldBox;
 import util.Animation;
 
@@ -16,28 +18,18 @@ public class WorldSelectState extends State {
 	public static final int OFF_Y = 75;
 	public static final double SCALE = 1;
 	
-	private double[] locations;
+	private WorldBox worldBox;
+	
 	private int curLoc;
 
 	private Animation smoothBox;
 	private Animation smoothRot;
 	
-	private WorldBox worldBox;
-	
 	public WorldSelectState(double initRot) {
 		smoothBox = new Animation(0, 1, 250, Animation.CUBIC, Animation.NO_LOOP, false);
 		smoothRot = new Animation(initRot, 0, 500, Animation.EASE_OUT, Animation.NO_LOOP, true);
-		locations = new double[6];
-		for (int i = 0; i < locations.length / 2 + 1; i++)
-			locations[i] = i * 2 * Math.PI / 6;
-		for (int i = 0; i < locations.length / 2; i++)
-			locations[i + locations.length / 2] = -Math.PI + i * 2 * Math.PI / 6;
-		worldBox = new WorldBox(this, Engine.SCREEN_WIDTH - 175, Engine.getScreenCenterY(350), 150, 350) {
-			@Override
-			public float getOpacity() {
-				return (float) smoothBox.getValue();
-			}
-		};
+		worldBox = new WorldBox(this, Engine.SCREEN_WIDTH - 180, Engine.getScreenCenterY(372), 168, 372);
+		worldBox.setBackground(ImageBank.worldscroll);
 		add(worldBox);
 	}
 	
@@ -47,12 +39,20 @@ public class WorldSelectState extends State {
 	}
 	
 	public int getEasyWorldId() {
-		return curLoc;
+		return World.getEasyWorldId(curLoc);
+	}
+
+	public int getHardWorldId() {
+		return World.getHardWorldId(curLoc);
+	}
+	
+	public float getBoxOpacity() {
+		return (float) smoothBox.getValue();
 	}
 	
 	private void switchLocation(int amount) {
 		int oldLoc = curLoc;
-		curLoc = (curLoc - amount + locations.length) % locations.length;
+		curLoc = (curLoc - amount + World.NUM_LOCATIONS) % World.NUM_LOCATIONS;
 		smoothRotate(oldLoc);
 		smoothBox.setForward(false);
 		smoothBox.resume();
@@ -61,14 +61,16 @@ public class WorldSelectState extends State {
 	
 	private void smoothRotate(int oldLoc) {
 		double from = smoothRot.getValue();
-		if (Math.abs(locations[curLoc] - locations[oldLoc]) > 3 * Math.PI / locations.length) {
-			if (locations[oldLoc] > 0)
+		double oldRot = World.getRadians(oldLoc);
+		double newRot = World.getRadians(curLoc);
+		if (Math.abs(newRot - oldRot) > World.getMaxRadianDistance()) {
+			if (oldRot > 0)
 				from = from - 2 * Math.PI;
 			else
 				from = 2 * Math.PI + from;
 		}
 		smoothRot.setFrom(from);
-		smoothRot.setTo(locations[curLoc]);
+		smoothRot.setTo(newRot);
 		smoothRot.reset(true);
 	}
 	
@@ -80,15 +82,13 @@ public class WorldSelectState extends State {
 		boolean leftKey = input.isPressingKey(KeyEvent.VK_LEFT);
 		boolean rightKey = input.isPressingKey(KeyEvent.VK_RIGHT);
 		if (leftKey && !rightKey) {
-			switchLocation(1);
+			switchLocation(-1);
 			input.consumeKeyPress(KeyEvent.VK_LEFT);
 		}
 		else if (rightKey && !leftKey) {
-			switchLocation(-1);
+			switchLocation(1);
 			input.consumeKeyPress(KeyEvent.VK_RIGHT);
 		}
-		if (input.isPressingKey(KeyEvent.VK_ENTER))
-			Engine.getEngine().getStateManager().openState(new LoadWorldState(0), State.NEWLY_OPENED);
 		// updating box fade/slide animation stuff
 		// if the box animation is stopped
 		if (!smoothBox.isPlaying()) {
@@ -100,7 +100,7 @@ public class WorldSelectState extends State {
 				smoothBox.reverse(true);
 			}
 		}
-		worldBox.setY((int) ((1 - smoothBox.getValue()) * -25 + Engine.getScreenCenterY(350)));
+		worldBox.setY((int) ((1 - smoothBox.getValue()) * -25 + Engine.getScreenCenterY(372)));
 	}
 
 	@Override

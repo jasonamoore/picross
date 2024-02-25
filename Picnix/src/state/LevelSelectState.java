@@ -3,10 +3,12 @@ package state;
 import java.awt.image.BufferedImage;
 
 import engine.Engine;
+import engine.Transition;
 import picnix.Level;
 import picnix.World;
 import resource.bank.ImageBank;
 import state.element.LevelButton;
+import state.load.LoadLevelState;
 
 public class LevelSelectState extends ScrollableState {
 
@@ -51,7 +53,8 @@ public class LevelSelectState extends ScrollableState {
 	}
 
 	public void levelClicked(int id) {
-		Engine.getEngine().getStateManager().openState(new LoadLevelState(id, world.getId()), State.NEWLY_OPENED);
+		LoadLevelState lss = new LoadLevelState(id, world.getId());
+		Engine.getEngine().getStateManager().transitionToState(lss, Transition.FADE, 750, 0, State.NEWLY_OPENED);
 	}
 	
 }

@@ -10,6 +10,7 @@ public class Animation {
 	public static final int NO_LOOP = 0;
 	public static final int CONTINUE = 1;
 	public static final int BOUNCE = 2;
+	public static final int UNLIMITED = Integer.MAX_VALUE;
 	
 	// animation transition strategies indices (corresponds to PRESETS array)
 	private static final int HOLD_INDEX = 0;
@@ -48,12 +49,14 @@ public class Animation {
 
 	// is the animation currently running
 	private boolean playing = false;
-	// is the animation currently "active" - a user set flag
-	private boolean active = false;
 	// the direction (forward/backward) of playback
 	private boolean forward = true;
 	// whether the animation should loop
 	private int loopMode;
+	// how many times the animation should loop
+	private int loopLimit;
+	// local count of how many times the anim has looped
+	private int loopsSoFar;
 	
 	// offset to add to timer; needed when animation is reversed during playback
 	private long offset;
@@ -74,6 +77,7 @@ public class Animation {
 		this.duration = duration;
 		this.transition = transition;
 		this.loopMode = loopMode;
+		loopLimit = loopMode == NO_LOOP ? 0 : UNLIMITED;
 		if (start) resume(); // start anim
 	}
 	
@@ -102,10 +106,10 @@ public class Animation {
 	 * This is a convenience compared to storing a boolean
 	 * alongside each Animation field in that Object's class.
 	 * @return True if the Animation is "active" (needs observation).
-	 */
+	 *
 	public boolean active() {
 		return active;
-	}
+	}/
 	
 	/**
 	 * Sets whether the Animation is currently active.
@@ -116,10 +120,10 @@ public class Animation {
 	 * overridden if needed using this function to reactivate.
 	 * @param active True to activate, false to deactivate the Animation.
 	 * @see #active()
-	 */
+	 *
 	public void setActive(boolean active) {
 		this.active = active;
-	}
+	}/
 	
 	/**
 	 * Updates the "from" value.
@@ -146,6 +150,14 @@ public class Animation {
 	}
 	
 	/**
+	 * Sets how many times the animation should loop.
+	 * @param limit The loop limit.
+	 */
+	public void setLoopLimit(int loopLimit) {
+		this.loopLimit = loopLimit;
+	}
+	
+	/**
 	 * Pauses the animation.
 	 */
 	public void pause() {
@@ -157,7 +169,6 @@ public class Animation {
 	 * Resumes the animation.
 	 */
 	public void resume() {
-		active = true;
 		playing = true;
 		timer.resume();
 	}
@@ -177,6 +188,8 @@ public class Animation {
 	 */
 	public void reset(boolean restart) {
 		timer.reset(restart);
+		// reset loops
+		loopsSoFar = 0;
 		// reset playback offset
 		offset = 0;
 		if (restart)
@@ -222,8 +235,8 @@ public class Animation {
 	 */
 	public double getValue() {
 		double val = calculateValue();
-		if (!playing)
-			active = false;
+		//if (!playing)
+		//	active = false;
 		return val;
 	}
 
@@ -278,22 +291,29 @@ public class Animation {
 	private long getElapsed() {
 		long ms = timer.elapsed() + offset;
 		if (ms > duration) {
-			if (loopMode == BOUNCE) {
-				int bounces = (int) (ms / duration);
-				ms %= duration;
-				if (bounces % 2 == 1) {
-					// reverse
-					forward = !forward;
-					offset = ms;
-					timer.reset(playing);
-				}
-					
-			}
-			else if (loopMode == CONTINUE)
-				ms %= duration;
-			else {
-				pause();
+			if (loopMode == NO_LOOP) {
 				ms = duration;
+				pause();
+			}
+			else {
+				loopsSoFar += (int) (ms / duration);
+				if (loopMode == BOUNCE) {
+					int bounces = (int) (ms / duration);
+					ms %= duration;
+					if (bounces % 2 == 1) {
+						// reverse
+						forward = !forward;
+						offset = ms;
+						timer.reset(playing);
+					}
+				}
+				else if (loopMode == CONTINUE)
+					ms %= duration;
+				if (loopLimit != Integer.MAX_VALUE && loopsSoFar > loopLimit) {
+					// return duration to end frame
+					ms = duration - offset;
+					pause();
+				}
 			}
 		}
 		return ms;

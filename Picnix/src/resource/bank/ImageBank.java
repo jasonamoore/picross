@@ -10,6 +10,7 @@ public class ImageBank {
 	public static BufferedImage title;
 	public static BufferedImage grassback;
 	public static BufferedImage island;
+	public static BufferedImage worldscroll;
 
 	public static BufferedImage[] bluebutton;
 	public static BufferedImage[] pinkbutton;
@@ -84,6 +85,7 @@ public class ImageBank {
 		title =			loadSheet("title.png");
 		grassback = 	loadSheet("grasstest.png");
 		island = 	loadSheet("island.png");
+		worldscroll = 	loadSheet("worldscroll.png");
 		// ui sprite sheet
 		BufferedImage uiSheet = loadSheet("ui.png");
 		bluebutton = loadMany(uiSheet, 267, 151, 3, 3, 3, 3);

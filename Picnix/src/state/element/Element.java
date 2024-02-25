@@ -288,7 +288,7 @@ public abstract class Element implements Comparable<Element> {
 	
 	/**
 	 * Checks whether the Element is currently being hovered.
-	 * An Element is hovered until onRelease is called,
+	 * An Element is hovered until onLeave is called,
 	 * which occurs on the first tick when the mouse
 	 * position is not within the Element.
 	 * @return True, if being hovered.

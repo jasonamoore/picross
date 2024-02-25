@@ -1,8 +1,8 @@
-package state;
+package state.load;
 
-import engine.Engine;
 import picnix.Level;
 import picnix.World;
+import state.PuzzleState;
 
 public class LoadLevelState extends LoadState {
 
@@ -21,7 +21,8 @@ public class LoadLevelState extends LoadState {
 		//ImageBank.loadWorldImages(worldId);
 		// when finished loading, open next state (puzzle state)
 		PuzzleState ps = new PuzzleState(level);
-		Engine.getEngine().getStateManager().openState(ps, State.NEWLY_OPENED);
+		setNextState(ps);
+		done();
 	}
 
 	@Override

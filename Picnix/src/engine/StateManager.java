@@ -78,13 +78,14 @@ public class StateManager {
 		if (transitioning) {
 			// if we passed part a, open the new state
 			if (transition.needsStateSwitch()) {
+				transition.getToState().freezeInput(true); // freeze new state's input
 				if (!transition.isExitTransition())
 					openState(transition.getToState(), transition.getStatus());
 				else
 					exitTopState(transition.getStatus());
 				transition.getOldState().freezeInput(false); // unfreeze previous state
-				getTopState().freezeInput(true); // keep its input frozen
 			}
+			// if everything is over
 			if (transition.isFinished()) {
 				transitioning = false; // mark that we're done
 				getTopState().freezeInput(false); // unfreeze the new state
@@ -94,8 +95,11 @@ public class StateManager {
 	}
 	
 	public void render(Graphics g) {
+		// render active state
 		getTopState().render(g);
+		// render particles
 		Particle.renderParticles(g);
+		// render transition effect
 		if (transitioning && !transition.isFinished()) {
 			if (transition.getType() == Transition.FADE) {
 				float opacity = (float) (transition.inPartA() ? transition.getAProgress() : 1.0 - transition.getBProgress());

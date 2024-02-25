@@ -2,6 +2,7 @@ package state.element;
 
 import java.awt.Graphics;
 
+import engine.Input;
 import resource.bank.Palette;
 import state.LevelSelectState;
 
@@ -19,7 +20,7 @@ public class LevelButton extends Button {
 	@Override
 	public void onRelease(int mbutton) {
 		super.onRelease(mbutton);
-		if (beingHovered())
+		if (mbutton == Input.LEFT_CLICK && beingHovered())
 			levSelState.levelClicked(id);
 	}
 	

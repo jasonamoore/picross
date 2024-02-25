@@ -154,7 +154,7 @@ public class Scroller extends Element {
 	public void tick() {
 		super.tick();
 		// update thumb to nudge anim, if observing
-		if (nudgeAnim.active())
+		if (nudgeAnim.isPlaying())
 			thumbOffset = nudgeAnim.getValue();
 		// update scroll position if its being dragged
 		if (dragging) {
@@ -164,7 +164,7 @@ public class Scroller extends Element {
 			double newDragPos = getMouseRailPosition() - dragStartOffset;
 			// put thumb at mouse pos, or min of 0 / max of realRailSize
 			thumbOffset = Math.max(0, Math.min(realRailSize, newDragPos));
-			nudgeAnim.setActive(false); // clear any current nudge if needed
+			nudgeAnim.pause(); // clear any current nudge if needed
 		}
 	}
 	

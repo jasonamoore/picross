@@ -1,8 +1,7 @@
-package state;
+package state.load;
 
-import engine.Engine;
 import picnix.World;
-import resource.bank.ImageBank;
+import state.LevelSelectState;
 
 public class LoadWorldState extends LoadState {
 
@@ -17,7 +16,8 @@ public class LoadWorldState extends LoadState {
 		// .. = SaveData.loadWorldSaveData(worldId);
 		// when finished loading open next state (level select)
 		LevelSelectState lss = new LevelSelectState(World.getWorld(worldId));
-		Engine.getEngine().getStateManager().openState(lss, State.NEWLY_OPENED);
+		setNextState(lss);
+		done();
 	}
 
 	@Override

@@ -1,0 +1,8 @@
+"world" data format:
+first byte: number of puzzles
+*puzzle section*
+(for each puzzle:)
+first byte: rows
+second byte: columns
+next row*columns bits: 1 = filled, 0 = empty in solution
+(+ padding of zeros to finish the last bit)

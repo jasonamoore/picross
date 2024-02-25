@@ -61,9 +61,9 @@ public class TitleState extends State {
 	@Override
 	public void render(Graphics g) {
 		double progress = zoomToIsland.getValue();;
-		int h = (int) (SKY_HEIGHT + (WorldSelectState.SKY_HEIGHT - SKY_HEIGHT) * progress);
-		int offx = (int) (WorldSelectState.OFF_X * progress);
-		int offy = (int) (OFF_Y + (WorldSelectState.OFF_Y - OFF_Y) * progress);
+		int h = (int) Math.round(SKY_HEIGHT + (WorldSelectState.SKY_HEIGHT - SKY_HEIGHT) * progress);
+		int offx = (int) Math.round(WorldSelectState.OFF_X * progress);
+		int offy = (int) Math.round(OFF_Y + (WorldSelectState.OFF_Y - OFF_Y) * progress);
 		double scl = SCALE + (WorldSelectState.SCALE - SCALE) * progress;
 		double rot = smoothRot.getValue();
 		Island.renderIsland(g, h, offx, offy, scl, rot);
@@ -71,7 +71,7 @@ public class TitleState extends State {
 		// if sliding out of screen, translate
 		Graphics2D gg = (Graphics2D) g;
 		AffineTransform oldTrans = gg.getTransform();
-		g.translate((int) (Engine.SCREEN_WIDTH * progress), 0);
+		g.translate((int) Math.round(Engine.SCREEN_WIDTH * progress), 0);
 		super.render(g);
 		gg.setTransform(oldTrans);
 	}

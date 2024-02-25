@@ -50,7 +50,8 @@ public abstract class State {
 	}
 
 	public void requestFocus(Element e) {
-		focusElement = e;
+		if (!frozen)
+			focusElement = e;
 	}
 	
 	public void activate(Element e) {
@@ -90,7 +91,6 @@ public abstract class State {
 		Input input = Input.getInstance();
 		// call events (only if focused element has not had the event called yet)
 		if (focusElement != null) {
-			//System.out.println(focusElement);
 			// mouse is over it: call hover
 			if (!focusElement.beingHovered()) {
 				focusElement.onHover();

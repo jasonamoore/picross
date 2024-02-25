@@ -15,11 +15,9 @@ import java.io.IOException;
 
 import javax.swing.JFrame;
 
-import picnix.Particle;
 import resource.bank.AudioBank;
 import resource.bank.FontBank;
 import resource.bank.ImageBank;
-import state.State;
 import state.TitleState;
 import util.Debug;
 

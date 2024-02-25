@@ -114,8 +114,8 @@ public class Blanket extends Element {
 		super.onLeave();
 		// make sure mouse wont leave and return somewhere else,
 		// causing a janky blob size hint animation
-		blobSizeAnim[0].setActive(false);
-		blobSizeAnim[1].setActive(false);
+		blobSizeAnim[0].pause();
+		blobSizeAnim[1].pause();;
 	}
 	
 	private void startDraw(int mode) {
@@ -139,8 +139,8 @@ public class Blanket extends Element {
 		currCell[COL] = -1;
 		lastCell[ROW] = -1;
 		lastCell[COL] = -1;
-		blobSizeAnim[0].setActive(false);
-		blobSizeAnim[1].setActive(false);
+		blobSizeAnim[0].pause();
+		blobSizeAnim[1].pause();
 		puzState.fadeSidebars(false);
 	}
 	
@@ -201,7 +201,7 @@ public class Blanket extends Element {
 			return;
 		int oldMark = puzzle.getMark(row, col);
 		if (oldMark != drawMode) {
-			boolean mistake = puzzle.markSpot(row, col, drawMode);
+			boolean mistake = puzzle.markSpot(row, col, drawMode);    
 			drawStroke.addChange(row, col, oldMark, mistake);
 		}
 	}
@@ -279,7 +279,7 @@ public class Blanket extends Element {
 					int nx = highCol * cellSize + (cellSize - nums[0].getWidth()) / 2;
 					int sy = !hintCover ? highRow * cellSize - 1 : (highRow + 1) * cellSize + 1;
 					int ny = !hintCover ? sy - nums[0].getHeight() : sy;
-					if (!blobSizeAnim[0].active() || !blobSizeAnim[1].active())
+					if (!blobSizeAnim[0].isPlaying() || !blobSizeAnim[1].isPlaying())
 						setBlobSizeAnim(nx, ny);
 					else {
 						int tnx = nx;
@@ -293,7 +293,7 @@ public class Blanket extends Element {
 					int ex = (start + size) * cellSize - 1;
 					g.setColor(Color.BLACK);
 					g.drawLine(sx, sy, sx, ey);
-					g.drawLine(sx, ey, nx - 2, ey);
+					g.drawLine(sx, ey, nx - 3, ey);
 					g.drawLine(nex + 2, ey, ex, ey);
 					g.drawLine(ex, ey, ex, sy);
 					g.drawImage(nums[size - 1], nx, ny, null);
@@ -309,7 +309,7 @@ public class Blanket extends Element {
 					int ny = highRow * cellSize + (cellSize - nums[0].getHeight()) / 2;
 					int sx = !hintCover ? highCol * cellSize - 1 : (highCol + 1) * cellSize + 1;
 					int nx = !hintCover ? sx - nums[0].getWidth() : sx;
-					if (!blobSizeAnim[0].active() || !blobSizeAnim[1].active())
+					if (!blobSizeAnim[0].isPlaying() || !blobSizeAnim[1].isPlaying())
 						setBlobSizeAnim(nx, ny);
 					else {
 						int tnx = nx;
@@ -323,7 +323,7 @@ public class Blanket extends Element {
 					int ey = (start + size) * cellSize - 1;
 					g.setColor(Color.BLACK);
 					g.drawLine(sx, sy, ex, sy);
-					g.drawLine(ex, sy, ex, ny - 2);
+					g.drawLine(ex, sy, ex, ny - 3);
 					g.drawLine(ex, ney + 2, ex, ey);
 					g.drawLine(ex, ey, sx, ey);
 					g.drawImage(nums[size - 1], nx, ny, null);
@@ -369,8 +369,8 @@ public class Blanket extends Element {
 	private void setBlobSizeAnim(int x, int y) {
 		Animation b0 = blobSizeAnim[0];
 		Animation b1 = blobSizeAnim[1];
-		double from0 = b0.active() ? b0.getValue() : x;
-		double from1 = b1.active() ? b1.getValue() : y;
+		double from0 = b0.isPlaying() ? b0.getValue() : x;
+		double from1 = b1.isPlaying() ? b1.getValue() : y;
 		b0.setFrom(from0);
 		b1.setFrom(from1);
 		b0.setTo(x);

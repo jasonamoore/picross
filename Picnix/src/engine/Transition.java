@@ -57,25 +57,30 @@ public class Transition {
 	}
 	
 	public boolean inPartA() {
-		return timer.elapsed() <= durA;
+		return !checked;
 	}
 	
 	public double getAProgress() {
-		return timer.elapsed() / (double) durA;
+		if (durA == 0)
+			return 1;
+		return Math.max(0, Math.min(1, timer.elapsed() / (double) durA));
 	}
 	
 	public double getBProgress() {
-		return (timer.elapsed() - durA) / (double) durB;
+		if (durB == 0)
+			return inPartA() ? 0 : 1;
+		return Math.max(0, Math.min(1, (timer.elapsed() - durA) / (double) durB));
 	}
 	
 	public boolean needsStateSwitch() {
-		if (!inPartA() && !checked)
+		if (timer.elapsed() > durA && !checked)
 			return (checked = true);
-		else return false;
+		else
+			return false;
 	}
 	
 	public boolean isFinished() {
-		return timer.elapsed() > durA + durB;
+		return checked && timer.elapsed() > durA + durB;
 	}
 	
 }
