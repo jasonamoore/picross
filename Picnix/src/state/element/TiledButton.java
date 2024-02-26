@@ -1,5 +1,6 @@
 package state.element;
 
+import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -14,6 +15,8 @@ public class TiledButton extends Button {
 	private BufferedImage[] tiles;
 	private BufferedImage[] clickTiles;
 	private BufferedImage[] disabledTiles;
+	private BufferedImage label;
+	private Color middleFill;
 	
 	public TiledButton(int x, int y, int w, int h) {
 		super(x, y, w, h);
@@ -23,6 +26,14 @@ public class TiledButton extends Button {
 		setTileMap(tiles);
 		setClickTileMap(clickTiles);
 		setDisabledTileMap(disabledTiles);
+	}
+	
+	public void setLabel(BufferedImage label) {
+		this.label = label;
+	}
+	
+	public void setMiddleFill(Color middleFill) {
+		this.middleFill = middleFill;
 	}
 	
 	public void setTileMap(BufferedImage[] tiles) {
@@ -46,12 +57,13 @@ public class TiledButton extends Button {
 		Composite oldComp = setRenderComposite(g);
 		int xp = getDisplayX();
 		int yp = getDisplayY();
+		boolean clicking = beingClicked(Input.LEFT_CLICK);
 		BufferedImage[] curTiles = null;
 		// if disabled, and has a disabled background:
 		if (!isEnabled() && disabledTiles != null)
 			curTiles = disabledTiles;
 		// if clicking, and has a click background:
-		else if (beingClicked(Input.LEFT_CLICK) && clickTiles != null)
+		else if (clicking && clickTiles != null)
 			curTiles = clickTiles;
 		// (default) if has a regular background:
 		else if (tiles != null)
@@ -61,6 +73,8 @@ public class TiledButton extends Button {
 			for (int y = 0; y < height - tileH; y += tileH) {
 				for (int x = 0; x < width - tileW; x += tileW) {
 					int tileNum = x == 0 ? y == 0 ? 0 : 3 : y == 0 ? 1 : 4;
+					if (tileNum == 4 && middleFill != null)
+						continue; // if we can just fill this tile with middleFill color, skip
 					g.drawImage(curTiles[tileNum], xp + x, yp + y, null);
 				}
 				g.drawImage(curTiles[y == 0 ? 2 : 5], xp + width - tileW, yp + y, null);
@@ -70,8 +84,21 @@ public class TiledButton extends Button {
 			}
 			g.drawImage(curTiles[8], xp + width - tileW, yp + height - tileH, null);
 		}
+		// fill the middle of the button with color
+		if (middleFill != null) {
+			g.setColor(middleFill);
+			g.fillRect(xp + tileW, yp + tileH, width - tileW * 2, height - tileH * 2);
+		}
+		// now draw label over the button
+		if (label != null) {
+			// find center position
+			int bias = clicking ? 1 : 0;
+			int lx = xp + (width - label.getWidth()) / 2 + bias;
+			int ly = yp + (height - label.getHeight()) / 2 + bias;
+			g.drawImage(label, lx, ly, null);
+		}
 		// if hovering, finally draw outline
-		if (!beingClicked(Input.LEFT_CLICK) && beingHovered()) {
+		if (!clicking && beingHovered()) {
 			g.setColor(hoverColor);
 			g.drawRect(xp - 1, yp - 1, width + 1, height + 1);
 		}

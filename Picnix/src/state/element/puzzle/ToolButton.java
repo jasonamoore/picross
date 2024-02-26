@@ -1,4 +1,4 @@
-package state.element;
+package state.element.puzzle;
 
 import java.awt.Composite;
 import java.awt.Graphics;
@@ -7,8 +7,8 @@ import java.awt.image.BufferedImage;
 
 import engine.Input;
 import resource.bank.ImageBank;
-import resource.bank.Palette;
 import state.PuzzleState;
+import state.element.Button;
 
 /**
  * A special type of Button used in the PuzzleState.
@@ -61,14 +61,14 @@ public class ToolButton extends Button {
 			BufferedImage back = ImageBank.toolbacks[UNDO % 2];
 			BufferedImage clickBack = ImageBank.toolbacks[UNDO % 2 + 2];
 			BufferedImage disBack = ImageBank.toolbacks[UNDO % 2 + 4];
-			int sx = back.getWidth()/2 * isRedo;
-			int sw = back.getWidth()/2;
+			int sx = back.getWidth() / 2 * isRedo;
+			int sw = back.getWidth() / 2;
 			int sh = back.getHeight();
 			setBackgrounds(back.getSubimage(sx, 0, sw, sh),
 					clickBack.getSubimage(sx, 0, sw, sh),
 					disBack.getSubimage(sx, 0, sw, sh));
 		}
-		setHoverOutlineColor(Palette.PURPLE);
+		//setHoverOutlineColor(Palette.PURPLE);
 	}
 	
 	@Override

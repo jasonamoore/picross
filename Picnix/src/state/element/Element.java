@@ -152,6 +152,13 @@ public abstract class Element implements Comparable<Element> {
 	}
 	
 	/**
+	 * @return The element's z-depth.
+	 */
+	public int getZ() {
+		return z;
+	}
+	
+	/**
 	 * Sets whether this Element is visible.
 	 * An invisible Element does not render,
 	 * but still accepts input events.
@@ -189,7 +196,20 @@ public abstract class Element implements Comparable<Element> {
 	 */
 	public void setChildrenEnabled(boolean enabled) {
 		for (int i = 0; i < children.size(); i++)
-			children.get(i).setEnabled(enabled);
+			children.get(i).setChildrenEnabled(enabled);
+	}
+	
+	/**
+	 * Sets the {@code enabled} and {@code visible}
+	 * status of all of this Element's children.
+	 * @see #setExisting(boolean)
+	 * @param exists True if the children should exist.
+	 */
+	public void setChildrenExisting(boolean exists) {
+		for (int i = 0; i < children.size(); i++) {
+			children.get(i).setExisting(exists);
+			children.get(i).setChildrenExisting(exists);
+		}
 	}
 
 	/**

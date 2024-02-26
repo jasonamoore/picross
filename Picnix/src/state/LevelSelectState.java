@@ -54,7 +54,7 @@ public class LevelSelectState extends ScrollableState {
 
 	public void levelClicked(int id) {
 		LoadLevelState lss = new LoadLevelState(id, world.getId());
-		Engine.getEngine().getStateManager().transitionToState(lss, Transition.FADE, 750, 0, State.NEWLY_OPENED);
+		Engine.getEngine().getStateManager().transitionToState(lss, Transition.FADE, 500, 0, State.NEWLY_OPENED);
 	}
 	
 }

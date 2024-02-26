@@ -5,10 +5,11 @@ import java.awt.event.KeyEvent;
 
 import engine.Engine;
 import engine.Input;
+import engine.Transition;
 import picnix.Island;
 import picnix.World;
-import resource.bank.ImageBank;
-import state.element.WorldBox;
+import state.element.location.LocationBox;
+import state.load.LoadWorldState;
 import util.Animation;
 
 public class WorldSelectState extends State {
@@ -18,7 +19,7 @@ public class WorldSelectState extends State {
 	public static final int OFF_Y = 75;
 	public static final double SCALE = 1;
 	
-	private WorldBox worldBox;
+	private LocationBox locationBox;
 	
 	private int curLoc;
 
@@ -28,22 +29,19 @@ public class WorldSelectState extends State {
 	public WorldSelectState(double initRot) {
 		smoothBox = new Animation(0, 1, 250, Animation.CUBIC, Animation.NO_LOOP, false);
 		smoothRot = new Animation(initRot, 0, 500, Animation.EASE_OUT, Animation.NO_LOOP, true);
-		worldBox = new WorldBox(this, Engine.SCREEN_WIDTH - 180, Engine.getScreenCenterY(372), 168, 372);
-		worldBox.setBackground(ImageBank.worldscroll);
-		add(worldBox);
+		locationBox = new LocationBox(this);
+		add(locationBox);
 	}
 	
 	@Override
 	public void focus(int status) {
 		smoothBox.reset(true);
 	}
-	
-	public int getEasyWorldId() {
-		return World.getEasyWorldId(curLoc);
-	}
 
-	public int getHardWorldId() {
-		return World.getHardWorldId(curLoc);
+	public void open(boolean easy) {
+		int worldId = easy ? World.getEasyWorldId(curLoc) : World.getHardWorldId(curLoc);
+		LoadWorldState lws = new LoadWorldState(worldId);
+		Engine.getEngine().getStateManager().transitionToState(lws, Transition.FADE, 500, 0, State.NEWLY_OPENED);
 	}
 	
 	public float getBoxOpacity() {
@@ -56,7 +54,7 @@ public class WorldSelectState extends State {
 		smoothRotate(oldLoc);
 		smoothBox.setForward(false);
 		smoothBox.resume();
-		worldBox.setEnabled(false);
+		locationBox.setEnabled(false);
 	}
 	
 	private void smoothRotate(int oldLoc) {
@@ -94,13 +92,13 @@ public class WorldSelectState extends State {
 		if (!smoothBox.isPlaying()) {
 			// re-enable the box controls if faded in
 			if (smoothBox.isForward())
-				worldBox.setEnabled(true);
+				locationBox.setEnabled(true);
 			else { // if faded out: make box fade back in
 				//testIcon.updateLocation(curLoc);
 				smoothBox.reverse(true);
 			}
 		}
-		worldBox.setY((int) ((1 - smoothBox.getValue()) * -25 + Engine.getScreenCenterY(372)));
+		locationBox.setY((int) ((1 - smoothBox.getValue()) * -25));
 	}
 
 	@Override

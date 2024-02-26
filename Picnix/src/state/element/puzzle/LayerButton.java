@@ -1,4 +1,4 @@
-package state.element;
+package state.element.puzzle;
 
 import java.awt.Color;
 import java.awt.Composite;
@@ -11,6 +11,7 @@ import picnix.puzzle.Puzzle;
 import resource.bank.ImageBank;
 import resource.bank.Palette;
 import state.PuzzleState;
+import state.element.Button;
 
 /**
  * A special type of Button used in the PuzzleState.
@@ -138,6 +139,13 @@ public class LayerButton extends Button {
 		Composite oldComp = setRenderComposite(g);
 		int xp = getDisplayX();
 		int yp = getDisplayY();
+		// draw focus rectangle
+		if (beingHovered()) {
+			g.setColor(hoverColor);
+			g.drawRect(xp - 1, yp - 1, width + 1, height + 1);
+		}
+		// DON'T INCLUDE OUTLINE IN CLIP FOR DRAWING PREVIEW
+		g.clipRect(xp, yp, width, height);
 		boolean click = beingClicked(Input.LEFT_CLICK);
 		if (!active)
 			g.drawImage(preview, xp + 1 + (click ? 0 : -CLICK_SHIFT), yp + 1 + (click ? 0 : -CLICK_SHIFT), null);
@@ -145,10 +153,6 @@ public class LayerButton extends Button {
 		BufferedImage label = ImageBank.layernames[layerId];
 		g.drawImage(frame, xp, yp, null);
 		g.drawImage(label, xp, yp + 50, null);
-		if (beingHovered()) { // draw focus rectangle
-			g.setColor(hoverColor);
-			g.drawRect(xp - 1, yp - 1, width + 1, height + 1);
-		}
 		g.setClip(null);
 		((Graphics2D) g).setComposite(oldComp);
 	}

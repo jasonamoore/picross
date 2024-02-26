@@ -9,6 +9,7 @@ import engine.Transition;
 import picnix.Island;
 import picnix.World;
 import resource.bank.ImageBank;
+import resource.bank.Palette;
 import state.element.Container;
 import state.element.Icon;
 import state.element.TiledButton;
@@ -29,8 +30,7 @@ public class TitleState extends State {
 		smoothRot = new Animation(0, 2 * Math.PI, 10000, Animation.LINEAR, Animation.CONTINUE, true);
 		zoomToIsland = new Animation(0, 1, 1000, Animation.EASE_OUT, Animation.NO_LOOP, false);
 		panel = new Container(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
-		Icon titleIcon = new Icon(ImageBank.title);
-		titleIcon.setBounds(Engine.getScreenCenterX(350), 50, 350, 125);
+		Icon titleIcon = new Icon(ImageBank.title, Engine.getScreenCenterX(350), 50);
 		TiledButton play = new TiledButton(Engine.getScreenCenterX(200), 250, 200, 100) {
 			public void onRelease(int mbutton) {
 				super.onRelease(mbutton);
@@ -39,6 +39,7 @@ public class TitleState extends State {
 			}
 		};
 		play.setAllTileMaps(ImageBank.bluebutton, ImageBank.bluebuttonclick, ImageBank.buttondisabled);
+		play.setMiddleFill(Palette.CYAN);
 		panel.add(titleIcon);
 		panel.add(play);
 		add(panel);

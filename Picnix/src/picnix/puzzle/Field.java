@@ -7,7 +7,7 @@ import engine.Input;
 import resource.bank.ImageBank;
 import state.PuzzleState;
 import state.element.Container;
-import state.element.ToolButton;
+import state.element.puzzle.ToolButton;
 import util.Animation;
 
 public class Field extends Container {

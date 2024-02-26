@@ -33,6 +33,18 @@ public class Icon extends Element {
 	}
 
 	/**
+	 * Creates an Icon with the given position and given background.
+	 * The width and height of the element will be equal to that of
+	 * the image supplied as its background.
+	 * @param x The x position of the Icon (relative to its parent).
+	 * @param y The y position of the Icon (relative to its parent).
+	 * @param image The background image of the Icon.
+	 */
+	public Icon(BufferedImage image, int x, int y) {
+		this(image, x, y, image.getWidth(), image.getHeight());
+	}
+
+	/**
 	 * Differs from the default rendering behavior in that it
 	 * forces the background image to scale to the Icon's size bounds.
 	 */

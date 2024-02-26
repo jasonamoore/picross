@@ -12,7 +12,7 @@ import resource.bank.ImageBank;
 import resource.bank.Palette;
 import state.PuzzleState;
 import state.element.Element;
-import state.element.ToolButton;
+import state.element.puzzle.ToolButton;
 import util.Animation;
 import util.Timer;
 

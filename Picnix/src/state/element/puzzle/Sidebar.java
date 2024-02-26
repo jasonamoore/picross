@@ -1,4 +1,4 @@
-package state.element;
+package state.element.puzzle;
 
 import java.awt.AlphaComposite;
 import java.awt.Composite;
@@ -9,6 +9,8 @@ import java.awt.image.BufferedImage;
 import engine.Engine;
 import engine.Input;
 import resource.bank.ImageBank;
+import state.element.Button;
+import state.element.Container;
 import util.Animation;
 
 public class Sidebar extends Container {

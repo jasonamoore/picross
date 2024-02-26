@@ -1,4 +1,4 @@
-package state.element;
+package state.element.puzzle;
 
 import java.awt.Color;
 import java.awt.Composite;
@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 
 import picnix.puzzle.Puzzle;
 import resource.bank.ImageBank;
+import state.element.Element;
 
 /**
  * A simple Element for displaying the completion progress

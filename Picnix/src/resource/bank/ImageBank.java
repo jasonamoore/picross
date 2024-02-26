@@ -1,5 +1,6 @@
 package resource.bank;
 
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
@@ -10,17 +11,31 @@ public class ImageBank {
 	public static BufferedImage title;
 	public static BufferedImage grassback;
 	public static BufferedImage island;
-	public static BufferedImage worldscroll;
+	public static BufferedImage tree;
 
 	public static BufferedImage[] bluebutton;
 	public static BufferedImage[] pinkbutton;
 	public static BufferedImage[] greenbutton;
 	public static BufferedImage[] goldbutton;
+	public static BufferedImage[] redbutton;
 	public static BufferedImage[] bluebuttonclick;
 	public static BufferedImage[] pinkbuttonclick;
 	public static BufferedImage[] greenbuttonclick;
 	public static BufferedImage[] goldbuttonclick;
+	public static BufferedImage[] redbuttonclick;
 	public static BufferedImage[] buttondisabled;
+	// --
+	public static BufferedImage locationboxframe;
+	public static BufferedImage[] locationlabels;
+	public static BufferedImage[] levelsetbuttonlabels;
+	public static BufferedImage[] worldprogressbars;
+	public static BufferedImage worldprogressfill;
+	public static BufferedImage scoreboard;
+	public static BufferedImage[] scoreboarddigits;
+	public static BufferedImage lockedlabel;
+	public static BufferedImage lockedprogress;
+	public static BufferedImage key;
+	public static BufferedImage[] lock;
 	// --
 	public static BufferedImage[] normallevelbutton;
 	public static BufferedImage[] layeredlevelbutton;
@@ -85,21 +100,37 @@ public class ImageBank {
 		title =			loadSheet("title.png");
 		grassback = 	loadSheet("grasstest.png");
 		island = 	loadSheet("island.png");
-		worldscroll = 	loadSheet("worldscroll.png");
+		// location (world select) sprite sheet
+		BufferedImage locSheet = loadSheet("locations.png");
+		tree = loadOne(locSheet, 321, 0, 13, 37);
+		locationboxframe = loadOne(locSheet, 0, 0, 168, 394);
+		locationlabels = loadMany(locSheet, 168, 0, 146, 44, 1, 6);
+		levelsetbuttonlabels = loadMany(locSheet, 168, 264, 113, 27, 1, 2);
+		worldprogressbars = loadMany(locSheet, 168, 319, 132, 23, 1, 2);
+		worldprogressfill = loadOne(locSheet, 300, 319, 6, 21);
+		scoreboard = loadOne(locSheet, 168, 365, 132, 23);
+		scoreboarddigits = loadMany(locSheet, 300, 365, 12, 19, 10, 1);
+		lockedlabel = loadOne(locSheet, 281, 264, 118, 26);
+		lockedprogress = loadOne(locSheet, 300, 342, 92, 23);
+		key = loadOne(locSheet, 281, 290, 48, 23);
+		lock = loadMany(locSheet, 329, 290, 20, 45, 2, 1);
 		// ui sprite sheet
 		BufferedImage uiSheet = loadSheet("ui.png");
 		bluebutton = loadMany(uiSheet, 267, 151, 3, 3, 3, 3);
 		pinkbutton = loadMany(uiSheet, 276, 151, 3, 3, 3, 3);
 		greenbutton = loadMany(uiSheet, 285, 151, 3, 3, 3, 3);
 		goldbutton = loadMany(uiSheet, 294, 151, 3, 3, 3, 3);
+		redbutton = loadMany(uiSheet, 303, 151, 3, 3, 3, 3);
 		bluebuttonclick = loadMany(uiSheet, 267, 160, 3, 3, 3, 3);
 		pinkbuttonclick = loadMany(uiSheet, 276, 160, 3, 3, 3, 3);
 		greenbuttonclick = loadMany(uiSheet, 285, 160, 3, 3, 3, 3);
 		goldbuttonclick = loadMany(uiSheet, 294, 160, 3, 3, 3, 3);
-		buttondisabled = loadMany(uiSheet, 303, 160, 3, 3, 3, 3);
+		redbuttonclick = loadMany(uiSheet, 303, 160, 3, 3, 3, 3);
+		buttondisabled = loadMany(uiSheet, 312, 160, 3, 3, 3, 3);
+		//
 		normallevelbutton = loadMany(uiSheet, 267, 169, 48, 48, 2, 1);
 		layeredlevelbutton = loadMany(uiSheet, 267, 217, 48, 48, 2, 1);
-		hiscorebar = loadOne(uiSheet, 303, 153, 41, 7);
+		hiscorebar = loadOne(uiSheet, 312, 153, 41, 7);
 		newlevelalert = loadOne(uiSheet, 363, 169, 39, 39);
 		hiddenpreview = loadOne(uiSheet, 363, 208, 39, 31);
 		//

@@ -17,10 +17,10 @@ import picnix.puzzle.Stroke;
 import resource.bank.ImageBank;
 import resource.bank.Palette;
 import state.element.Icon;
-import state.element.LayerButton;
-import state.element.LayerProgress;
-import state.element.Sidebar;
-import state.element.ToolButton;
+import state.element.puzzle.LayerButton;
+import state.element.puzzle.LayerProgress;
+import state.element.puzzle.Sidebar;
+import state.element.puzzle.ToolButton;
 import util.Animation;
 import util.Timer;
 

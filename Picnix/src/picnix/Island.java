@@ -12,6 +12,17 @@ public class Island {
 
 	private static final double HEIGHT_WIDTH_RATIO = 0.5;
 	
+	private static double[][] trees;
+	
+	static {
+		// make 25 random trees
+		trees = new double[25][2];
+		for (int i = 0; i < trees.length; i++) {
+			trees[i][0] = Math.random() * 300;
+			trees[i][1] = Math.random() * 2 * Math.PI;
+		}
+	}
+	
 	public static void renderIsland(Graphics g, int skyHeight, int islandOffsetX, int islandOffsetY, double islandScale, double islandRotation) {
 		// draw sky
 		g.setColor(Palette.SKY);
@@ -36,6 +47,16 @@ public class Island {
 		// revert graphics state
 		gg.setClip(null);
 		gg.setTransform(oldTrans);
+		// draw island entities
+		for (int i = 0; i < trees.length; i++) {
+			double rad = trees[i][0] * islandScale;
+			double rot = trees[i][1];
+			int offx = ImageBank.tree.getWidth() / 2;
+			int offy = ImageBank.tree.getHeight();
+			int tx = (int) (-offx + islandOffsetX + Engine.SCREEN_WIDTH / 2 + Math.cos(-islandRotation + rot) * rad);
+			int ty = (int) (-offy + islandOffsetY + Engine.SCREEN_HEIGHT / 2 + Math.sin(-islandRotation + rot) * rad * HEIGHT_WIDTH_RATIO);
+			g.drawImage(ImageBank.tree, tx, ty, null);
+		}
 	}
 	
 }
