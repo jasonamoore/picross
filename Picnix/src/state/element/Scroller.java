@@ -75,17 +75,8 @@ public class Scroller extends Element {
 	 */
 	public Scroller(int x, int y, int thickness, int dispSize, int viewSize, int contSize, boolean orient) {	
 		orientation = orient;
-		this.x = x;
-		this.y = y;
+		setBounds(x, y, isHorizontal() ? dispSize : thickness, isHorizontal() ? thickness : dispSize);
 		this.thickness = thickness;
-		if (isHorizontal()) {
-			width = dispSize;
-			height = thickness;
-		}
-		else {
-			height = dispSize;
-			width = thickness;
-		}
 		viewportSize = viewSize;
 		contentSize = contSize;
 		double ratio = (double) viewportSize / (double) contentSize;
@@ -176,7 +167,7 @@ public class Scroller extends Element {
 		if (isHorizontal()) {
 			g.setColor(Color.BLACK);
 			g.drawRect(xp, yp, thickness - 1, thickness - 1);
-			g.drawRect(width - thickness, yp, thickness - 1, thickness - 1);
+			g.drawRect(getWidth() - thickness, yp, thickness - 1, thickness - 1);
 			g.setColor(Color.GRAY);
 			g.fillRect(xp + thickness + (int) thumbOffset, yp, (int) Math.ceil(thumbSize), thickness);
 		}
@@ -184,7 +175,7 @@ public class Scroller extends Element {
 		else if (!isHorizontal()) {
 			g.setColor(Color.BLACK);
 			g.drawRect(xp, yp, thickness - 1, thickness - 1);
-			g.drawRect(xp, height - thickness, thickness - 1, thickness - 1);
+			g.drawRect(xp, getHeight() - thickness, thickness - 1, thickness - 1);
 			g.setColor(Color.GRAY);
 			g.fillRect(xp, yp + thickness + (int) thumbOffset, thickness, (int) Math.ceil(thumbSize));
 		}

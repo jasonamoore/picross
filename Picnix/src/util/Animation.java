@@ -47,6 +47,8 @@ public class Animation {
 	private int duration;
 	private double[] transition;
 
+	// delay (ms) before starting
+	private int delay;
 	// is the animation currently running
 	private boolean playing = false;
 	// the direction (forward/backward) of playback
@@ -95,35 +97,6 @@ public class Animation {
 	public Animation(int duration, double[] transition, int loopMode) {
 		this(0, 0, duration, transition, loopMode, false);
 	}
-
-	/**
-	 * Returns whether the Animation is currently active.
-	 * "Active" is a user-defined flag, which can be useful
-	 * when another Object is observing this Animation to
-	 * update some value, such as its position. Once that
-	 * Object no longer needs to observe the Animation,
-	 * it may mark it as inactive to keep note.
-	 * This is a convenience compared to storing a boolean
-	 * alongside each Animation field in that Object's class.
-	 * @return True if the Animation is "active" (needs observation).
-	 *
-	public boolean active() {
-		return active;
-	}/
-	
-	/**
-	 * Sets whether the Animation is currently active.
-	 * It is not necessary to explicitly set an Animation
-	 * as inactive to stop observing it. The first call to
-	 * getValue after the Animation has stopped playing will
-	 * automatically deactivates the Animation. This can be
-	 * overridden if needed using this function to reactivate.
-	 * @param active True to activate, false to deactivate the Animation.
-	 * @see #active()
-	 *
-	public void setActive(boolean active) {
-		this.active = active;
-	}/
 	
 	/**
 	 * Updates the "from" value.
@@ -147,6 +120,14 @@ public class Animation {
 	 */
 	public void setDuration(int duration) {
 		this.duration = duration;
+	}
+	
+	/**
+	 * Updates the aninmation's starting delay.
+	 * @param duration The new delay, in milliseconds.
+	 */
+	public void setDelay(int delay) {
+		this.delay = delay;
 	}
 	
 	/**
@@ -234,10 +215,7 @@ public class Animation {
 	 * @return The animation's current {@code double} value.
 	 */
 	public double getValue() {
-		double val = calculateValue();
-		//if (!playing)
-		//	active = false;
-		return val;
+		return calculateValue();
 	}
 
 	/**
@@ -256,6 +234,9 @@ public class Animation {
 	 * its transition function, and the amount of time elapsed.
 	 */
 	private double calculateValue() {
+		// during delay, no movement
+		if (timer.elapsed() < delay)
+			return from;
 		// get amount elapsed; capped if not looping
 		long elapsed = getElapsed();
 		// swap from and to if playing backwards
@@ -289,7 +270,7 @@ public class Animation {
 	 * the same as loop continue mode.
 	 */
 	private long getElapsed() {
-		long ms = timer.elapsed() + offset;
+		long ms = timer.elapsed() + offset - delay;
 		if (ms > duration) {
 			if (loopMode == NO_LOOP) {
 				ms = duration;

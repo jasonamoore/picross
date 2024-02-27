@@ -6,9 +6,9 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.Stack;
 
-import picnix.Particle;
 import resource.bank.Palette;
 import state.State;
+import state.particle.Particle;
 
 public class StateManager {
 

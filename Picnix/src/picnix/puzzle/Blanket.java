@@ -269,64 +269,53 @@ public class Blanket extends Element {
 		}
 		// if there is a current stroke w/ at least 2 changes
 		if (hov && drawStroke != null && drawStroke.size() > 1) {
-			if (lastCell[ROW] == currCell[ROW]) { // horizontal movement
-				int[] blob = puzzle.getHorizontalBlob(currCell[ROW], currCell[COL], drawMode);
+			boolean horizontal = lastCell[ROW] == currCell[ROW];
+			boolean vertical = lastCell[COL] == currCell[COL];
+			if (horizontal || vertical) {
+				int[] blob = horizontal ? puzzle.getHorizontalBlob(currCell[ROW], currCell[COL], drawMode)
+						: puzzle.getVerticalBlob(currCell[ROW], currCell[COL], drawMode);
 				if (blob != null) {
-					int start = blob[0];
-					int size = blob[1];
-					boolean hintCover = currCell[ROW] == 0;
-					int sx = start * cellSize + 1;
-					int nx = highCol * cellSize + (cellSize - nums[0].getWidth()) / 2;
-					int sy = !hintCover ? highRow * cellSize - 1 : (highRow + 1) * cellSize + 1;
-					int ny = !hintCover ? sy - nums[0].getHeight() : sy;
-					if (!blobSizeAnim[0].isPlaying() || !blobSizeAnim[1].isPlaying())
-						setBlobSizeAnim(nx, ny);
-					else {
-						int tnx = nx;
-						int tny = ny;
-						nx = blobSizeAnim[0].getIntValue();
-						ny = blobSizeAnim[1].getIntValue();
-						setBlobSizeAnim(tnx, tny);
+					int start = blob[0], size = blob[1];
+					int axisPara = horizontal ? ROW : COL;
+					int axisPerp = horizontal ? COL : ROW;
+					boolean hintCover = currCell[axisPara] == 0;
+					int numPara = horizontal ? nums[0].getWidth() : nums[0].getHeight();
+					int numPerp = horizontal ? nums[0].getHeight() : nums[0].getWidth();
+					int spa = start * cellSize + 1;
+					int npa = currCell[axisPerp] * cellSize + (cellSize - numPara) / 2;
+					int spe = !hintCover ? currCell[axisPara] * cellSize - 1 : (currCell[axisPara] + 1) * cellSize + 1;
+					int npe = !hintCover ? spe - numPerp : spe;
+					// animation stuff
+					int newnx = horizontal ? npa : npe;
+					int newny = horizontal ? npe : npa;
+					if (!blobSizeAnim[0].isPlaying() || !blobSizeAnim[1].isPlaying()) {
+						setBlobSizeAnim(newnx, newny);
 					}
-					int nex = nx + nums[0].getWidth();
-					int ey = !hintCover ? sy + (ny - sy) / 2 : sy + nums[0].getHeight() / 2;
-					int ex = (start + size) * cellSize - 1;
-					g.setColor(Color.BLACK);
-					g.drawLine(sx, sy, sx, ey);
-					g.drawLine(sx, ey, nx - 3, ey);
-					g.drawLine(nex + 2, ey, ex, ey);
-					g.drawLine(ex, ey, ex, sy);
-					g.drawImage(nums[size - 1], nx, ny, null);
-				}
-			}
-			else if (lastCell[COL] == currCell[COL]) { // vertical movement
-				int[] blob = puzzle.getVerticalBlob(currCell[ROW], currCell[COL], drawMode);
-				if (blob != null) {
-					int start = blob[0];
-					int size = blob[1];
-					boolean hintCover = currCell[COL] == 0;
-					int sy = start * cellSize + 1;
-					int ny = highRow * cellSize + (cellSize - nums[0].getHeight()) / 2;
-					int sx = !hintCover ? highCol * cellSize - 1 : (highCol + 1) * cellSize + 1;
-					int nx = !hintCover ? sx - nums[0].getWidth() : sx;
-					if (!blobSizeAnim[0].isPlaying() || !blobSizeAnim[1].isPlaying())
-						setBlobSizeAnim(nx, ny);
 					else {
-						int tnx = nx;
-						int tny = ny;
-						nx = blobSizeAnim[0].getIntValue();
-						ny = blobSizeAnim[1].getIntValue();
-						setBlobSizeAnim(tnx, tny);
+						int oldnx = blobSizeAnim[0].getIntValue();
+						int oldny = blobSizeAnim[1].getIntValue();
+						npa = horizontal ? oldnx : oldny;
+						npe = horizontal ? oldny : oldnx;
+						setBlobSizeAnim(newnx, newny);
 					}
-					int ney = ny + nums[0].getHeight();
-					int ex = !hintCover ? sx + (nx - sx) / 2 : sx + nums[0].getWidth() / 2;
-					int ey = (start + size) * cellSize - 1;
-					g.setColor(Color.BLACK);
-					g.drawLine(sx, sy, ex, sy);
-					g.drawLine(ex, sy, ex, ny - 3);
-					g.drawLine(ex, ney + 2, ex, ey);
-					g.drawLine(ex, ey, sx, ey);
-					g.drawImage(nums[size - 1], nx, ny, null);
+					int nepa = npa + numPara;
+					int epe = !hintCover ? spe + (npe - spe) / 2 : spe + numPerp / 2;
+					int epa = (start + size) * cellSize - 1;
+					g.setColor(Palette.BLACK);
+					if (horizontal) {
+						g.drawLine(spa, spe, spa, epe);
+						g.drawLine(spa, epe, npa - 3, epe);
+						g.drawLine(nepa + 2, epe, epa, epe);
+						g.drawLine(epa, epe, epa, spe);
+						g.drawImage(nums[size - 1], npa, npe, null);
+					} // swap arguments for vertical
+					else {
+						g.drawLine(spe, spa, epe, spa);
+						g.drawLine(epe, spa, epe, npa - 3);
+						g.drawLine(epe, nepa + 2, epe, epa);
+						g.drawLine(epe, epa, spe, epa);
+						g.drawImage(nums[size - 1], npe, npa, null);
+					}
 				}
 			}
 		}
@@ -340,7 +329,7 @@ public class Blanket extends Element {
 				g.drawImage(scrHoriz[1 + hh], -hgridW * (i+1), r * cellSize, null);
 				g.drawImage(nums[Math.abs(hintnum)-1], -hgridW * (i+1) + rowXOff, r * cellSize + rowYOff, null);
 				if (hintnum < 0) {
-					g.setColor(Palette.RED);
+					g.setColor(Palette.BRICK);
 					g.drawLine(-hgridW * (i+1) + rowXOff, r * cellSize + rowYOff,
 							-hgridW * i - rowXOff, (r+1) * cellSize - rowYOff);
 				}
@@ -355,7 +344,7 @@ public class Blanket extends Element {
 				g.drawImage(scrVert[1 + hh], c * cellSize, -hgridW * (i+1), null);
 				g.drawImage(nums[Math.abs(hintnum)-1], c * cellSize + colXOff, -hgridW * (i+1) + colYOff, null);
 				if (hintnum < 0) {
-					g.setColor(Palette.RED);
+					g.setColor(Palette.BRICK);
 					g.drawLine(c * cellSize + colXOff, -hgridW * (i+1) + colYOff,
 							(c+1) * cellSize - colXOff, -hgridW * i - colYOff);
 				}

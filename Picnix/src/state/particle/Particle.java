@@ -1,4 +1,4 @@
-package picnix;
+package state.particle;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;

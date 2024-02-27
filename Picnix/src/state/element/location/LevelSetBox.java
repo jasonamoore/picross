@@ -16,6 +16,9 @@ import state.element.TiledButton;
 
 public class LevelSetBox extends Element {
 
+	public static final int ANIM_DELAY = 125;
+	public static final int ANIM_DURATION = 500;
+	
 	private static final String LABEL_1 = "puzzles completed";
 	private static final String LABEL_2 = "total score";
 	
@@ -52,6 +55,14 @@ public class LevelSetBox extends Element {
 		add(puzComp);
 		add(totScore);
 	}
+
+	public WorldProgress getProgressBar() {
+		return progBar;
+	}
+	
+	public Scoreboard getScoreboard() {
+		return score;
+	}
 	
 	@Override
 	public void render(Graphics g) {
@@ -59,17 +70,19 @@ public class LevelSetBox extends Element {
 		Composite oldComp = setRenderComposite(g);
 		int xp = getDisplayX();
 		int yp = getDisplayY();
+		int dw = getWidth();
+		int dh = getHeight();
 		//
 		Color main = easy ? Palette.PALE_GREEN : Palette.PALE_RED;
 		Color shadow = easy ? Palette.SEAFOAM: Palette.PINK;
 		g.setColor(main);
-		g.fillRect(xp + 2, yp + 2, width - 2, height - 2);
+		g.fillRect(xp + 2, yp + 2, dw - 2, dh - 2);
 		g.setColor(shadow);
-		g.fillRect(xp, yp, 2, height);
-		g.fillRect(xp, yp, width, 2);
+		g.fillRect(xp, yp, 2, dh);
+		g.fillRect(xp, yp, dw, 2);
 		//
 		g.setClip(null);
 		((Graphics2D) g).setComposite(oldComp);
-	} 
+	}
 	
 }

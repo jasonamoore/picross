@@ -8,6 +8,7 @@ import engine.Engine;
 import engine.Transition;
 import picnix.Island;
 import picnix.World;
+import picnix.data.UserData;
 import resource.bank.ImageBank;
 import resource.bank.Palette;
 import state.element.Container;
@@ -49,6 +50,7 @@ public class TitleState extends State {
 	public void focus(int status) {
 		for (int i = 0; i < World.NUM_WORLDS; i++)
 			World.loadWorld(i);
+		UserData.load();
 	}
 	
 	private void playButtonClicked() {

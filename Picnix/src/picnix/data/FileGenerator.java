@@ -1,4 +1,4 @@
-package picnix.io;
+package picnix.data;
 
 import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
@@ -12,27 +12,28 @@ import javax.imageio.ImageIO;
 
 public class FileGenerator {
 
-	private static final String SOURCE = "C:\\Users\\Jason\\Desktop\\picross\\picross\\levels\\source";
-	private static final String BIN = "C:\\Users\\Jason\\Desktop\\picross\\picross\\levels\\bin";
-	private static final String WORLD_BIN = "C:\\Users\\Jason\\Desktop\\picross\\picross\\levels\\allworlds";
+	private static final String SOURCE = "L:\\Users\\Jason\\Documents\\Programming\\picross\\levels\\world1";
 	
 	public static void main(String args[]) throws IOException {
-		encodeAll(SOURCE, BIN);
-		combineIntoWorld("test2", BIN, WORLD_BIN);
+		encodeAll(SOURCE);
+		combineIntoWorld("test1", 5000, SOURCE);
 	}
 	
-	private static void combineIntoWorld(String name, String source, String bin) throws IOException {
+	private static void combineIntoWorld(String name, int unlockScore, String source) throws IOException {
 		File indir = new File(source);
-		int count = indir.listFiles().length;
-		File outfile = new File(bin + "\\" + name + ".pwr");
+		int count = indir.list((d, n) -> n.contains("puz") || n.contains("lpz")).length;
+		File outfile = new File(source + "\\" + name + ".pwr");
 		outfile.createNewFile();
 		FileOutputStream fos = new FileOutputStream(outfile);
 		DataOutputStream dos = new DataOutputStream(fos);
 		dos.write(count); // write the count metadata
+		dos.writeInt(unlockScore); // write the unlock score metadata
 		int b = 0;
 		byte curByte = 0;
 		// writes metadata bits for if puzzles are normal or layered
 		for (File f : indir.listFiles()) {
+			if (!f.getName().contains("puz") && !f.getName().contains("lpz"))
+				continue;
 			// write a 1 if filetype is lpz, else a 0 bit
 			boolean layered = f.getName().split("\\.")[1].equals("lpz");
 			curByte |= (layered ? 1 : 0) << b;
@@ -48,6 +49,8 @@ public class FileGenerator {
 			dos.write(curByte);
 		// actually copy in all the puzzle data one by one
 		for (File f : indir.listFiles()) {
+			if (!f.getName().contains("puz") && !f.getName().contains("lpz"))
+				continue;
 			FileInputStream fis = new FileInputStream(f);
 			DataInputStream dis = new DataInputStream(fis);
 			int nextByte = 0;
@@ -58,10 +61,11 @@ public class FileGenerator {
 		dos.close();
 	}	
 	
-	private static void encodeAll(String source, String bin) throws IOException {
+	private static void encodeAll(String source) throws IOException {
 		File indir = new File(source);
 		for (File f : indir.listFiles())
-			encode(f, bin);
+			if (f.getName().contains("png"))
+				encode(f, source);
 	}
 
 	private static void encode(File image, String bin) throws IOException {

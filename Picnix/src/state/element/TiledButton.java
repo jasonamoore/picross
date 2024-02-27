@@ -57,6 +57,9 @@ public class TiledButton extends Button {
 		Composite oldComp = setRenderComposite(g);
 		int xp = getDisplayX();
 		int yp = getDisplayY();
+		int dw = getWidth();
+		int dh = getHeight();
+		//
 		boolean clicking = beingClicked(Input.LEFT_CLICK);
 		BufferedImage[] curTiles = null;
 		// if disabled, and has a disabled background:
@@ -70,37 +73,37 @@ public class TiledButton extends Button {
 			curTiles = tiles;
 		// draw tiles
 		if (curTiles != null) {
-			for (int y = 0; y < height - tileH; y += tileH) {
-				for (int x = 0; x < width - tileW; x += tileW) {
+			for (int y = 0; y < dh - tileH; y += tileH) {
+				for (int x = 0; x < dw - tileW; x += tileW) {
 					int tileNum = x == 0 ? y == 0 ? 0 : 3 : y == 0 ? 1 : 4;
 					if (tileNum == 4 && middleFill != null)
 						continue; // if we can just fill this tile with middleFill color, skip
 					g.drawImage(curTiles[tileNum], xp + x, yp + y, null);
 				}
-				g.drawImage(curTiles[y == 0 ? 2 : 5], xp + width - tileW, yp + y, null);
+				g.drawImage(curTiles[y == 0 ? 2 : 5], xp + dw - tileW, yp + y, null);
 			}
-			for (int x = 0; x < width - tileW; x += tileW) {
-				g.drawImage(curTiles[x == 0 ? 6 : 7], xp + x, yp + height - tileH, null);
+			for (int x = 0; x < dw - tileW; x += tileW) {
+				g.drawImage(curTiles[x == 0 ? 6 : 7], xp + x, yp + dh - tileH, null);
 			}
-			g.drawImage(curTiles[8], xp + width - tileW, yp + height - tileH, null);
+			g.drawImage(curTiles[8], xp + dw - tileW, yp + dh - tileH, null);
 		}
 		// fill the middle of the button with color
 		if (middleFill != null) {
 			g.setColor(middleFill);
-			g.fillRect(xp + tileW, yp + tileH, width - tileW * 2, height - tileH * 2);
+			g.fillRect(xp + tileW, yp + tileH, dw - tileW * 2, dh - tileH * 2);
 		}
 		// now draw label over the button
 		if (label != null) {
 			// find center position
 			int bias = clicking ? 1 : 0;
-			int lx = xp + (width - label.getWidth()) / 2 + bias;
-			int ly = yp + (height - label.getHeight()) / 2 + bias;
+			int lx = xp + (dw - label.getWidth()) / 2 + bias;
+			int ly = yp + (dh - label.getHeight()) / 2 + bias;
 			g.drawImage(label, lx, ly, null);
 		}
 		// if hovering, finally draw outline
 		if (!clicking && beingHovered()) {
 			g.setColor(hoverColor);
-			g.drawRect(xp - 1, yp - 1, width + 1, height + 1);
+			g.drawRect(xp - 1, yp - 1, dw + 1, dh + 1);
 		}
 		// reset rendering constriants
 		g.setClip(null);

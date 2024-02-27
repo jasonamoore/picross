@@ -142,10 +142,10 @@ public class LayerButton extends Button {
 		// draw focus rectangle
 		if (beingHovered()) {
 			g.setColor(hoverColor);
-			g.drawRect(xp - 1, yp - 1, width + 1, height + 1);
+			g.drawRect(xp - 1, yp - 1, getWidth() + 1, getHeight() + 1);
 		}
 		// DON'T INCLUDE OUTLINE IN CLIP FOR DRAWING PREVIEW
-		g.clipRect(xp, yp, width, height);
+		g.clipRect(xp, yp, getWidth(), getHeight());
 		boolean click = beingClicked(Input.LEFT_CLICK);
 		if (!active)
 			g.drawImage(preview, xp + 1 + (click ? 0 : -CLICK_SHIFT), yp + 1 + (click ? 0 : -CLICK_SHIFT), null);

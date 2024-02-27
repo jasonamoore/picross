@@ -23,7 +23,8 @@ public abstract class Element implements Comparable<Element> {
 	// list of child elements
 	private ArrayList<Element> children;
 	// element's defined bounds
-	protected int x, y, width, height;
+	private int x, y;
+	private int width, height;
 	// the element's depth order (greater z means farther in front)
 	protected int z;
 	
@@ -253,6 +254,28 @@ public abstract class Element implements Comparable<Element> {
 	}
 	
 	/**
+	 * Returns the set width of this element.
+	 * Can be overridden by child classes to
+	 * return a value from an observed animation,
+	 * which is useful for smooth animations.
+	 * @return The width.
+	 */
+	public int getWidth() {
+		return width;
+	}
+	
+	/**
+	 * Returns the set height of this element.
+	 * Can be overridden by child classes to
+	 * return a value from an observed animation,
+	 * which is useful for smooth animations.
+	 * @return The height.
+	 */
+	public int getHeight() {
+		return height;
+	}
+	
+	/**
 	 * Sets the bounds of this Element.
 	 * @param x The x position of the Element (relative to its parent).
 	 * @param y The y position of the Element (relative to its parent).
@@ -282,8 +305,8 @@ public abstract class Element implements Comparable<Element> {
 		int dpy = getDisplayY();
 		// check if in parent bounds
 		boolean parentPass = parent == null || parent.inBounds(posX, posY);
-		return parentPass && (posX >= dpx && posX < dpx + width
-							&& posY >= dpy && posY < dpy + height);
+		return parentPass && (posX >= dpx && posX < dpx + getWidth()
+							&& posY >= dpy && posY < dpy + getHeight());
 	}
 	
 	/**
@@ -461,9 +484,9 @@ public abstract class Element implements Comparable<Element> {
 	public void setRenderClips(Graphics g) {
 		// clip to parent bounds
 		if (parent != null)
-			g.setClip(parent.getDisplayX(), parent.getDisplayY(), parent.width, parent.height);
+			g.setClip(parent.getDisplayX(), parent.getDisplayY(), parent.getWidth(), parent.getHeight());
 		// add clip to only draw bg image within this elem's bounds
-		g.clipRect(getDisplayX(), getDisplayY(), width, height);
+		g.clipRect(getDisplayX(), getDisplayY(), getWidth(), getHeight());
 	}
 	
 	/**

@@ -1,8 +1,6 @@
-package picnix.io;
+package picnix.data;
 
 import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -20,6 +18,8 @@ public class FileParser {
 			DataInputStream dis = new DataInputStream(is);
 			// first byte = num of levels in world
 			int count = dis.read();
+			// next four (int) - world unlock score
+			int unlockScore = dis.readInt();
 			boolean[] levels = new boolean[count];
 			// read next n bits; tells whether levels are normal or layered
 			int b = 0;
@@ -32,7 +32,7 @@ public class FileParser {
 				b = (b + 1) % 8;
 			}
 			dis.close();
-			return new World(worldId, levels);
+			return new World(worldId, unlockScore, levels);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return null;
@@ -45,7 +45,8 @@ public class FileParser {
 			DataInputStream dis = new DataInputStream(is);
 			World world = World.getWorld(worldId);
 			// don't care about header bytes, will skip past them
-			int metaBytes = 1 + (int) Math.ceil(world.getLevelCount() / 8.0); // 1 byte for level count, n level bits (padded)
+			// 1 byte for level count + 4 for unlock score, and n puzzle bits (padded)
+			int metaBytes = 1 + 4 + (int) Math.ceil(world.getLevelCount() / 8.0);
 			if (dis.skipBytes(metaBytes) != metaBytes) {
 				dis.close();
 				return null; // skip bytes failed (shouldn't happen)

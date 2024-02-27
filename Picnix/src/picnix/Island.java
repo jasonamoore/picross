@@ -18,7 +18,7 @@ public class Island {
 		// make 25 random trees
 		trees = new double[25][2];
 		for (int i = 0; i < trees.length; i++) {
-			trees[i][0] = Math.random() * 300;
+			trees[i][0] = Math.random() * 175;
 			trees[i][1] = Math.random() * 2 * Math.PI;
 		}
 	}

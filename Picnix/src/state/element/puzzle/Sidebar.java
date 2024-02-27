@@ -15,6 +15,8 @@ import util.Animation;
 
 public class Sidebar extends Container {
 
+	private int type;
+	
 	private Button collapser;
 
 	private Animation fadeAnim;
@@ -32,6 +34,7 @@ public class Sidebar extends Container {
 	
 	public Sidebar(int x) {
 		super(x, SIDEBAR_Y, SIDEBAR_W, SIDEBAR_H);
+		type = x;
 		collapser = new Button(x == TOOLBAR_X ? 7 : 59, 6, 14, 11) {
 			@Override
 			public void onRelease(int mbutton) {
@@ -75,10 +78,9 @@ public class Sidebar extends Container {
 		return (float) fadeAnim.getValue();
 	}
 	
-	public void tick() {
-		super.tick();
-		if (collapseAnim != null)
-			setBounds(x, y, width, collapseAnim.getIntValue());
+	@Override
+	public int getHeight() {
+		return collapseAnim.getIntValue();
 	}
 
 	public void render(Graphics g) {
@@ -86,8 +88,8 @@ public class Sidebar extends Container {
 		Composite oldComp = gg.getComposite();
 		gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, getOpacity()));
 		super.render(g);
-		BufferedImage bottom = x == TOOLBAR_X ? ImageBank.toolbarbottom : ImageBank.layerbarbottom;
-		g.drawImage(bottom, getDisplayX(), getDisplayY() + height, null);
+		BufferedImage bottom = type == TOOLBAR_X ? ImageBank.toolbarbottom : ImageBank.layerbarbottom;
+		g.drawImage(bottom, getDisplayX(), getDisplayY() + getHeight(), null);
 		gg.setComposite(oldComp);
 	}
 	

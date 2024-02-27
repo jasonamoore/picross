@@ -3,17 +3,18 @@ package state.element;
 import java.awt.Graphics;
 
 import engine.Input;
-import resource.bank.Palette;
+import picnix.data.UserData;
+import resource.bank.ImageBank;
 import state.LevelSelectState;
 
 public class LevelButton extends Button {
 	
-	private LevelSelectState levSelState;
+	private LevelSelectState levState;
 	private int id;
 	
-	public LevelButton(LevelSelectState levSelState, int id, int x, int y, int w, int h) {
+	public LevelButton(LevelSelectState levState, int id, int x, int y, int w, int h) {
 		super(x, y, w, h);
-		this.levSelState = levSelState;
+		this.levState = levState;
 		this.id = id;
 	}
 	
@@ -21,7 +22,7 @@ public class LevelButton extends Button {
 	public void onRelease(int mbutton) {
 		super.onRelease(mbutton);
 		if (mbutton == Input.LEFT_CLICK && beingHovered())
-			levSelState.levelClicked(id);
+			levState.levelClicked(id);
 	}
 	
 	@Override
@@ -29,8 +30,14 @@ public class LevelButton extends Button {
 		super.render(g);
 		int xp = getDisplayX();
 		int yp = getDisplayY();
-		g.setColor(Palette.WHITE);
-		g.drawString(Integer.toString(id), xp, yp);
+		int wid = levState.getWorld().getId();
+		if (UserData.isPuzzleCompleted(wid, id)) {
+			int score = UserData.getPuzzleScore(wid, id);
+			g.drawImage(ImageBank.hiscorebar, xp + 3, yp + 37, null);
+		}
+		else {
+			g.drawImage(ImageBank.newlevelalert, xp + 4, yp + 4, null);
+		}
 	}
 	
 }

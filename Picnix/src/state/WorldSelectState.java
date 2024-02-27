@@ -8,6 +8,7 @@ import engine.Input;
 import engine.Transition;
 import picnix.Island;
 import picnix.World;
+import picnix.data.UserData;
 import state.element.location.LocationBox;
 import state.load.LoadWorldState;
 import util.Animation;
@@ -27,7 +28,7 @@ public class WorldSelectState extends State {
 	private Animation smoothRot;
 	
 	public WorldSelectState(double initRot) {
-		smoothBox = new Animation(0, 1, 250, Animation.CUBIC, Animation.NO_LOOP, false);
+		smoothBox = new Animation(0, 1, 125, Animation.CUBIC, Animation.NO_LOOP, false);
 		smoothRot = new Animation(initRot, 0, 500, Animation.EASE_OUT, Animation.NO_LOOP, true);
 		locationBox = new LocationBox(this);
 		add(locationBox);
@@ -36,12 +37,17 @@ public class WorldSelectState extends State {
 	@Override
 	public void focus(int status) {
 		smoothBox.reset(true);
+		locationBox.update(curLoc);
 	}
 
 	public void open(boolean easy) {
 		int worldId = easy ? World.getEasyWorldId(curLoc) : World.getHardWorldId(curLoc);
 		LoadWorldState lws = new LoadWorldState(worldId);
 		Engine.getEngine().getStateManager().transitionToState(lws, Transition.FADE, 500, 0, State.NEWLY_OPENED);
+	}
+	
+	public int getBoxY() {
+		return (int) ((1 - smoothBox.getValue()) * -25);
 	}
 	
 	public float getBoxOpacity() {
@@ -93,12 +99,13 @@ public class WorldSelectState extends State {
 			// re-enable the box controls if faded in
 			if (smoothBox.isForward())
 				locationBox.setEnabled(true);
-			else { // if faded out: make box fade back in
-				//testIcon.updateLocation(curLoc);
+			// if faded out: make box fade back in
+			else {
 				smoothBox.reverse(true);
+				UserData.randomizeScores();
+				locationBox.update(curLoc);
 			}
 		}
-		locationBox.setY((int) ((1 - smoothBox.getValue()) * -25));
 	}
 
 	@Override

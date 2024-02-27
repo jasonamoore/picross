@@ -45,10 +45,13 @@ public class TextField extends Element {
 	
 	@Override
 	public void render(Graphics g) {
+		if (text.isBlank())
+			return;
 		setRenderClips(g);
 		Composite oldComp = setRenderComposite(g);
 		int xp = getDisplayX();
 		int yp = getDisplayY();
+		int dw = getWidth();
 		// text rendering
 		int cy = 0;
 		int i = 0;
@@ -58,11 +61,11 @@ public class TextField extends Element {
 			// start width at the first char
 			int cw = font.getGlyph(text.charAt(j++)).getWidth();
 			// while fitting in line (and there is letters to fit)
-			while (j < text.length() && cw < width)
+			while (j < text.length() && cw < dw)
 				// add next char to width and increment j
 				cw += font.getGlyph(text.charAt(j++)).getWidth() + font.getCharPadding();
 			// the starting x offset - based on the width of the line
-			int cx = alignment == ALIGN_LEFT ? 0 : alignment == ALIGN_CENTER ? (width - cw) / 2 : width - cw;
+			int cx = alignment == ALIGN_LEFT ? 0 : alignment == ALIGN_CENTER ? (dw - cw) / 2 : dw - cw;
 			for (int k = i; k < j; k++) {
 				// get char glyph and draw it
 				BufferedImage glyph = font.getGlyph(text.charAt(k));

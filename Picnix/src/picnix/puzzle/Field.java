@@ -129,15 +129,10 @@ public class Field extends Container {
 		super.tick();
 		Input input = Input.getInstance();
 		if (dragging) {
-			//int lastCamX = camX;
-			//int lastCamY = camY;
 			int movedX = input.getMouseX() - clickXOffset;
 			int movedY = input.getMouseY() - clickYOffset;
 			setCamX(camXAtClick - movedX);
 			setCamY(camYAtClick - movedY);
-			//camXVel = (camXVel + camX - lastCamX) * .995;
-			//camYVel = (camYVel + camY - lastCamY) * .995;
-			//System.out.println(camXVel + ", " + camYVel);
 		}
 		else {
 			// if a cam anim is going, set camera to it
@@ -150,6 +145,16 @@ public class Field extends Container {
 	
 	@Override
 	public void render(Graphics g) {
+		// updating cam position during render
+		// which makes the camera look WAY smoother
+		Input input = Input.getInstance();
+		if (dragging) {
+			int movedX = input.getMouseX() - clickXOffset;
+			int movedY = input.getMouseY() - clickYOffset;
+			setCamX(camXAtClick - movedX);
+			setCamY(camYAtClick - movedY);
+		}
+		//
 		g.translate(-camX, -camY);
 		g.drawImage(ImageBank.grassback, 0, 0, FIELD_WIDTH, FIELD_HEIGHT, null);
 		g.translate(camX, camY);

@@ -4,7 +4,6 @@ import java.awt.image.BufferedImage;
 
 import engine.Engine;
 import engine.Transition;
-import picnix.Level;
 import picnix.World;
 import resource.bank.ImageBank;
 import state.element.LevelButton;
@@ -24,6 +23,10 @@ public class LevelSelectState extends ScrollableState {
 		setupLevels(world.getLevels());
 	}
 
+	public World getWorld() {
+		return world;
+	}
+	
 	private void setupLevels(boolean[] levels) {
 		int xp, yp;
 		xp = yp = LEVEL_BUTTON_MARGIN;

@@ -26,18 +26,19 @@ public class LockedSetBox extends Element {
 	
 	public LockedSetBox() {
 		Icon lockedLabel = new Icon(ImageBank.lockedlabel, 13, 12);
-		setZ(getZ() + 1);
 		progBar = new WorldProgress(27, 111, 92, 23);
 		progBar.setBackground(ImageBank.lockedprogress);
-		keyAnim = new Animation(100, Animation.EASE_OUT, Animation.NO_LOOP);
-		setProgress(10, 10);
+		// don't show any text in the progress bar
+		progBar.setChildrenExisting(false);
+		keyAnim = new Animation(LevelSetBox.ANIM_DURATION, Animation.EASE_OUT, Animation.NO_LOOP);
+		keyAnim.setDelay(LevelSetBox.ANIM_DELAY);
 		add(lockedLabel);
 		add(progBar);
 	}
 	
 	public void setProgress(int done, int total) {
 		progBar.setProgress(done, total);
-		keyAnim.setFrom(keyAnim.getValue());
+		keyAnim.setFrom(KEY_START_X);
 		keyAnim.setTo(KEY_START_X + done / (double) total * KEY_MOVE_DISTANCE);
 		keyAnim.reset(true);
 	}
@@ -49,14 +50,16 @@ public class LockedSetBox extends Element {
 		Composite oldComp  = setRenderComposite(g);
 		int xp = getDisplayX();
 		int yp = getDisplayY();
+		int dw = getWidth();
+		int dh = getHeight();
 		// fill background color
 		g.setColor(Palette.GREY);
-		g.fillRect(xp + 2, yp + 2, width - 2, height - 2);
+		g.fillRect(xp + 2, yp + 2, dw - 2, dh - 2);
 		g.setColor(Palette.RAIN);
-		g.fillRect(xp, yp, 2, height);
-		g.fillRect(xp, yp, width, 2);
+		g.fillRect(xp, yp, 2, dh);
+		g.fillRect(xp, yp, dw, 2);
 		// draw key and lock
-		g.clipRect(xp, yp, LOCK_LEFT_X + LOCK_WIDTH, height);
+		g.clipRect(xp, yp, LOCK_LEFT_X + LOCK_WIDTH, dh);
 		g.drawImage(ImageBank.lock[0], xp + LOCK_LEFT_X, yp + LOCK_Y, null);
 		g.drawImage(ImageBank.key, xp + keyAnim.getIntValue(), yp + KEY_Y, null);
 		g.drawImage(ImageBank.lock[1], xp + LOCK_RIGHT_X, yp + LOCK_Y, null);

@@ -84,9 +84,9 @@ public class Button extends Element {
 	public void setRenderClips(Graphics g) {
 		// clip to parent bounds
 		if (parent != null)
-			g.setClip(parent.getDisplayX(), parent.getDisplayY(), parent.width, parent.height);
+			g.setClip(parent.getDisplayX(), parent.getDisplayY(), parent.getWidth(), parent.getHeight());
 		// add clip to only draw bg image within this elem's bounds
-		g.clipRect(getDisplayX() - 1, getDisplayY() - 1, width + 2, height + 2);
+		g.clipRect(getDisplayX() - 1, getDisplayY() - 1, getWidth() + 2, getHeight() + 2);
 	}
 	
 	/**
@@ -114,7 +114,7 @@ public class Button extends Element {
 			// if hovering, draw outline
 			if (beingHovered() && hoverColor != null) {
 				g.setColor(hoverColor);
-				g.drawRect(xp - 1, yp - 1, width + 1, height + 1);
+				g.drawRect(xp - 1, yp - 1, getWidth() + 1, getHeight() + 1);
 			}
 		}
 		// reset rendering constriants

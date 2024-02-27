@@ -9,7 +9,6 @@ import java.util.ArrayList;
 
 import engine.Engine;
 import picnix.Level;
-import picnix.Particle;
 import picnix.puzzle.Blanket;
 import picnix.puzzle.Field;
 import picnix.puzzle.Puzzle;
@@ -21,6 +20,7 @@ import state.element.puzzle.LayerButton;
 import state.element.puzzle.LayerProgress;
 import state.element.puzzle.Sidebar;
 import state.element.puzzle.ToolButton;
+import state.particle.Particle;
 import util.Animation;
 import util.Timer;
 

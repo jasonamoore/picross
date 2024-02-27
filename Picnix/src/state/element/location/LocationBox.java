@@ -1,12 +1,11 @@
 package state.element.location;
 
 import engine.Engine;
-import engine.Transition;
+import picnix.World;
+import picnix.data.UserData;
 import resource.bank.ImageBank;
-import state.State;
 import state.WorldSelectState;
 import state.element.Container;
-import state.load.LoadWorldState;
 
 public class LocationBox extends Container {
 
@@ -36,6 +35,33 @@ public class LocationBox extends Container {
 		add(hard);
 		add(lock);
 	};
+
+	public void update(int curLoc) {
+		int easyId = World.getEasyWorldId(curLoc);
+		int hardId = World.getHardWorldId(curLoc);
+		World easyWorld = World.getWorld(easyId);
+		World hardWorld = World.getWorld(hardId);
+		int easyScore = UserData.getWorldScore(easyId);
+		int hardScore = UserData.getWorldScore(hardId);
+		int unlockScore = hardWorld.getUnlockScore();
+		boolean unlocked = easyScore >= unlockScore;
+		hard.setExisting(unlocked);
+		hard.setChildrenExisting(unlocked);
+		lock.setExisting(!unlocked);
+		lock.setChildrenExisting(!unlocked);
+		easy.getProgressBar().setProgress(UserData.getPuzzlesCompleted(easyId),
+				easyWorld.getLevelCount());
+		easy.getScoreboard().setScore(easyScore);
+		hard.getProgressBar().setProgress(UserData.getPuzzlesCompleted(hardId),
+				hardWorld.getLevelCount());
+		hard.getScoreboard().setScore(hardScore);
+		lock.setProgress(easyScore, unlockScore);
+	}
+	
+	@Override
+	public int getDisplayY() {
+		return worState.getBoxY() + (parent != null ? parent.getDisplayY() - parent.getScrollY() : 0);
+	}
 	
 	@Override
 	public float getOpacity() {

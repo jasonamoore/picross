@@ -53,7 +53,7 @@ public class Icon extends Element {
 		setRenderClips(g);
 		Composite oldComp = setRenderComposite(g);
 		if (background != null)
-			g.drawImage(background, getDisplayX(), getDisplayY(), width, height, null);
+			g.drawImage(background, getDisplayX(), getDisplayY(), getWidth(), getHeight(), null);
 		g.setClip(null);
 		((Graphics2D) g).setComposite(oldComp);
 	}	

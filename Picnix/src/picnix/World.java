@@ -1,6 +1,6 @@
 package picnix;
 
-import picnix.io.FileParser;
+import picnix.data.FileParser;
 
 public class World {
 	
@@ -12,8 +12,8 @@ public class World {
 	private static final int[] LOCATIONS_YOFF = {0, 10, 0, 20, 0, 30, 5, 10, -10, 0, 11, 12};
 	private static double maxRadDist;
 	
-	private static final String[] WORLD_FILES = new String[] {"test.pwr", "test2.pwr", "test.pwr", "test2.pwr", "test.pwr", "test2.pwr",
-															"test.pwr", "test2.pwr", "test.pwr", "test2.pwr", "test.pwr", "test2.pwr"};
+	private static final String[] WORLD_FILES = new String[] {"test2.pwr", "test2.pwr", "test1.pwr", "test1.pwr", "test1.pwr", "test2.pwr",
+															"test2.pwr", "test1.pwr", "test2.pwr", "test2.pwr", "test1.pwr", "test2.pwr"};
 	
 	private static World[] worlds = new World[NUM_WORLDS];
 	
@@ -69,15 +69,21 @@ public class World {
 	// non-static stuff
 
 	private int id;
+	private int unlockScore;
 	private boolean[] levels;
 	
-	public World(int id, boolean[] levels) {
+	public World(int id, int unlockScore, boolean[] levels) {
 		this.id = id;
+		this.unlockScore = unlockScore;
 		this.levels = levels;
 	}
 	
 	public int getId() {
 		return id;
+	}
+	
+	public int getUnlockScore() {
+		return unlockScore;
 	}
 	
 	/**
@@ -90,8 +96,7 @@ public class World {
 	 */
 	public boolean[] getLevels() {
 		return levels;
-	}
-	
+	}	
 
 	/**
 	 * Returns the number of levels in this world.
@@ -100,19 +105,6 @@ public class World {
 	public int getLevelCount() {
 		return levels.length;
 	}
-	
-	/**
-	 * Fetches the list of high scores for each level
-	 * in this World. For each index, a positive integer
-	 * represents the high score for the level of whose
-	 * id is that index. A special value of 0 indicates
-	 * that no high score exists because the level has
-	 * not been beaten.
-	 * @return The scores array.
-	 
-	public int[] getScores() {
-		return scores;
-	}*/
 	
 	public Level loadLevel(int levelId) {
 		return FileParser.readLevel(levelId, id);
