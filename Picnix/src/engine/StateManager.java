@@ -14,6 +14,10 @@ public class StateManager {
 
 	// stack of State objects - the State list
 	private Stack<State> stateStack;
+
+	// transition for states on the stack
+	private Transition transition;
+	private boolean transitioning;
 	
 	/**
 	 * Initializes a state manager with an empty state stack.
@@ -29,7 +33,7 @@ public class StateManager {
 	 */
 	public StateManager(State start) {
 		this();
-		openState(start, State.NEWLY_OPENED);
+		openState(start);
 	}
 
 	/**
@@ -39,51 +43,47 @@ public class StateManager {
 	public State getTopState() {
 		return stateStack.peek();
 	}
-
+	
 	/**
 	 * Opens this state, pushing it to the top of the stack.
 	 * @param state
-	 * @param status 
 	 */
-	public void openState(State state, int status) {
+	public void openState(State state) {
 		stateStack.push(state);
-		state.focus(status);
+		state.focus(State.NEWLY_OPENED);
 	}
 	
-	
-	public void transitionToState(State toState, int type, int a, int b, int status) {
+	public void transitionToState(State toState, int type, int a, int b) {
 		State oldState = getTopState();
-		transition = new Transition(toState, oldState, type, a, b, status);
+		transition = new Transition(toState, oldState, type, a, b);
 		transitioning = true;
 		oldState.freezeInput(true);
 	}
 	
-	public void transitionExitState(int type, int a, int b, int status) {
-		transitionToState(null, type, a, b, status);
+	public void transitionExitState(int type, int a, int b) {
+		transitionToState(null, type, a, b);
 	}
-
+	
 	/**
 	 * Pops off the active (top) state, closing it.
 	 */
-	public void exitTopState(int status) {
+	public void exitTopState(boolean error) {
 		stateStack.pop();
 		if (!stateStack.empty())
-			stateStack.peek().focus(status);
+			stateStack.peek().focus(!error ? State.RETURNING : State.ERROR_RETURN);
 	}
-
-	private Transition transition;
-	private boolean transitioning;
 	
 	public void tick() {
 		if (transitioning) {
 			// if we passed part a, open the new state
 			if (transition.needsStateSwitch()) {
-				transition.getToState().freezeInput(true); // freeze new state's input
-				if (!transition.isExitTransition())
-					openState(transition.getToState(), transition.getStatus());
+				if (!transition.isExitTransition()) {
+					transition.getOldState().freezeInput(false); // unfreeze previous state
+					transition.getToState().freezeInput(true); // freeze new state's input
+					openState(transition.getToState());
+				}
 				else
-					exitTopState(transition.getStatus());
-				transition.getOldState().freezeInput(false); // unfreeze previous state
+					exitTopState(false);
 			}
 			// if everything is over
 			if (transition.isFinished()) {

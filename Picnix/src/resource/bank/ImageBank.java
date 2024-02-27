@@ -5,13 +5,17 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+import picnix.World;
+
 public class ImageBank {
 
+	public static BufferedImage[] backgrounds = new BufferedImage[World.NUM_WORLDS];
+	public static BufferedImage[][] tiledBackgrounds = new BufferedImage[World.NUM_WORLDS][];
+	//
 	public static BufferedImage title;
-	public static BufferedImage grassback;
 	public static BufferedImage island;
 	public static BufferedImage tree;
-
+	//
 	public static BufferedImage[] bluebutton;
 	public static BufferedImage[] pinkbutton;
 	public static BufferedImage[] greenbutton;
@@ -95,10 +99,9 @@ public class ImageBank {
 	public static BufferedImage[] numstiny;
 	
 	public static void loadGlobalResources() throws IOException {
-		// tests
-		title =			loadSheet("title.png");
-		grassback = 	loadSheet("grasstest.png");
-		island = 	loadSheet("island.png");
+		// singles
+		title = loadSheet("title.png");
+		island = loadSheet("island.png");
 		// location (world select) sprite sheet
 		BufferedImage locSheet = loadSheet("locations.png");
 		tree = loadOne(locSheet, 321, 0, 13, 37);
@@ -185,9 +188,19 @@ public class ImageBank {
 		numstiny = loadMany(blanketSheet, 161, 75, 6, 7, 5, 4);
 	}
 	
+	public static void loadWorldResources(int worldId) throws IOException {
+		BufferedImage backSheet = loadSheet("grasstest.png");
+		backgrounds[worldId] = backSheet;
+		tiledBackgrounds[worldId] = loadMany(backSheet, 0, 0, 100, 45, 10, 15); 
+	}
+	
+	public static void unloadWorldResources(int worldId) {
+		tiledBackgrounds[worldId] = null;
+		System.gc();
+	}
+	
 	private static BufferedImage loadSheet(String src) throws IOException {
-		BufferedImage image = ImageIO.read(ImageBank.class.getClassLoader().getResourceAsStream(src));
-		return image;
+		return ImageIO.read(ImageBank.class.getClassLoader().getResourceAsStream(src));
 	}
 	
 	private static BufferedImage loadOne(BufferedImage fromSheet, int x, int y, int w, int h) {
@@ -196,13 +209,10 @@ public class ImageBank {
 	
 	private static BufferedImage[] loadMany(BufferedImage fromSheet, int startx, int starty, int subw, int subh, int cols, int rows) {
 		BufferedImage[] list = new BufferedImage[cols * rows];
-		//if (startx + numwide * subw > fromSheet.getWidth()
-		//		|| starty + numtall * subh > fromSheet.getHeight()) return null;
 		int i = 0;
 		for (int y = 0; y < rows; y++)
 			for (int x = 0; x < cols; x++)
 				list[i++] = fromSheet.getSubimage(startx + x * subw, starty + y * subh, subw, subh);
-		
 		return list;
 	}
 	

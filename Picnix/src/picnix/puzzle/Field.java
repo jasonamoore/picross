@@ -1,6 +1,7 @@
 package picnix.puzzle;
 
 import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 
 import engine.Engine;
 import engine.Input;
@@ -12,13 +13,13 @@ import util.Animation;
 
 public class Field extends Container {
 
+	private static final int FIELD_WIDTH = 1000;
+	private static final int FIELD_HEIGHT = 675;
+	
 	// parent puzzle state
 	private PuzzleState puzState;
 	// the picnic blanket, which has the puzzle loaded
 	private Blanket blanket;
-	
-	private static final int FIELD_WIDTH = 1000;
-	private static final int FIELD_HEIGHT = 600;
 
 	// position of the camera over the field
 	private int camX, camY;
@@ -32,11 +33,15 @@ public class Field extends Container {
 	// position & size of blanket within the field
 	private int bx, by, bw, bh;
 	
-	public Field(PuzzleState puzState) {
+	// the background field image
+	private BufferedImage[] fieldBackground;
+	
+	public Field(PuzzleState puzState, int worldId) {
 		super(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT, FIELD_WIDTH, FIELD_HEIGHT);
 		this.puzState = puzState;
 		disableScrollers();
 		setZ(-100);
+		fieldBackground = ImageBank.tiledBackgrounds[worldId];
 		blanket = new Blanket(this);
 		bw = puzState.getPuzzleDisplayWidth();
 		bh = puzState.getPuzzleDisplayHeight();
@@ -127,6 +132,7 @@ public class Field extends Container {
 	@Override
 	public void tick() {
 		super.tick();
+		// update camera if dragging
 		Input input = Input.getInstance();
 		if (dragging) {
 			int movedX = input.getMouseX() - clickXOffset;
@@ -145,7 +151,7 @@ public class Field extends Container {
 	
 	@Override
 	public void render(Graphics g) {
-		// updating cam position during render
+		// updating drag cam position during render
 		// which makes the camera look WAY smoother
 		Input input = Input.getInstance();
 		if (dragging) {
@@ -154,9 +160,14 @@ public class Field extends Container {
 			setCamX(camXAtClick - movedX);
 			setCamY(camYAtClick - movedY);
 		}
-		//
+		// background tiling / chunking ;)
 		g.translate(-camX, -camY);
-		g.drawImage(ImageBank.grassback, 0, 0, FIELD_WIDTH, FIELD_HEIGHT, null);
+		for (int x = camX / 100; x * 100 < Engine.SCREEN_WIDTH + camX; x++) {
+			for (int y = camY / 45; y * 45 < Engine.SCREEN_HEIGHT + camY; y++) {
+				BufferedImage tile = fieldBackground[x + y * 10];
+				g.drawImage(tile, x * 100, y * 45, null);
+			}
+		}
 		g.translate(camX, camY);
 	}
 	

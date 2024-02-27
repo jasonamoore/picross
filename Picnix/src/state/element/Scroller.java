@@ -88,6 +88,9 @@ public class Scroller extends Element {
 	}
 
 	public int getViewportOffset() {
+		// update thumb to nudge anim, if observing
+		if (nudgeAnim.isPlaying())
+			thumbOffset = nudgeAnim.getValue();
 		double ratio = (contentSize - viewportSize) / realRailSize;
 		return (int) (thumbOffset * ratio);
 	}
@@ -144,9 +147,6 @@ public class Scroller extends Element {
 	@Override
 	public void tick() {
 		super.tick();
-		// update thumb to nudge anim, if observing
-		if (nudgeAnim.isPlaying())
-			thumbOffset = nudgeAnim.getValue();
 		// update scroll position if its being dragged
 		if (dragging) {
 			//    relMouse = 0

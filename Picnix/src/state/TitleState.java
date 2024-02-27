@@ -48,8 +48,7 @@ public class TitleState extends State {
 
 	@Override
 	public void focus(int status) {
-		for (int i = 0; i < World.NUM_WORLDS; i++)
-			World.loadWorld(i);
+		World.loadWorlds();
 		UserData.load();
 	}
 	
@@ -57,8 +56,7 @@ public class TitleState extends State {
 		smoothRot = new Animation(smoothRot.getValue(), 0, 1000, Animation.EASE_OUT, Animation.NO_LOOP, true);
 		zoomToIsland.resume(); // play the zoom to island anim
 		// open world state, with a "part A" delay so the zoom anim plays first
-		Engine.getEngine().getStateManager().transitionToState(
-				new WorldSelectState(0), Transition.NONE, 1000, 0, NEWLY_OPENED);
+		Engine.getEngine().getStateManager().transitionToState(new WorldSelectState(0), Transition.NONE, 1000, 0);
 	}
 			
 	@Override

@@ -49,13 +49,9 @@ public class World {
 		return location * 2 + 1;
 	}
 	
-	public static World loadWorld(int worldId) {
-		worlds[worldId] = FileParser.readWorld(worldId);
-		return getWorld(worldId);
-	}
-	
-	public static void unloadWorld(int worldId) {
-		worlds[worldId] = null;
+	public static void loadWorlds() {
+		for (int i = 0; i < NUM_WORLDS; i++)
+			worlds[i] = FileParser.readWorld(i);
 	}
 	
 	public static World getWorld(int worldId) {

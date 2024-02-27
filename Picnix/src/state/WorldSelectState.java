@@ -43,7 +43,7 @@ public class WorldSelectState extends State {
 	public void open(boolean easy) {
 		int worldId = easy ? World.getEasyWorldId(curLoc) : World.getHardWorldId(curLoc);
 		LoadWorldState lws = new LoadWorldState(worldId);
-		Engine.getEngine().getStateManager().transitionToState(lws, Transition.FADE, 500, 0, State.NEWLY_OPENED);
+		Engine.getEngine().getStateManager().transitionToState(lws, Transition.FADE, 500, 0);
 	}
 	
 	public int getBoxY() {

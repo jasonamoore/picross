@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 import engine.Engine;
 import picnix.Level;
+import picnix.World;
 import picnix.puzzle.Blanket;
 import picnix.puzzle.Field;
 import picnix.puzzle.Puzzle;
@@ -92,7 +93,13 @@ public class PuzzleState extends State {
 	// the cell size for puzzles in this State
 	private int cellSize;
 	
-	public PuzzleState(Level level) {
+	private World world;
+	private Level level;
+	
+	public PuzzleState(World world, Level level) {
+		this.world = world;
+		this.level = level;
+		win();
 		layered = level.isLayered();
 		timeSecLimit = level.getTimeLimit() * 60;
 		mistakeCap = level.getMistakeCap();
@@ -124,7 +131,7 @@ public class PuzzleState extends State {
 			msize <= 10 ? CELL_SIZE_10x10 :
 			msize <= 15 ? CELL_SIZE_15x15 :
 			/*msize>15?*/ CELL_SIZE_20x20;
-		field = new Field(this);
+		field = new Field(this, world.getId());
 		add(field);
 		toolArrowAnim = new Animation(100, Animation.EASE_OUT, Animation.NO_LOOP);
 		toolClicked(ToolButton.PLATE);
@@ -446,7 +453,7 @@ public class PuzzleState extends State {
 	}
 	
 	private void win() {
-		
+		Engine.getEngine().getStateManager().openState(new WinState(world, level));
 	}
 	
 	private void lose() {

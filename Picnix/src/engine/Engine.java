@@ -45,7 +45,7 @@ public class Engine {
 	private String title = "Picnix";
 	// JFrame and Canvas component for drawing
 	private JFrame frame;
-	public Canvas canvas;
+	private Canvas canvas;
 
 	// instance of state manager, holding a stack of game states
 	private StateManager stateManager;
@@ -242,9 +242,6 @@ public class Engine {
 			return;
 		}
 		// create state manager
-		//TODO THIS IS AN EXPLICIT TESTING PLUG-IN
-		//stateManager = new StateManager(new PuzzleState(new Puzzle(Puzzle.genPuzzle(5, 5))));
-		//stateManager = new StateManager(new LevelSelectState(PuzzleFileReader.readLayeredWorld("L:\\Users\\Jason\\Documents\\Programming\\picross\\levels\\world\\frutas.pwr")));
 		stateManager = new StateManager(new TitleState());
 		// enter game loop
 		running = true;

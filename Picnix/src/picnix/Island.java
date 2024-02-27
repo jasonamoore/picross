@@ -35,14 +35,15 @@ public class Island {
 		AffineTransform oldTrans = gg.getTransform();
 		// clip island below horizon
 		gg.setClip(0, skyHeight, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT - skyHeight);
-		// translate to island to origin plus given offset before rotating
+		// translate island to origin plus given offset before rotating
 		gg.translate(islandOffsetX + Engine.SCREEN_WIDTH / 2, islandOffsetY + Engine.SCREEN_HEIGHT / 2);
 		// scale based on islandScale argument and island's width-to-height ratio
         gg.scale(islandScale, islandScale * HEIGHT_WIDTH_RATIO);
         // rotate based on argument
         gg.rotate(-islandRotation);
         // translate back, so drawing will be at the desired position
-		gg.translate(-Engine.SCREEN_WIDTH / 2, -Engine.SCREEN_HEIGHT / 2);
+		gg.translate(-ImageBank.island.getWidth() / 2, -ImageBank.island.getHeight() / 2);
+		// draw island
 		gg.drawImage(ImageBank.island, 0, 0, null);
 		// revert graphics state
 		gg.setClip(null);

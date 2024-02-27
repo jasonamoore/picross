@@ -329,7 +329,7 @@ public class Blanket extends Element {
 				g.drawImage(scrHoriz[1 + hh], -hgridW * (i+1), r * cellSize, null);
 				g.drawImage(nums[Math.abs(hintnum)-1], -hgridW * (i+1) + rowXOff, r * cellSize + rowYOff, null);
 				if (hintnum < 0) {
-					g.setColor(Palette.BRICK);
+					g.setColor(Palette.RED);
 					g.drawLine(-hgridW * (i+1) + rowXOff, r * cellSize + rowYOff,
 							-hgridW * i - rowXOff, (r+1) * cellSize - rowYOff);
 				}
@@ -344,7 +344,7 @@ public class Blanket extends Element {
 				g.drawImage(scrVert[1 + hh], c * cellSize, -hgridW * (i+1), null);
 				g.drawImage(nums[Math.abs(hintnum)-1], c * cellSize + colXOff, -hgridW * (i+1) + colYOff, null);
 				if (hintnum < 0) {
-					g.setColor(Palette.BRICK);
+					g.setColor(Palette.RED);
 					g.drawLine(c * cellSize + colXOff, -hgridW * (i+1) + colYOff,
 							(c+1) * cellSize - colXOff, -hgridW * i - colYOff);
 				}

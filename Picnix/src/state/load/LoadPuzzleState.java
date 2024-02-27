@@ -4,12 +4,12 @@ import picnix.Level;
 import picnix.World;
 import state.PuzzleState;
 
-public class LoadLevelState extends LoadState {
+public class LoadPuzzleState extends LoadState {
 
 	private int levelId;
 	private int worldId;
 	
-	public LoadLevelState(int levelId, int worldId) {
+	public LoadPuzzleState(int levelId, int worldId) {
 		this.levelId = levelId;
 		this.worldId = worldId;
 	}
@@ -18,9 +18,8 @@ public class LoadLevelState extends LoadState {
 	public void load() {
 		World world = World.getWorld(worldId);
 		Level level = world.loadLevel(levelId);
-		//ImageBank.loadWorldImages(worldId);
 		// when finished loading, open next state (puzzle state)
-		PuzzleState ps = new PuzzleState(level);
+		PuzzleState ps = new PuzzleState(world, level);
 		setNextState(ps);
 		done();
 	}

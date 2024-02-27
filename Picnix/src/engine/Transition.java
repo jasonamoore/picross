@@ -12,7 +12,6 @@ public class Transition {
 	private State oldState;
 	private int type;
 	private int durA, durB;
-	private int status;
 	
 	private boolean exiting;
 	private boolean checked;
@@ -24,9 +23,8 @@ public class Transition {
 	 * @param type
 	 * @param durA
 	 * @param durB
-	 * @param status
 	 */
-	Transition(State toState, State oldState, int type, int durA, int durB, int status) {
+	Transition(State toState, State oldState, int type, int durA, int durB) {
 		this.toState = toState;
 		this.oldState = oldState;
 		exiting = toState == null;
@@ -50,10 +48,6 @@ public class Transition {
 	
 	public int getType() {
 		return type;
-	}
-	
-	public int getStatus() {
-		return status;
 	}
 	
 	public boolean inPartA() {

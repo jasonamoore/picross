@@ -11,9 +11,9 @@ import util.Timer;
 public abstract class LoadState extends State {
 	
 	public static final int MIN_WAIT_MS = 500;
-	
-	private State nextState;
+
 	private Timer timer;
+	private State nextState;
 	protected boolean done;
 	
 	public LoadState() {
@@ -23,7 +23,9 @@ public abstract class LoadState extends State {
 	@Override
 	public void focus(int status) {
 		timer.reset(true);
-		if (status == State.NEWLY_OPENED)
+		nextState = null;
+		done = false;
+		if (status == NEWLY_OPENED)
 			load();
 		else
 			unload();
@@ -44,8 +46,7 @@ public abstract class LoadState extends State {
 	@Override
 	public void tick() {
 		if (done && timer.elapsed() >= MIN_WAIT_MS)
-			Engine.getEngine().getStateManager()
-				.transitionToState(nextState, Transition.FADE, 0, 250, State.NEWLY_OPENED);
+			Engine.getEngine().getStateManager().transitionToState(nextState, Transition.FADE, 0, 250);
 	}
 
 	@Override
