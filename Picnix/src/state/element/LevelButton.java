@@ -32,8 +32,16 @@ public class LevelButton extends Button {
 		int yp = getDisplayY();
 		int wid = levState.getWorld().getId();
 		if (UserData.isPuzzleCompleted(wid, id)) {
-			int score = UserData.getPuzzleScore(wid, id);
 			g.drawImage(ImageBank.hiscorebar, xp + 3, yp + 37, null);
+			int score = UserData.getPuzzleScore(wid, id);
+			final int startX = 13, startY = 38;
+			final int pWidth = 29, cWidth = 5;
+			final int max = 999_999;
+			String count = Integer.toString(Math.min(max, score));
+			int xOff = startX + (pWidth - cWidth * count.length() + 1) / 2;
+			for (int c = 0; c < count.length(); c++)
+				g.drawImage(ImageBank.smallblacknums[count.charAt(c) - '0'],
+						xp + c * cWidth + xOff, yp + startY, null);
 		}
 		else {
 			g.drawImage(ImageBank.newlevelalert, xp + 4, yp + 4, null);

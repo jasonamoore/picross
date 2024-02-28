@@ -43,6 +43,7 @@ public class ImageBank {
 	public static BufferedImage[] normallevelbutton;
 	public static BufferedImage[] layeredlevelbutton;
 	public static BufferedImage hiscorebar;
+	public static BufferedImage[] smallblacknums;
 	public static BufferedImage newlevelalert;
 	public static BufferedImage hiddenpreview;
 	// --
@@ -97,6 +98,7 @@ public class ImageBank {
 	public static BufferedImage[] numsbig;
 	public static BufferedImage[] numsmed;
 	public static BufferedImage[] numstiny;
+	public static BufferedImage isoplate;
 	
 	public static void loadGlobalResources() throws IOException {
 		// singles
@@ -133,6 +135,7 @@ public class ImageBank {
 		normallevelbutton = loadMany(uiSheet, 267, 169, 48, 48, 2, 1);
 		layeredlevelbutton = loadMany(uiSheet, 267, 217, 48, 48, 2, 1);
 		hiscorebar = loadOne(uiSheet, 312, 153, 41, 7);
+		smallblacknums = loadMany(uiSheet, 287, 0, 4, 5, 5, 2);
 		newlevelalert = loadOne(uiSheet, 363, 169, 39, 39);
 		hiddenpreview = loadOne(uiSheet, 363, 208, 39, 31);
 		//
@@ -186,6 +189,7 @@ public class ImageBank {
 		numsbig = loadMany(blanketSheet, 35, 240, 11, 17, 5, 1);
 		numsmed = loadMany(blanketSheet, 86, 140, 8, 10, 5, 2);
 		numstiny = loadMany(blanketSheet, 161, 75, 6, 7, 5, 4);
+		isoplate = loadOne(blanketSheet, 141, 218, 33, 16);
 	}
 	
 	public static void loadWorldResources(int worldId) throws IOException {

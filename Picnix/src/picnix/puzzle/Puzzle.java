@@ -246,6 +246,10 @@ public class Puzzle {
 		return marks[row][col];
 	}
 	
+	public boolean isFilledInSolution(int row, int col) {
+		return solution[row][col];
+	}
+	
 	public boolean isSolved() {
 		if (solvedStateDirty)
 			updateSolved();
