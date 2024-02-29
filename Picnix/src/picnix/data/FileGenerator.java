@@ -12,11 +12,11 @@ import javax.imageio.ImageIO;
 
 public class FileGenerator {
 
-	private static final String SOURCE = "L:\\Users\\Jason\\Documents\\Programming\\picross\\levels\\world1";
+	private static final String SOURCE = "L:\\Users\\Jason\\Documents\\Programming\\picross\\levels\\worldbeach";
 	
 	public static void main(String args[]) throws IOException {
 		encodeAll(SOURCE);
-		combineIntoWorld("test1", 5000, SOURCE);
+		combineIntoWorld("beach", 5000, SOURCE);
 	}
 	
 	private static void combineIntoWorld(String name, int unlockScore, String source) throws IOException {
@@ -77,8 +77,8 @@ public class FileGenerator {
 		DataOutputStream dos = new DataOutputStream(fos);
 		dos.write(img.getHeight()); // rows
 		dos.write(img.getWidth()); // cols
-		dos.write(8); // time limit
-		dos.write(3); // mistakes
+		//dos.write(8); // time limit
+		//dos.write(3); // mistakes
 		for (int i = 0; i < (layered ? 3 : 1); i++) {
 			int b = 0;
 			byte curByte = 0;

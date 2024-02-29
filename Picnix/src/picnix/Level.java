@@ -11,19 +11,14 @@ public class Level {
 	
 	private int id;
 	
-	private int timeLimit;
-	private int mistakeCap;
-	
-	public Level(Puzzle[] layers, int id, int timeLimit, int mistakeCap) {
+	public Level(Puzzle[] layers, int id) {
 		this.layers = layers;
 		this.layered = layers.length > 1;
 		this.id = id;
-		this.timeLimit = timeLimit;
-		this.mistakeCap = mistakeCap;
 	}
 	
-	public Level(Puzzle puzzle, int id, int timeLimit, int mistakeCap) {
-		this(new Puzzle[] {puzzle}, id, timeLimit, mistakeCap);
+	public Level(Puzzle puzzle, int id) {
+		this(new Puzzle[] {puzzle}, id);
 	}
 	
 	public Puzzle[] getPuzzles() {
@@ -36,14 +31,6 @@ public class Level {
 	
 	public int getLevelId() {
 		return id;
-	}
-	
-	public int getTimeLimit() {
-		return timeLimit;
-	}
-	
-	public int getMistakeCap() {
-		return mistakeCap;
 	}
 	
 }

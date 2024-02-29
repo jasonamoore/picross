@@ -8,8 +8,10 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import engine.Engine;
+import engine.Transition;
 import picnix.Level;
 import picnix.World;
+import picnix.data.UserData;
 import picnix.puzzle.Blanket;
 import picnix.puzzle.Field;
 import picnix.puzzle.Puzzle;
@@ -23,6 +25,7 @@ import state.element.puzzle.Sidebar;
 import state.element.puzzle.ToolButton;
 import state.particle.Particle;
 import util.Animation;
+import util.MultiAnimation;
 import util.Timer;
 
 /**
@@ -41,6 +44,8 @@ public class PuzzleState extends State {
 	public static final int YELLOW = 1;
 	public static final int CYAN = 2;
 	public static final int TOTAL = 3;
+
+	public static final int FINISH_DURATION = 1000;
 	
 	// the puzzle(s)
 	private Puzzle[] puzzleLayers;
@@ -55,6 +60,8 @@ public class PuzzleState extends State {
 	// clock for hwo long the puzzle has been running
 	private Timer clock; 
 	private int timeSecLimit;
+	// score
+	private int score;
 	// keeps track of mistakes
 	private int mistakeCap;
 	private int mistakeCount;
@@ -93,39 +100,32 @@ public class PuzzleState extends State {
 	// the cell size for puzzles in this State
 	private int cellSize;
 	
+	// lose/win text drop animation
+	private MultiAnimation textDrop;
+	// lose/win status info
+	private boolean winning, losing;
+	private Timer finishTimer;
+	
 	private World world;
 	private Level level;
+	
+	/* ~~~~~~~~~~~~~~~~~~~~
+	 * 	SETUP
+	 * ~~~~~~~~~~~~~~~~~~~~
+	 */
 	
 	public PuzzleState(World world, Level level) {
 		this.world = world;
 		this.level = level;
-		win();
+		//win();
 		layered = level.isLayered();
-		timeSecLimit = level.getTimeLimit() * 60;
-		mistakeCap = level.getMistakeCap();
+		//timeSecLimit = level.getTimeLimit() * 60;
+		//mistakeCap = level.getMistakeCap();
+		timeSecLimit = 10 * 60;
+		mistakeCap = 3;
 		puzzleLayers = level.getPuzzles();
 		activeLayerId = layered ? MAGENTA : NO_LAYER;
 		activePuzzle = puzzleLayers[Math.max(0, activeLayerId)];
-		setup();
-	}
-		
-	@Override
-	public void focus(int status) {
-		// TODO Auto-generated method stub
-	}
-	
-	/* ~~~~~~~~~~~~~~~~~~~~
-	 * 	STATE SETUP
-	 * ~~~~~~~~~~~~~~~~~~~~
-	 */
-	
-	/**
-	 * Determines the puzzle cell size, creates a Field,
-	 * sets the current tool to "plate", and initializes
-	 * empty undo/redo arrays.
-	 * Then calls {@link #generateUI()} Ito create and setup UI elements.
-	 */
-	private void setup() {
 		int msize = Math.max(activePuzzle.getRows(), activePuzzle.getColumns());
 		cellSize =  msize <= 5 ? CELL_SIZE_5x5 :
 			msize <= 10 ? CELL_SIZE_10x10 :
@@ -137,8 +137,18 @@ public class PuzzleState extends State {
 		toolClicked(ToolButton.PLATE);
 		undo = new ArrayList<Stroke>();
 		redo = new ArrayList<Stroke>();
-		clock = new Timer(true);
+		textDrop = new MultiAnimation(new double[] {-150, 142, 85, 142, 135, 142},
+				new int[] {500, 200, 200, 75, 75, 0},
+				new double[][] {MultiAnimation.EASE_IN, MultiAnimation.EASE_OUT, MultiAnimation.EASE_IN,
+						MultiAnimation.EASE_OUT, MultiAnimation.EASE_IN, MultiAnimation.HOLD},
+				0, 0, false);
+		finishTimer = new Timer(false);
 		generateUI();
+	}
+		
+	@Override
+	public void focus(int status) {
+		clock = new Timer(true);
 	}
 	
 	/**
@@ -359,7 +369,15 @@ public class PuzzleState extends State {
 		updatePlateEnabled();
 		updateClearEnabled();
 		updateUndoRedoEnabled();
+		// maybe lost?
 		handleMistake(s.getMistakes());
+		// maybe won?
+		boolean won = true;
+		// check all puzzles are solved
+		for (int i = 0; i < puzzleLayers.length; i++)
+			won = won && puzzleLayers[i].isSolved();
+		if (won)
+			win();
 	}
 	
 	public void undo() {
@@ -402,11 +420,14 @@ public class PuzzleState extends State {
 	 */
 
 	public void updatePlateEnabled() {
-		boolean enabled = activePuzzle.getRemainingFillCount() > 0;
-		tools[ToolButton.PLATE].setEnabled(enabled);
+		tools[ToolButton.PLATE].setEnabled(hasPlates());
 		// switch from this tool if disabled
 		//if (!enabled && currentToolId == ToolButton.PLATE)
 		//	toolClicked(ToolButton.FORKS);
+	}
+
+	public boolean hasPlates() {
+		return activePuzzle.getRemainingFillCount() > 0;
 	}
 	
 	public void updateClearEnabled() {
@@ -449,16 +470,63 @@ public class PuzzleState extends State {
 		mistakeCount += count;
 		if (mistakeCount >= mistakeCap)
 			lose();
-		Particle.generateParticle(ImageBank.plates35[0], 200, 200, -100, -300, 0.90, 0, 10, 10000);
+	}
+	
+	private void finish() {
+		clock.pause();
+		freezeInput(true);
+		textDrop.resume();
+		finishTimer.resume();
 	}
 	
 	private void win() {
-		Engine.getEngine().getStateManager().openState(new WinState(world, level));
+		winning = true;
+		finish();
 	}
 	
 	private void lose() {
-		freezeInput(true);
+		losing = true;
+		finish();
+		// make particles
+		BufferedImage[] plates = Blanket.getPlateSheet(cellSize);
+		BufferedImage[] forks = Blanket.getForkSheet(cellSize);
+		int bx = field.getBlanket().getDisplayX();
+		int by = field.getBlanket().getDisplayY();
+		for (int r = 0; r < activePuzzle.getRows(); r++) {
+			for (int c = 0; c < activePuzzle.getColumns(); c++) {
+				int mark = activePuzzle.getMark(r, c);
+				BufferedImage image = null;
+				if (mark == Puzzle.FILLED)
+					image = plates[activeLayerId+1];
+				else if (mark == Puzzle.FLAGGED)
+					image = forks[0];
+				else if (mark == Puzzle.MAYBE_FILLED)
+					image = plates[4];
+				else if (mark == Puzzle.MAYBE_FLAGGED)
+					image = forks[2];
+				if (image != null) {
+					double randXVel = Math.random() * 200 - 100;
+					double randYVel = Math.random() * 100 - 150;
+					Particle.generateParticle(image, bx + c * cellSize, by + r * cellSize, randXVel, randYVel, 0.92, 0, 10, 7000);
+				}
+			}
+		}
 		clearMarks();
+	}
+	
+	private void goOn(boolean win) {
+		if (win) {
+			UserData.setPuzzleScore(world.getId(), level.getLevelId(), score);
+			WinState ws = new WinState(world, level);
+			Engine.getEngine().getStateManager().transitionToState(ws, Transition.NONE, 500, 500);
+		}
+		else {
+			Engine.getEngine().getStateManager().transitionExitState(Transition.FADE, 500, 0);
+		}
+	}
+
+	public boolean isOver() {
+		return winning || losing;
 	}
 	
 	// ~~~~~~~~~~ TICK
@@ -469,6 +537,10 @@ public class PuzzleState extends State {
 		// check for time failure
 		if (clock.elapsedSec() > timeSecLimit)
 			lose();
+		if (finishTimer.elapsed() > FINISH_DURATION) {
+			finishTimer.reset(false);
+			goOn(winning);
+		}
 	}
 	
 	// ~~~~~~~~~~ RENDER
@@ -509,6 +581,13 @@ public class PuzzleState extends State {
 		g.drawImage(ImageBank.mistakes, 300, 5, null);
 		for (int i = 0; i < mistakeCap; i++)
 			g.drawImage(ImageBank.mistakeLives[mistakeCount < mistakeCap - i ? 0 : 1], 400 + i * 20, 5, null);
+		// draw big oh no text if you're a loser
+		if (losing) {
+			g.drawImage(ImageBank.ohno, 37, textDrop.getIntValue(), null);
+		}
+		if (winning) {
+			g.drawImage(ImageBank.youwin, 37, textDrop.getIntValue(), null);
+		}
 	}
 	
 	/* ~~~~~~~~~~~~~~~~~~~~

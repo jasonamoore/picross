@@ -57,8 +57,8 @@ public class FileParser {
 				// skip the number of bytes this level contains
 				int rows = dis.read();
 				int cols = dis.read();
-				// two bytes for time and mistake data, then row * col bits (padded) for one layer, times three if layered
-				int numBytes = 2 + (int) Math.ceil(rows * cols / 8.0) * (levels[n] ? 3 : 1);
+				// row * col bits (padded) for one layer, times three if layered
+				int numBytes = /*2 +*/ (int) Math.ceil(rows * cols / 8.0) * (levels[n] ? 3 : 1);
 				if (dis.skipBytes(numBytes) != numBytes) {
 					dis.close();
 					return null; // skip bytes failed (shouldn't happen)
@@ -78,8 +78,8 @@ public class FileParser {
 	private static Level readOneNormalLevel(DataInputStream dis, int id) throws IOException {
 		int rows = dis.read();
 		int cols = dis.read();
-		int time = dis.read();
-		int mistakes = dis.read();
+		//int time = dis.read();
+		//int mistakes = dis.read();
 		boolean[][] solution = new boolean[rows][cols];
 		int b = 0;
 		int curByte = 0;
@@ -91,14 +91,14 @@ public class FileParser {
 				b = (b + 1) % 8;
 			}
 		}
-		return new Level(new Puzzle(solution), id, time, mistakes);
+		return new Level(new Puzzle(solution), id);
 	}
 	
 	private static Level readOneLayeredLevel(DataInputStream dis, int id) throws IOException {
 		int rows = dis.read();
 		int cols = dis.read();
-		int time = dis.read();
-		int mistakes = dis.read();
+		//int time = dis.read();
+		//int mistakes = dis.read();
 		Puzzle[] layers = new Puzzle[NUM_LAYERS];
 		for (int p = 0; p < NUM_LAYERS; p++) {
 			boolean[][] solution = new boolean[rows][cols];
@@ -114,7 +114,7 @@ public class FileParser {
 			}
 			layers[p] = new Puzzle(solution);
 		}
-		return new Level(layers, id, time, mistakes);
+		return new Level(layers, id);
 	}
 
 }

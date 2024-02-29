@@ -212,7 +212,6 @@ public class Blanket extends Element {
 		int cellSize = puzState.getPuzzleCellSize();
 		int layid = puzState.getActiveLayerId();
 
-		final int guessIndex = 4;
 		BufferedImage[] cells = getCellSheet(cellSize);
 		BufferedImage[] plates = getPlateSheet(cellSize);
 		BufferedImage[] forks = getForkSheet(cellSize);
@@ -233,7 +232,7 @@ public class Blanket extends Element {
 		// the highlighted row and column hints
 		int highRow = getCellAtPoint(getRelativeMouseY());
 		int highCol = getCellAtPoint(getRelativeMouseX());
-		boolean hov = puzzle.validSpot(highRow, highCol);
+		boolean hov = puzzle.validSpot(highRow, highCol) && !puzState.isOver();
 		int mode = hov ? getDrawMode(Input.LEFT_CLICK, puzzle.getMark(highRow, highCol)) : 0;
 
 		Graphics2D gg = (Graphics2D) g;
@@ -248,9 +247,9 @@ public class Blanket extends Element {
 				int pyl = (int) Math.round(plateYLeeway * seed);
 				int fxl = (int) Math.round(forkXLeeway * seed);
 				int fyl = (int) Math.round(forkYLeeway * seed);
-				boolean hovered = r == highRow && c == highCol;
+				boolean hovered = hov && r == highRow && c == highCol;
 				if ((!drawing || mark != drawMode) && hovered && mark == Puzzle.EMPTY && // draw half opacity hover hint
-					(mode != Puzzle.FILLED || puzzle.getRemainingFillCount() > 0)) { // don't if not enough plates
+					(mode != Puzzle.FILLED || puzState.hasPlates())) { // don't if not enough plates
 					gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
 					mark = mode;
 				}
@@ -259,7 +258,7 @@ public class Blanket extends Element {
 				else if (mark == Puzzle.FLAGGED)
 					g.drawImage(forks[0], c * cellSize+fxl, r * cellSize+fyl, null);
 				else if (mark == Puzzle.MAYBE_FILLED)
-					g.drawImage(plates[guessIndex], c * cellSize+pxl, r * cellSize+pyl, null);
+					g.drawImage(plates[4], c * cellSize+pxl, r * cellSize+pyl, null);
 				else if (mark == Puzzle.MAYBE_FLAGGED)
 					g.drawImage(forks[2], c * cellSize+fxl, r * cellSize+fyl, null);
 				if (hovered) // reset opacity
@@ -372,7 +371,7 @@ public class Blanket extends Element {
 		return hash / 17.0;
 	}
 	
-	private static BufferedImage[] getCellSheet(int cellSize) {
+	public static BufferedImage[] getCellSheet(int cellSize) {
 		switch (cellSize) {
 		case PuzzleState.CELL_SIZE_5x5:
 			return ImageBank.cells35;
@@ -386,7 +385,7 @@ public class Blanket extends Element {
 		return null;
 	}
 	
-	private static BufferedImage[] getPlateSheet(int cellSize) {
+	public static BufferedImage[] getPlateSheet(int cellSize) {
 		switch (cellSize) {
 		case PuzzleState.CELL_SIZE_5x5:
 			return ImageBank.plates35;
@@ -400,7 +399,7 @@ public class Blanket extends Element {
 		return null;
 	}
 	
-	private static BufferedImage[] getForkSheet(int cellSize) {
+	public static BufferedImage[] getForkSheet(int cellSize) {
 		switch (cellSize) {
 		case PuzzleState.CELL_SIZE_5x5:
 			return ImageBank.forks35;
@@ -414,7 +413,7 @@ public class Blanket extends Element {
 		return null;
 	}
 	
-	private static BufferedImage[] getHintScrollHorizontalSheet(int cellSize) {
+	public static BufferedImage[] getHintScrollHorizontalSheet(int cellSize) {
 		switch (cellSize) {
 		case PuzzleState.CELL_SIZE_5x5:
 			return ImageBank.hintHoriz35;
@@ -428,7 +427,7 @@ public class Blanket extends Element {
 		return null;
 	}
 	
-	private static BufferedImage[] getHintScrollVerticalSheet(int cellSize) {
+	public static BufferedImage[] getHintScrollVerticalSheet(int cellSize) {
 		switch (cellSize) {
 		case PuzzleState.CELL_SIZE_5x5:
 			return ImageBank.hintVert35;
@@ -446,7 +445,7 @@ public class Blanket extends Element {
 		return getHintScrollHorizontalSheet(cellSize)[0].getWidth();
 	}
 	
-	private static BufferedImage[] getHintNumbersSheet(int cellSize) {
+	public static BufferedImage[] getHintNumbersSheet(int cellSize) {
 		switch (cellSize) {
 		case PuzzleState.CELL_SIZE_5x5:
 			return ImageBank.numsbig;

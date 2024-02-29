@@ -15,6 +15,8 @@ public class ImageBank {
 	public static BufferedImage title;
 	public static BufferedImage island;
 	public static BufferedImage tree;
+	public static BufferedImage ohno;
+	public static BufferedImage youwin;
 	//
 	public static BufferedImage[] bluebutton;
 	public static BufferedImage[] pinkbutton;
@@ -104,6 +106,8 @@ public class ImageBank {
 		// singles
 		title = loadSheet("title.png");
 		island = loadSheet("island.png");
+		ohno = loadSheet("ohno.png");
+		youwin = loadSheet("youwin.png");
 		// location (world select) sprite sheet
 		BufferedImage locSheet = loadSheet("locations.png");
 		tree = loadOne(locSheet, 321, 0, 13, 37);

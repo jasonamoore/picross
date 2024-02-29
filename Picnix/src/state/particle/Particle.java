@@ -10,7 +10,7 @@ public class Particle {
 	public static final double GRAVITY = 20;
 	public static final double FRICTION = 0.95;
 	
-	protected static final int MAX_PARTICLES = 100;
+	protected static final int MAX_PARTICLES = 500;
 	protected static Particle[] particleBelt = new Particle[MAX_PARTICLES];
 	protected static int beltHead;
 	

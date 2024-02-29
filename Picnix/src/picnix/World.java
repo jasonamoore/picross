@@ -12,8 +12,8 @@ public class World {
 	private static final int[] LOCATIONS_YOFF = {0, 10, 0, 20, 0, 30, 5, 10, -10, 0, 11, 12};
 	private static double maxRadDist;
 	
-	private static final String[] WORLD_FILES = new String[] {"test2.pwr", "test2.pwr", "test1.pwr", "test1.pwr", "test1.pwr", "test2.pwr",
-															"test2.pwr", "test1.pwr", "test2.pwr", "test2.pwr", "test1.pwr", "test2.pwr"};
+	private static final String[] WORLD_FILES = new String[] {"beach.pwr", "beach.pwr", "beach.pwr", "beach.pwr", "beach.pwr", "beach.pwr",
+															"beach.pwr", "beach.pwr", "beach.pwr", "beach.pwr", "beach.pwr", "beach.pwr"};
 	
 	private static World[] worlds = new World[NUM_WORLDS];
 	

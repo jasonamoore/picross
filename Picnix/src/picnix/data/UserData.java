@@ -11,6 +11,10 @@ public class UserData {
 	public static int getPuzzleScore(int worldId, int levelId) {
 		return puzzleScores[worldId][levelId];
 	}
+
+	public static void setPuzzleScore(int worldId, int levelId, int score) {
+		puzzleScores[worldId][levelId] = score;
+	}
 	
 	public static int getWorldScore(int worldId) {
 		int count = 0;
