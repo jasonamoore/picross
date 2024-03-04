@@ -50,11 +50,11 @@ public class WinState extends State {
 
 	private static final int ROT = 0;
 	private static final int RAD = 1;
-	private static final int X = 2;
-	private static final int Y = 3;
+	private static final int DELAY = 2;
+	private static final int STOP = 3;
 
-	private static final int ANTS_PER_PLATE = 1;
-	private static final int MIN_ANT_DIST = 200;
+	private static final int ANTS_PER_PLATE = 30;
+	private static final int MAX_DELAY = 10000;
 	private double[][] plates;
 	private double[][] ants;
 	
@@ -93,16 +93,14 @@ public class WinState extends State {
 					for (int a = 0; a < ANTS_PER_PLATE; a++) {
 						// find its target point
 						int aid = i * ANTS_PER_PLATE + a;
-						ants[aid][X] = px; // the plate's x
-						ants[aid][Y] = py; // the plate's y
-						double tdpx = px * topdownScale + Engine.SCREEN_WIDTH / 2;
-						double tdpy = py * topdownScale + Engine.SCREEN_HEIGHT / 2;
-						System.out.println(tdpx + ", " + tdpy);
+						double abspx = px * topdownScale + Engine.SCREEN_WIDTH / 2;
+						double abspy = py * topdownScale + Engine.SCREEN_HEIGHT / 2;
 						// tell this ant where to start from
 						ants[aid][ROT] = Math.random() * 2 * Math.PI; // any angle
 						// the nearest edge, plus some random factor
-						ants[aid][RAD] = Math.max(MIN_ANT_DIST, getMinimumRadiusToEdge(tdpx, tdpy, ants[aid][ROT]) / topdownScale)
-								;//+ Math.random() * 50;
+						ants[aid][RAD] = getMinimumRadiusToEdge(abspx, abspy, ants[aid][ROT]) / topdownScale;
+						ants[aid][DELAY] = Math.random() * MAX_DELAY;
+						ants[aid][STOP] = Math.random() * CELL_SIZE * 0.5;
 					}
 					// next plate
 					i++;
@@ -120,16 +118,12 @@ public class WinState extends State {
 		simulating = true;
 		simTimer.resume();
 		camTimer.resume();
-		goRandomIsometric();
+		goTopDown();
 	}
 	
 	private void stopSimulation() {
 		simulating = false;
 		goTopDown();
-	}
-	
-	private double getSimulationProgress() {
-		return Math.max(0, Math.min(1, simTimer.elapsed() / (double) SIMULATION_DURATION));
 	}
 	
 	private double getMinimumRadiusToEdge(double x, double y, double theta) {
@@ -156,8 +150,8 @@ public class WinState extends State {
 		double distA = theta >= Math.PI / 2 && theta < 3 * Math.PI / 2 ? leftDist : rightDist;
 		double distB = theta >= 0 && theta < Math.PI ? bottomDist : topDist;
 		//System.out.println("a: " + distA + "b: " + distB);
-		// find minimum of side distances
-		return Math.min(distA, distB);
+		// find minimum of side distances (20 grace)
+		return Math.min(distA, distB) + 20;
 	}
 	
 	private void goTopDown() {
@@ -209,7 +203,6 @@ public class WinState extends State {
 		if (simTimer.elapsed() > SIMULATION_DURATION) {
 			stopSimulation();
 		}
-		/*
 		if (simulating) {
 			double factor = !topdown ? 1 : TOPDOWN_DILATION;
 			boolean timeForMore = SIMULATION_DURATION - simTimer.elapsed() >= CAM_SWITCH_TIME;
@@ -219,7 +212,7 @@ public class WinState extends State {
 			}
 		}
 		else
-			super.tick();*/
+			super.tick();
 	}
 
 	@Override
@@ -248,34 +241,72 @@ public class WinState extends State {
 		gg.setTransform(oldTrans);
 		// draw field entities
 		
-		BufferedImage plate = !topdown ? ImageBank.isoplate : ImageBank.plates35[0];
+		BufferedImage plateimg = !topdown ? ImageBank.isoplate : ImageBank.plates35[0];
 		for (int i = 0; i < plates.length; i++) {
+			// get rot and rad values for plate
 			double rot = plates[i][ROT];
-			double rad = plates[i][RAD] * camScale;
-			int w = (int) (camScale * plate.getWidth());
-			int h = (int) (camScale * plate.getHeight());
-			int tx = (int) (-(w / 2) + camX + Engine.SCREEN_WIDTH / 2 + Math.cos(camRot + rot) * rad);
-			int ty = (int) (-(h / 2) + camY + Engine.SCREEN_HEIGHT / 2 + Math.sin(camRot + rot) * rad * ratio);
-			g.drawImage(plate, tx, ty, w, h, null);
+			double rad = plates[i][RAD];
+			// find plate's x and y pos, with cam rot, relative to center of blanket
+			double px = Math.cos(camRot + rot) * rad;
+			double py = Math.sin(camRot + rot) * rad;
+			// width and height of image to draw
+			double pw = camScale * plateimg.getWidth();
+			double ph = camScale * plateimg.getHeight();
+			// location to draw at - translated by camera position and to center of screen
+			double tx = px * camScale - pw / 2 + camX + Engine.SCREEN_WIDTH / 2;
+			double ty = py * camScale * ratio - ph / 2 + camY + Engine.SCREEN_HEIGHT / 2;
+			g.drawImage(plateimg, (int) tx, (int) ty, (int) pw, (int) ph, null);
 		}
 		for (int i = 0; i < ants.length; i++) {
+			// get the plate this ant targets
+			double[] plate = plates[i / ANTS_PER_PLATE];
+			// calculate the plate's x and y pos, as above
+			double px = Math.cos(camRot + plate[ROT]) * plate[RAD];
+			double py = Math.sin(camRot + plate[ROT]) * plate[RAD];
+			// calc ant's progress towards its goal plate
+			double progress = Math.max(0, (simTimer.elapsed() - ants[i][DELAY]) /
+									(double) (SIMULATION_DURATION - MAX_DELAY));
+			// get ant's rot and rad values
 			double rot = ants[i][ROT];
-			double rad = ants[i][RAD] * camScale * (1 - getSimulationProgress());
-			double px = ants[i][X] * camScale;
-			double py = ants[i][Y] * camScale * ratio;
-			int w = (int) (4 * camScale);
-			int h = (int) (4 * camScale);
-			double tx, ty;
-			if (rad < 0) {
-				tx = Math.random() * 35 + px + camX + Engine.SCREEN_WIDTH / 2;
-				ty = Math.random() * 35 * ratio + py + camY + Engine.SCREEN_HEIGHT / 2;
+			double rad = ants[i][RAD] * (1 - progress);
+			// check if ant is stopped, then keep rad at stop value
+			boolean stopped = rad < ants[i][STOP];
+			if (stopped) // put ant at stop radius
+				rad = ants[i][STOP];
+			// ant pos, based on angle and progress from plate (rel to center of blanket)
+			double ax = px + Math.cos(camRot + rot) * rad;
+			double ay = py + Math.sin(camRot + rot) * rad;
+			// if reached stop radius, jitter around
+			if (stopped) {
+				int token = (int) (simTimer.elapsed() % 500);
+				int xoff, yoff;
+				if (token < 125) {
+					xoff = -1;
+					yoff = 0;
+				}
+				else if (token < 250) {
+					xoff = 0;
+					yoff = 0;
+				}
+				else if (token < 375) {
+					xoff = 1;
+					yoff = -1;
+				}
+				else {
+					xoff = 0;
+					yoff = 1;
+				}
+				ax += xoff;
+				ay += yoff;
 			}
-			else {
-				tx = -(w / 2) + px + camX + Engine.SCREEN_WIDTH / 2 + Math.cos(camRot + rot) * rad;
-				ty = -(h / 2) + py + camY + Engine.SCREEN_HEIGHT / 2 + Math.sin(camRot + rot) * rad * ratio;
-			}
+			// width and height of image to draw
+			double aw = 4 * camScale;
+			double ah = 4 * camScale;
+			// location to draw at - translated by camera position and to center of screen
+			double tx = ax * camScale - aw / 2 + camX + Engine.SCREEN_WIDTH / 2;
+			double ty = ay * camScale * ratio - ah / 2 + camY + Engine.SCREEN_HEIGHT / 2;
 			g.setColor(Color.BLACK);
-			g.fillRect((int) tx, (int) ty, w, h);
+			g.fillRect((int) tx, (int) ty, (int) aw, (int) ah);
 		}
 	}
 
