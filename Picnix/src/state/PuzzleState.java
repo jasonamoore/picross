@@ -45,7 +45,7 @@ public class PuzzleState extends State {
 	public static final int CYAN = 2;
 	public static final int TOTAL = 3;
 
-	public static final int FINISH_DURATION = 1000;
+	public static final int FINISH_DURATION = 5000;
 	
 	// the puzzle(s)
 	private Puzzle[] puzzleLayers;
@@ -537,6 +537,7 @@ public class PuzzleState extends State {
 		// check for time failure
 		if (clock.elapsedSec() > timeSecLimit)
 			lose();
+		// check to go on from this state (after lose/win)
 		if (finishTimer.elapsed() > FINISH_DURATION) {
 			finishTimer.reset(false);
 			goOn(winning);

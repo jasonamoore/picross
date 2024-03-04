@@ -1,18 +1,18 @@
 package state;
 
-import java.awt.Color;
+import java.awt.AlphaComposite;
+import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
 import engine.Engine;
-import engine.Input;
 import picnix.Level;
 import picnix.World;
 import picnix.puzzle.Puzzle;
 import resource.bank.ImageBank;
+import resource.bank.Palette;
 import util.Animation;
 import util.Timer;
 
@@ -22,41 +22,43 @@ public class WinState extends State {
 	private static final int TOPDOWN_FINAL_HEIGHT = Engine.SCREEN_HEIGHT - 50;
 	private static final int CELL_SIZE = 35;
 	
+	private static final int SIMULATION_DURATION = 30000;
+	private static final int HALFTIME = SIMULATION_DURATION / 2;
+	
 	private static final double CAM_SWITCH_TIME = 2000;
 	private static final int TOPDOWN_DILATION = 2;
 	private static final double CAM_MIN_SCALE = 2;
 	private static final double CAM_MAX_SCALE = 5;
 	
-	private static final int SIMULATION_DURATION = 30000;
+	private static final int ANTS_PER_PLATE = 30;
+	private static final int ANT_SPREAD = 150;
+	private static final int MAX_DELAY = 10000;
+	private static final int[] JIGGLE = {71, 13, 73, 17};
 	
-	private World world;
-	private Level level;
-	private Puzzle puzzle;
-
-	private int rows, cols;
-	private int width, height;
-	
-	private double camX, camY;
-	private double camScale = 1;
-	
-	private Timer simTimer;
-	private Timer camTimer;
-	private boolean simulating;
-	
-	private boolean topdown;
-	private double topdownScale;
-	
-	private Animation smoothRot;
-
 	private static final int ROT = 0;
 	private static final int RAD = 1;
 	private static final int DELAY = 2;
 	private static final int STOP = 3;
-
-	private static final int ANTS_PER_PLATE = 30;
-	private static final int MAX_DELAY = 10000;
+	
 	private double[][] plates;
 	private double[][] ants;
+	
+	private Timer simTimer;
+	private Timer camTimer;
+	private boolean simulating;
+
+	private int rows, cols;
+	private int width, height;
+
+	private double camX, camY;
+	private double camScale = 1;
+	private Animation smoothRot;
+	private boolean topdown;
+	private double topdownScale;
+	
+	private World world;
+	private Level level;
+	private Puzzle puzzle;
 	
 	public WinState(World world, Level level) {
 		this.world = world;
@@ -98,9 +100,10 @@ public class WinState extends State {
 						// tell this ant where to start from
 						ants[aid][ROT] = Math.random() * 2 * Math.PI; // any angle
 						// the nearest edge, plus some random factor
-						ants[aid][RAD] = getMinimumRadiusToEdge(abspx, abspy, ants[aid][ROT]) / topdownScale;
+						ants[aid][RAD] = getMinimumRadiusToEdge(abspx, abspy, ants[aid][ROT]) / topdownScale
+								+ Math.random() * ANT_SPREAD;
 						ants[aid][DELAY] = Math.random() * MAX_DELAY;
-						ants[aid][STOP] = Math.random() * CELL_SIZE * 0.5;
+						ants[aid][STOP] = Math.random() * (CELL_SIZE - 5) * 0.5;
 					}
 					// next plate
 					i++;
@@ -118,7 +121,7 @@ public class WinState extends State {
 		simulating = true;
 		simTimer.resume();
 		camTimer.resume();
-		goTopDown();
+		goRandomIsometric();
 	}
 	
 	private void stopSimulation() {
@@ -150,8 +153,8 @@ public class WinState extends State {
 		double distA = theta >= Math.PI / 2 && theta < 3 * Math.PI / 2 ? leftDist : rightDist;
 		double distB = theta >= 0 && theta < Math.PI ? bottomDist : topDist;
 		//System.out.println("a: " + distA + "b: " + distB);
-		// find minimum of side distances (20 grace)
-		return Math.min(distA, distB) + 20;
+		// find minimum of side distances (+ some grace room)
+		return Math.min(distA, distB) + CELL_SIZE;
 	}
 	
 	private void goTopDown() {
@@ -189,17 +192,6 @@ public class WinState extends State {
 	
 	@Override
 	public void tick() {
-		if (Input.getInstance().isPressingKey(KeyEvent.VK_A)) {
-			goTopDown();
-		}
-		if (Input.getInstance().isPressingKey(KeyEvent.VK_D)) {
-			goRandomIsometric();
-			Input.getInstance().consumeKeyPress(KeyEvent.VK_D);
-		}
-		if (Input.getInstance().isPressingKey(KeyEvent.VK_0)) {
-			Engine.getEngine().getStateManager().exitTopState(false);
-			Engine.getEngine().getStateManager().exitTopState(false);
-		}
 		if (simTimer.elapsed() > SIMULATION_DURATION) {
 			stopSimulation();
 		}
@@ -217,13 +209,18 @@ public class WinState extends State {
 
 	@Override
 	public void render(Graphics g) {
-		//goTopDown();
 		// draw blanky
 		Graphics2D gg = (Graphics2D) g;
 		AffineTransform oldTrans = gg.getTransform();
 		// if topdown, width and height scale equally
 		double ratio = topdown ? 1 : HEIGHT_WIDTH_RATIO;
 		double camRot = !topdown ? smoothRot.getValue() : 0;
+		float opacity = Math.max(0, Math.min(1, // halfway through sim, start fading in
+				(simTimer.elapsed() - HALFTIME) / (float) HALFTIME));
+		Composite oldComp = gg.getComposite();
+		Composite alphaComp = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity);
+		Composite invAlphaComp = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1 - opacity);
+		g.setColor(Palette.BLACK);
 		// translate field to origin plus given offset before rotating
 		gg.translate(Engine.SCREEN_WIDTH / 2 + camX, Engine.SCREEN_HEIGHT / 2 + camY);
 		gg.scale(camScale, camScale * ratio);
@@ -232,16 +229,27 @@ public class WinState extends State {
         // translate back, so drawing will be at the desired position
 		gg.translate(-width / 2, -height / 2);
 		// draw blanket
-		for (int r = 0; r < rows; r++)
-			for (int c = 0; c < cols; c++)
+		for (int r = 0; r < rows; r++) {
+			for (int c = 0; c < cols; c++) {
+				gg.setComposite(invAlphaComp);
 				g.drawImage(ImageBank.cells35[r % 2 + c % 2],
 						c * CELL_SIZE, r * CELL_SIZE, null);
+				gg.setComposite(oldComp);
+				if (puzzle.isFilledInSolution(r, c)) {
+					// slowly fill cells
+					gg.setComposite(alphaComp);
+					g.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+					gg.setComposite(oldComp);
+				}
+			}
+		}
 		// revert graphics state
 		gg.setClip(null);
 		gg.setTransform(oldTrans);
 		// draw field entities
-		
 		BufferedImage plateimg = !topdown ? ImageBank.isoplate : ImageBank.plates35[0];
+		// plates slowly fade out
+		gg.setComposite(invAlphaComp);
 		for (int i = 0; i < plates.length; i++) {
 			// get rot and rad values for plate
 			double rot = plates[i][ROT];
@@ -257,6 +265,8 @@ public class WinState extends State {
 			double ty = py * camScale * ratio - ph / 2 + camY + Engine.SCREEN_HEIGHT / 2;
 			g.drawImage(plateimg, (int) tx, (int) ty, (int) pw, (int) ph, null);
 		}
+		// revert to regular composite
+		gg.setComposite(oldComp);
 		for (int i = 0; i < ants.length; i++) {
 			// get the plate this ant targets
 			double[] plate = plates[i / ANTS_PER_PLATE];
@@ -276,36 +286,21 @@ public class WinState extends State {
 			// ant pos, based on angle and progress from plate (rel to center of blanket)
 			double ax = px + Math.cos(camRot + rot) * rad;
 			double ay = py + Math.sin(camRot + rot) * rad;
-			// if reached stop radius, jitter around
-			if (stopped) {
-				int token = (int) (simTimer.elapsed() % 500);
-				int xoff, yoff;
-				if (token < 125) {
-					xoff = -1;
-					yoff = 0;
-				}
-				else if (token < 250) {
-					xoff = 0;
-					yoff = 0;
-				}
-				else if (token < 375) {
-					xoff = 1;
-					yoff = -1;
-				}
-				else {
-					xoff = 0;
-					yoff = 1;
-				}
-				ax += xoff;
-				ay += yoff;
-			}
 			// width and height of image to draw
 			double aw = 4 * camScale;
 			double ah = 4 * camScale;
 			// location to draw at - translated by camera position and to center of screen
 			double tx = ax * camScale - aw / 2 + camX + Engine.SCREEN_WIDTH / 2;
 			double ty = ay * camScale * ratio - ah / 2 + camY + Engine.SCREEN_HEIGHT / 2;
-			g.setColor(Color.BLACK);
+			// if reached stop radius, jitter around
+			if (stopped) {
+				int token = (int) (simTimer.elapsed() % 500 / 125);
+				int xhash = (int) (rad * JIGGLE[token]);
+				int yhash = (int) (rot * JIGGLE[token]);
+				tx += xhash % 3 - 1;
+				ty += yhash % 3 - 1;
+			}
+			g.setColor(Palette.BLACK);
 			g.fillRect((int) tx, (int) ty, (int) aw, (int) ah);
 		}
 	}
