@@ -173,10 +173,20 @@ public abstract class Element implements Comparable<Element> {
 	 * Sets whether this Element is enabled.
 	 * A disabled Element does not accept
 	 * input events, but still renders.
+	 * If the Element was being hovered or
+	 * clicked, the leave/release events
+	 * will be called immediately.
 	 * @param enabled True if the Element should become enabled.
 	 */
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
+		if (!enabled) {
+		if (beingHovered())
+			onLeave();
+		for (int i = 0; i < clicking.length; i++)
+			if (beingClicked(i))
+				onRelease(i);
+		}
 	}
 	
 	/**
@@ -185,8 +195,8 @@ public abstract class Element implements Comparable<Element> {
 	 * @param exists True if the Element should become enabled/visible.
 	 */
 	public void setExisting(boolean exists) {
-		this.visible = exists;
-		this.enabled = exists;
+		setVisible(exists);
+		setEnabled(exists);
 	}
 	
 	/**

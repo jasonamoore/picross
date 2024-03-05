@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import picnix.World;
 import resource.bank.ImageBank;
-import state.LevelSelectState;
+import state.NewLevelSelectState;
 
 public class LoadWorldState extends LoadState {
 
@@ -23,7 +23,7 @@ public class LoadWorldState extends LoadState {
 			e.printStackTrace();
 		}
 		// when finished loading open next state (level select)
-		LevelSelectState lss = new LevelSelectState(World.getWorld(worldId));
+		NewLevelSelectState lss = new NewLevelSelectState(World.getWorld(worldId));
 		setNextState(lss);
 		done();
 	}

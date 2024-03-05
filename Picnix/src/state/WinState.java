@@ -128,8 +128,13 @@ public class WinState extends State {
 	private void stopSimulation() {
 		simulating = false;
 		goTopDown();
+		showGallery();
 	}
 	
+	private void showGallery() {
+		
+	}
+
 	private double getMinimumRadiusToEdge(double x, double y, double theta) {
 		// slope of the angle
 		double m = Math.tan(theta); // regular slope for left/right

@@ -102,7 +102,7 @@ public class WorldSelectState extends State {
 			// if faded out: make box fade back in
 			else {
 				smoothBox.reverse(true);
-				UserData.randomizeScores();
+				//UserData.randomizeScores();
 				locationBox.update(curLoc);
 			}
 		}

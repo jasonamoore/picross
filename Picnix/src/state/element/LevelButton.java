@@ -33,7 +33,7 @@ public class LevelButton extends Button {
 		int wid = levState.getWorld().getId();
 		int offset = beingClicked(Input.LEFT_CLICK) ? 1 : 0;
 		g.translate(offset, offset);
-		if (UserData.isPuzzleCompleted(wid, id)) {
+		if (UserData.isPuzzleCleared(wid, id)) {
 			g.drawImage(ImageBank.hiscorebar, xp + 3, yp + 37, null);
 			int score = UserData.getPuzzleScore(wid, id);
 			final int startX = 13, startY = 38;

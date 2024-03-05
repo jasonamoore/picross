@@ -3,8 +3,6 @@ package picnix;
 import picnix.puzzle.Puzzle;
 
 public class Level {
-
-	public static int NO_SCORE = 0;
 	
 	private Puzzle[] layers;
 	private boolean layered;
