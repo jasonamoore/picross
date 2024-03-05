@@ -481,6 +481,7 @@ public class PuzzleState extends State {
 	
 	private void win() {
 		winning = true;
+		UserData.setPuzzleScore(world.getId(), level.getLevelId(), score);
 		finish();
 	}
 	
@@ -497,7 +498,7 @@ public class PuzzleState extends State {
 				int mark = activePuzzle.getMark(r, c);
 				BufferedImage image = null;
 				if (mark == Puzzle.FILLED)
-					image = plates[activeLayerId+1];
+					image = plates[activeLayerId + 1];
 				else if (mark == Puzzle.FLAGGED)
 					image = forks[0];
 				else if (mark == Puzzle.MAYBE_FILLED)
@@ -516,9 +517,8 @@ public class PuzzleState extends State {
 	
 	private void goOn(boolean win) {
 		if (win) {
-			UserData.setPuzzleScore(world.getId(), level.getLevelId(), score);
 			WinState ws = new WinState(world, level);
-			Engine.getEngine().getStateManager().transitionToState(ws, Transition.NONE, 500, 500);
+			Engine.getEngine().getStateManager().transitionToState(ws, Transition.CURTAIN, 500, 750);
 		}
 		else {
 			Engine.getEngine().getStateManager().transitionExitState(Transition.FADE, 500, 0);

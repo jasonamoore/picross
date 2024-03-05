@@ -27,6 +27,8 @@ public class LoadPuzzleState extends LoadState {
 	@Override
 	public void unload() {
 		// SaveData . write ...
+		setNextState(null);
+		done();
 	}
 	
 	

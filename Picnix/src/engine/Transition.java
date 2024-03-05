@@ -1,5 +1,11 @@
 package engine;
 
+import java.awt.AlphaComposite;
+import java.awt.Composite;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+
+import resource.bank.Palette;
 import state.State;
 import util.Timer;
 
@@ -7,6 +13,7 @@ public class Transition {
 
 	public static final int NONE = 0;
 	public static final int FADE = 1;
+	public static final int CURTAIN = 2;
 
 	private State toState;
 	private State oldState;
@@ -75,6 +82,31 @@ public class Transition {
 	
 	public boolean isFinished() {
 		return checked && timer.elapsed() > durA + durB;
+	}
+	
+	public void render(Graphics g) {
+		if (type == Transition.NONE)
+			; // render nothing
+		else if (type == Transition.FADE) {
+			float opacity = (float) (inPartA() ? getAProgress() : 1.0 - getBProgress());
+			Graphics2D gg = (Graphics2D) g;
+			Composite oldComp = gg.getComposite();
+			gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
+			gg.setColor(Palette.BLACK);
+			gg.fillRect(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
+			gg.setComposite(oldComp);
+		}
+		else if (type == Transition.CURTAIN) {
+			int half = Engine.SCREEN_WIDTH / 2;
+			double progress = inPartA() ? getAProgress() : 1 - getBProgress();
+			// curtain should hold closed for a while - adjust progress
+			progress = 1 - Math.min(1, progress / 0.5);
+			double x1 = -half * progress;
+			double x2 = half + half * progress;
+			g.setColor(Palette.RED);
+			g.fillRect((int) x1, 0, half, Engine.SCREEN_HEIGHT);
+			g.fillRect((int) x2, 0, half, Engine.SCREEN_HEIGHT);
+		}
 	}
 	
 }

@@ -30,7 +30,6 @@ public class WinState extends State {
 	private static final double CAM_MIN_SCALE = 2;
 	private static final double CAM_MAX_SCALE = 5;
 	
-	private static final int ANTS_PER_PLATE = 30;
 	private static final int ANT_SPREAD = 150;
 	private static final int MAX_DELAY = 10000;
 	private static final int[] JIGGLE = {71, 13, 73, 17};
@@ -42,6 +41,7 @@ public class WinState extends State {
 	
 	private double[][] plates;
 	private double[][] ants;
+	private int antsPerPlate;
 	
 	private Timer simTimer;
 	private Timer camTimer;
@@ -75,7 +75,8 @@ public class WinState extends State {
 		// plates for the filled cells
 		plates = new double[puzzle.getFilledCellsInSolution()][2];
 		// create ants around the edges
-		int numAnts = plates.length * ANTS_PER_PLATE;
+		antsPerPlate = 150 / rows;
+		int numAnts = plates.length * antsPerPlate;
 		ants = new double[numAnts][4];
 		int i = 0;
 		for (int r = 0; r < puzzle.getRows(); r++) {
@@ -92,9 +93,9 @@ public class WinState extends State {
 					plates[i][ROT] = angle;
 					plates[i][RAD] = dist;
 					// make the ants for this plate
-					for (int a = 0; a < ANTS_PER_PLATE; a++) {
+					for (int a = 0; a < antsPerPlate; a++) {
 						// find its target point
-						int aid = i * ANTS_PER_PLATE + a;
+						int aid = i * antsPerPlate + a;
 						double abspx = px * topdownScale + Engine.SCREEN_WIDTH / 2;
 						double abspy = py * topdownScale + Engine.SCREEN_HEIGHT / 2;
 						// tell this ant where to start from
@@ -269,7 +270,7 @@ public class WinState extends State {
 		gg.setComposite(oldComp);
 		for (int i = 0; i < ants.length; i++) {
 			// get the plate this ant targets
-			double[] plate = plates[i / ANTS_PER_PLATE];
+			double[] plate = plates[i / antsPerPlate];
 			// calculate the plate's x and y pos, as above
 			double px = Math.cos(camRot + plate[ROT]) * plate[RAD];
 			double py = Math.sin(camRot + plate[ROT]) * plate[RAD];

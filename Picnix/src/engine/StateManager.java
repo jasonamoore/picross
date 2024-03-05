@@ -100,17 +100,8 @@ public class StateManager {
 		// render particles
 		Particle.renderParticles(g);
 		// render transition effect
-		if (transitioning && !transition.isFinished()) {
-			if (transition.getType() == Transition.FADE) {
-				float opacity = (float) (transition.inPartA() ? transition.getAProgress() : 1.0 - transition.getBProgress());
-				Graphics2D gg = (Graphics2D) g;
-				Composite oldComp = gg.getComposite();
-				gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-				gg.setColor(Palette.BLACK);
-				gg.fillRect(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
-				gg.setComposite(oldComp);
-			}
-		}
+		if (transitioning && !transition.isFinished())
+			transition.render(g);
 	}
 	
 }
