@@ -6,6 +6,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import picnix.World;
+import state.Gallery;
 
 public class ImageBank {
 
@@ -101,6 +102,9 @@ public class ImageBank {
 	public static BufferedImage[] numsmed;
 	public static BufferedImage[] numstiny;
 	public static BufferedImage isoplate;
+	
+	// gallery images
+	public static BufferedImage[][] gallery;
 	
 	public static void loadGlobalResources() throws IOException {
 		// singles
@@ -204,6 +208,21 @@ public class ImageBank {
 	
 	public static void unloadWorldResources(int worldId) {
 		tiledBackgrounds[worldId] = null;
+		System.gc();
+	}
+	
+	public static void loadGalleryResources() throws IOException {
+		BufferedImage gallerySheet = loadSheet("gallery.png");
+		gallery = new BufferedImage[World.NUM_WORLDS][];
+		for (int i = 0; i < World.NUM_WORLDS; i++) {
+			gallery[i] = loadMany(gallerySheet, 0, i * Gallery.ITEM_SIZE,
+									Gallery.ITEM_SIZE, Gallery.ITEM_SIZE,
+									World.getWorld(i).getLevelCount(), 1);
+		}
+	}
+	
+	public static void unloadGalleryResources() {
+		gallery = null;
 		System.gc();
 	}
 	
