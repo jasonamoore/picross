@@ -30,6 +30,14 @@ public class ImageBank {
 	public static BufferedImage[] goldbuttonclick;
 	public static BufferedImage[] redbuttonclick;
 	public static BufferedImage[] buttondisabled;
+	public static BufferedImage backbuttonlabel;
+	public static BufferedImage[] arrowlabels;
+	public static BufferedImage[] scrollarrowshoriz;
+	public static BufferedImage[] scrollarrowsvert;
+	public static BufferedImage[] scrollthumbhoriz;
+	public static BufferedImage[] scrollthumbvert;
+	public static BufferedImage scrollthumbgriphoriz;
+	public static BufferedImage scrollthumbgripvert;
 	// --
 	public static BufferedImage locationboxframe;
 	public static BufferedImage[] locationlabels;
@@ -139,6 +147,14 @@ public class ImageBank {
 		goldbuttonclick = loadMany(uiSheet, 294, 160, 3, 3, 3, 3);
 		redbuttonclick = loadMany(uiSheet, 303, 160, 3, 3, 3, 3);
 		buttondisabled = loadMany(uiSheet, 312, 160, 3, 3, 3, 3);
+		backbuttonlabel = loadOne(uiSheet, 267, 265, 22, 22);
+		arrowlabels = loadMany(uiSheet, 267, 230, 35, 35, 2, 1);
+		scrollarrowshoriz = loadMany(uiSheet, 289, 265, 10, 10, 2, 1);
+		scrollarrowsvert = loadMany(uiSheet, 289, 275, 10, 10, 2, 1);
+		scrollthumbhoriz = loadMany(uiSheet, 309, 265, 10, 10, 3, 1);
+		scrollthumbvert = loadMany(uiSheet, 309, 275, 10, 10, 3, 1);
+		scrollthumbgriphoriz = loadOne(uiSheet, 339, 265, 7, 6);
+		scrollthumbgripvert = loadOne(uiSheet, 339, 271, 6, 7);
 		//
 		normallevelbutton = loadMany(uiSheet, 267, 169, 48, 48, 2, 1);
 		layeredlevelbutton = loadMany(uiSheet, 267, 217, 48, 48, 2, 1);

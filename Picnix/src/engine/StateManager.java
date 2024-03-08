@@ -8,6 +8,8 @@ import java.util.Stack;
 
 import resource.bank.Palette;
 import state.State;
+import state.TitleState;
+import state.load.LoadState;
 import state.particle.Particle;
 
 public class StateManager {
@@ -43,6 +45,14 @@ public class StateManager {
 	public State getTopState() {
 		return stateStack.peek();
 	}
+
+	/**
+	 * Returns the second topmost state from the stack.
+	 * @return The element at the second-to-last index of the stack.
+	 */
+	public State getPreviousState() {
+		return stateStack.get(stateStack.size() - 2);
+	}
 	
 	/**
 	 * Opens this state, pushing it to the top of the stack.
@@ -71,6 +81,18 @@ public class StateManager {
 		stateStack.pop();
 		if (!stateStack.empty())
 			stateStack.peek().focus(!error ? State.RETURNING : State.ERROR_RETURN);
+	}
+	
+	/**
+	 * Pops state off the stack until the next
+	 * load state is reached.
+	 */
+	public void popUntilNextLoadState() {
+		// pop current state
+		exitTopState(false);
+		// keep popping until its a load state
+		while (!(stateStack.peek() instanceof LoadState))
+			exitTopState(false);
 	}
 	
 	public void tick() {

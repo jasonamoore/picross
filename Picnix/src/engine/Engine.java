@@ -19,7 +19,6 @@ import resource.bank.AudioBank;
 import resource.bank.FontBank;
 import resource.bank.ImageBank;
 import state.TitleState;
-import util.Debug;
 
 /**
  * Singleton class that handles all system-level jobs. Creates the native UI
@@ -274,7 +273,7 @@ public class Engine {
 			lastTime = now;
 			// do ticks
 			while (queuedTicks > 0) {
-				Debug.doTickDebug(now, lastTick);
+				//Debug.doTickDebug(now, lastTick);
 				stateManager.tick();
 				queuedTicks -= 1;
 				lastTick = now;
@@ -301,7 +300,7 @@ public class Engine {
 			image = canvas.createVolatileImage(Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
 
 			long nowR = System.nanoTime();
-			Debug.doRenderDebug(nowR, lastRender);
+			//Debug.doRenderDebug(nowR, lastRender);
             lastRender = nowR;
             Graphics g = image.getGraphics();
             // render game

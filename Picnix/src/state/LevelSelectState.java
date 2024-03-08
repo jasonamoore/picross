@@ -1,6 +1,5 @@
 package state;
 
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
@@ -8,7 +7,7 @@ import engine.Engine;
 import engine.Transition;
 import picnix.World;
 import resource.bank.ImageBank;
-import state.element.Button;
+import state.element.BackButton;
 import state.element.LevelButton;
 import state.load.LoadPuzzleState;
 
@@ -30,20 +29,7 @@ public class LevelSelectState extends ScrollableState {
 		this.world = world;
 		background = ImageBank.tiledBackgrounds[world.getId()];
 		setupLevels(world.getLevels());
-		Button back = new Button(5, 5, 20, 20) {
-			@Override
-			public void onRelease(int mbutton) {
-				super.onRelease(mbutton);
-				if (beingHovered())
-					navigateBack();
-			}
-			@Override
-			public void render(Graphics g) {
-				g.setColor(Color.BLACK);
-				g.fillRect(getDisplayX(), getDisplayY(), getWidth(), getHeight());
-			}
-		};
-		add(back);
+		add(new BackButton());
 	}
 
 	@Override
@@ -53,10 +39,6 @@ public class LevelSelectState extends ScrollableState {
 
 	public World getWorld() {
 		return world;
-	}
-	
-	private void navigateBack() {
-		Engine.getEngine().getStateManager().transitionExitState(Transition.FADE, 500, 0);
 	}
 	
 	private void setupLevels(boolean[] levels) {

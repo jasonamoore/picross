@@ -23,6 +23,7 @@ import state.element.puzzle.LayerButton;
 import state.element.puzzle.LayerProgress;
 import state.element.puzzle.Sidebar;
 import state.element.puzzle.ToolButton;
+import state.load.LoadWinState;
 import state.particle.Particle;
 import util.Animation;
 import util.MultiAnimation;
@@ -481,7 +482,7 @@ public class PuzzleState extends State {
 	
 	private void win() {
 		winning = true;
-		UserData.setPuzzleScore(world.getId(), level.getLevelId(), score);
+		UserData.setPuzzleScore(world.getId(), level.getId(), score);
 		finish();
 	}
 	
@@ -517,8 +518,8 @@ public class PuzzleState extends State {
 	
 	private void goOn(boolean win) {
 		if (win) {
-			WinState ws = new WinState(world, level);
-			Engine.getEngine().getStateManager().transitionToState(ws, Transition.CURTAIN, 500, 750);
+			LoadWinState lws = new LoadWinState(world, level);
+			Engine.getEngine().getStateManager().transitionToState(lws, Transition.CURTAIN, 500, 750);
 		}
 		else {
 			Engine.getEngine().getStateManager().transitionExitState(Transition.FADE, 500, 0);

@@ -7,12 +7,6 @@ import resource.bank.ImageBank;
 import state.GalleryState;
 
 public class LoadGalleryState extends LoadState {
-
-	private int worldId;
-	
-	public LoadGalleryState(int worldId) {
-		this.worldId = worldId;
-	}
 	
 	@Override
 	public void load() {
@@ -38,6 +32,5 @@ public class LoadGalleryState extends LoadState {
 		setNextState(null);
 		done();
 	}
-	
-	
+
 }

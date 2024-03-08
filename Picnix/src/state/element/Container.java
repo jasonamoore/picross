@@ -14,6 +14,8 @@ import state.State;
  */
 public class Container extends Element {
 
+	private int innerWidth, innerHeight;
+	
 	// the built-in Scrollers (one for each axis);
 	// behave like "pseudo-elements" and siblings, not children
 	protected Scroller scrollHoriz;
@@ -44,11 +46,16 @@ public class Container extends Element {
 	 */
 	public Container(int x, int y, int viewWidth, int viewHeight, int innerWidth, int innerHeight) {
 		super(x, y, viewWidth, viewHeight);
+		this.innerWidth = innerWidth;
+		this.innerHeight = innerHeight;
 		final int thick = Scroller.DEFAULT_THICKNESS;
-		if (innerWidth > Engine.SCREEN_WIDTH)
-			scrollHoriz = new Scroller(0, Engine.SCREEN_HEIGHT - thick, thick, Engine.SCREEN_WIDTH - thick, Engine.SCREEN_WIDTH, innerWidth, Scroller.HORIZONTAL);
-		if (innerHeight > Engine.SCREEN_HEIGHT)
-			scrollVert = new Scroller(Engine.SCREEN_WIDTH - thick, 0, thick, Engine.SCREEN_HEIGHT - thick, Engine.SCREEN_HEIGHT, innerHeight, Scroller.VERTICAL);
+		boolean hasHoriz = innerWidth > viewWidth;
+		boolean hasVert = innerHeight > viewHeight;
+		boolean hasBoth = hasHoriz && hasVert;
+		if (hasHoriz)
+			scrollHoriz = new Scroller(x, y + viewHeight - thick, thick, viewWidth - (hasBoth ? thick : 0), viewWidth, innerWidth, Scroller.HORIZONTAL);
+		if (hasVert)
+			scrollVert = new Scroller(x + viewWidth - thick, y, thick, viewHeight - (hasBoth ? thick : 0), viewHeight, innerHeight, Scroller.VERTICAL);
 	}
 
 	/**
@@ -94,10 +101,16 @@ public class Container extends Element {
 	 * invisible and disabled.
 	 */
 	protected void disableScrollers() {
-		scrollHoriz.setVisible(false);
-		scrollVert.setVisible(false);
-		scrollHoriz.setEnabled(false);
-		scrollVert.setEnabled(false);
+		scrollHoriz.setExisting(false);
+		scrollVert.setExisting(false);
+	}
+	
+	public int getInnerWidth() {
+		return innerWidth;
+	}
+	
+	public int getInnerHeight() {
+		return innerHeight;
 	}
 	
 	/**
@@ -124,22 +137,24 @@ public class Container extends Element {
 	@Override
 	public void tick() {
 		super.tick();
-		Input input = Input.getInstance();
-		double scroll = input.getUnconsumedScrollAmount();
-		Scroller targeted = null;
-		if (scrollHoriz != null && scrollVert == null)
-			targeted = scrollHoriz;
-		else if (scrollHoriz == null && scrollVert != null)
-			targeted = scrollVert;
-		else if (scrollHoriz != null && scrollVert != null) {
-			if (input.isPressingKey(KeyEvent.VK_SHIFT))
+		if (isEnabled()) {
+			Input input = Input.getInstance();
+			double scroll = input.getUnconsumedScrollAmount();
+			Scroller targeted = null;
+			if (scrollHoriz != null && scrollVert == null)
 				targeted = scrollHoriz;
-			else
+			else if (scrollHoriz == null && scrollVert != null)
 				targeted = scrollVert;
-		}
-		if (scroll != 0 && targeted != null) {
-			targeted.nudgeSmooth((int) (scroll * Scroller.SCROLL_WHEEL_NUDGE_AMOUNT));
-			input.consumeMouseWheelScroll();
+			else if (scrollHoriz != null && scrollVert != null) {
+				if (input.isPressingKey(KeyEvent.VK_SHIFT))
+					targeted = scrollHoriz;
+				else
+					targeted = scrollVert;
+			}
+			if (scroll != 0 && targeted != null) {
+				targeted.nudgeSmooth((int) (scroll * Scroller.SCROLL_WHEEL_NUDGE_AMOUNT));
+				input.consumeMouseWheelScroll();
+			}
 		}
 	}
 	

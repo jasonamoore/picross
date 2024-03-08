@@ -27,7 +27,7 @@ public class Level {
 		return layered;
 	}
 	
-	public int getLevelId() {
+	public int getId() {
 		return id;
 	}
 	

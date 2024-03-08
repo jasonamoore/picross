@@ -8,11 +8,15 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
 import engine.Engine;
+import engine.Input;
+import engine.Transition;
 import picnix.Level;
 import picnix.World;
 import picnix.puzzle.Puzzle;
+import resource.bank.FontBank;
 import resource.bank.ImageBank;
 import resource.bank.Palette;
+import state.element.TextField;
 import util.Animation;
 import util.Timer;
 
@@ -22,7 +26,7 @@ public class WinState extends State {
 	private static final int TOPDOWN_FINAL_HEIGHT = Engine.SCREEN_HEIGHT - 50;
 	private static final int CELL_SIZE = 35;
 	
-	private static final int SIMULATION_DURATION = 30000;
+	private static final int SIMULATION_DURATION = 2500;//30000;
 	private static final int HALFTIME = SIMULATION_DURATION / 2;
 	
 	private static final double CAM_SWITCH_TIME = 2000;
@@ -38,6 +42,10 @@ public class WinState extends State {
 	private static final int RAD = 1;
 	private static final int DELAY = 2;
 	private static final int STOP = 3;
+	
+	private static final int GALLERY_PADDING = 100;	
+	private static final int GALLERY_PAUSE_TIME = 2000;
+	private static final String GALLERY_STRING = "click anywhere to continue";
 	
 	private double[][] plates;
 	private double[][] ants;
@@ -56,6 +64,10 @@ public class WinState extends State {
 	private boolean topdown;
 	private double topdownScale;
 	
+	private Animation galleryAnim;
+	private Timer galleryTimer;
+	private TextField contText;
+	
 	private World world;
 	private Level level;
 	private Puzzle puzzle;
@@ -72,6 +84,13 @@ public class WinState extends State {
 		simTimer = new Timer(false);
 		camTimer = new Timer(false);
 		smoothRot = new Animation(0, 2 * Math.PI, SIMULATION_DURATION, Animation.EASE_OUT, Animation.NO_LOOP, true);
+		galleryAnim =  new Animation(0, 1, 250, Animation.EASE_IN, Animation.NO_LOOP, false);
+		galleryTimer = new Timer(false);
+		contText = new TextField(GALLERY_STRING, FontBank.test, 0, 345, Engine.SCREEN_WIDTH);
+		contText.setVisible(false);
+		contText.setAlignment(TextField.ALIGN_CENTER);
+		add(contText);
+		// SIM STUFF:
 		// plates for the filled cells
 		plates = new double[puzzle.getFilledCellsInSolution()][2];
 		// create ants around the edges
@@ -132,7 +151,13 @@ public class WinState extends State {
 	}
 	
 	private void showGallery() {
-		
+		Gallery gallery = new Gallery(GALLERY_PADDING, GALLERY_PADDING,
+				Engine.SCREEN_WIDTH - GALLERY_PADDING * 2, Engine.SCREEN_HEIGHT - GALLERY_PADDING * 2);
+		gallery.setEnabled(false);
+		add(gallery);
+		gallery.doFancyReveal(6, 4);
+		galleryAnim.resume();
+		galleryTimer.resume();
 	}
 
 	private double getMinimumRadiusToEdge(double x, double y, double theta) {
@@ -197,8 +222,14 @@ public class WinState extends State {
 	}
 	
 	@Override
+	public void navigateBack() {
+		Engine.getEngine().getStateManager().transitionExitState(Transition.FADE, 250, 0);
+	}
+	
+	@Override
 	public void tick() {
 		if (simTimer.elapsed() > SIMULATION_DURATION) {
+			simTimer.reset(false);
 			stopSimulation();
 		}
 		if (simulating) {
@@ -209,8 +240,13 @@ public class WinState extends State {
 				tryNewScene();
 			}
 		}
-		else
+		else {
 			super.tick();
+			// check a left click to move on
+			if (galleryTimer.elapsed() > GALLERY_PAUSE_TIME &&
+				Input.getInstance().isPressingMouseButton(Input.LEFT_CLICK))
+					navigateBack();
+		}
 	}
 
 	@Override
@@ -308,6 +344,16 @@ public class WinState extends State {
 			}
 			g.setColor(Palette.BLACK);
 			g.fillRect((int) tx, (int) ty, (int) aw, (int) ah);
+		}
+		if (!simulating) {
+			float backopacity = (float) galleryAnim.getValue();
+			gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, backopacity / 2));
+			g.setColor(Palette.BLACK);
+			g.fillRect(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
+			gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, backopacity));
+			boolean showText = galleryTimer.elapsed() > GALLERY_PAUSE_TIME && (int) (galleryTimer.elapsedSec() * 2) % 2 == 0;
+			contText.setVisible(showText);
+			super.render(g);
 		}
 	}
 

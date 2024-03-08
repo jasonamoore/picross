@@ -1,23 +1,25 @@
 package state;
 
 import java.awt.Graphics;
-import java.awt.event.KeyEvent;
 
 import engine.Engine;
 import engine.Input;
 import engine.Transition;
 import picnix.Island;
 import picnix.World;
-import picnix.data.UserData;
+import resource.bank.ImageBank;
+import resource.bank.Palette;
+import state.element.BackButton;
+import state.element.TiledButton;
 import state.element.location.LocationBox;
 import state.load.LoadWorldState;
 import util.Animation;
 
 public class WorldSelectState extends State {
 
-	public static final int SKY_HEIGHT = 150;
+	public static final int SKY_HEIGHT = 120;
 	public static final int OFF_X = -125;
-	public static final int OFF_Y = 75;
+	public static final int OFF_Y = 50;
 	public static final double SCALE = 1;
 	
 	private LocationBox locationBox;
@@ -31,13 +33,45 @@ public class WorldSelectState extends State {
 		smoothBox = new Animation(0, 1, 125, Animation.CUBIC, Animation.NO_LOOP, false);
 		smoothRot = new Animation(initRot, 0, 500, Animation.EASE_OUT, Animation.NO_LOOP, true);
 		locationBox = new LocationBox(this);
+		TiledButton left = new TiledButton(15, 350, 48, 48) {
+			@Override
+			public void onRelease(int mbutton) {
+				super.onRelease(mbutton);
+				if (mbutton == Input.LEFT_CLICK && beingHovered())
+					switchLocation(-1);
+			}
+		};
+		TiledButton right = new TiledButton(240, 350, 48, 48) {
+			@Override
+			public void onRelease(int mbutton) {
+				super.onRelease(mbutton);
+				if (mbutton == Input.LEFT_CLICK && beingHovered())
+					switchLocation(1);
+			}
+		};
+		left.setAllTileMaps(ImageBank.goldbutton, ImageBank.goldbuttonclick, ImageBank.buttondisabled);
+		left.setMiddleFill(Palette.YELLOW);
+		left.setLabel(ImageBank.arrowlabels[0]);
+		right.setAllTileMaps(ImageBank.goldbutton, ImageBank.goldbuttonclick, ImageBank.buttondisabled);
+		right.setMiddleFill(Palette.YELLOW);
+		right.setLabel(ImageBank.arrowlabels[1]);
 		add(locationBox);
+		add(left);
+		add(right);
+		add(new BackButton());
 	}
 	
 	@Override
 	public void focus(int status) {
 		smoothBox.reset(true);
 		locationBox.update(curLoc);
+	}
+	
+	@Override
+	public void navigateBack() {
+		TitleState ts = (TitleState) Engine.getEngine().getStateManager().getPreviousState();
+		ts.setZoomAnim(false, 0, smoothRot.getValue());
+		Engine.getEngine().getStateManager().transitionExitState(Transition.NONE, 0, TitleState.ZOOM_TIME);
 	}
 
 	public void open(boolean easy) {
@@ -81,8 +115,9 @@ public class WorldSelectState extends State {
 	@Override
 	public void tick() {
 		super.tick();
-		Input input = Input.getInstance();
+		/*Input input = Input.getInstance();
 		// check for rotating the island
+		/*
 		boolean leftKey = input.isPressingKey(KeyEvent.VK_LEFT);
 		boolean rightKey = input.isPressingKey(KeyEvent.VK_RIGHT);
 		if (leftKey && !rightKey) {
@@ -92,7 +127,7 @@ public class WorldSelectState extends State {
 		else if (rightKey && !leftKey) {
 			switchLocation(1);
 			input.consumeKeyPress(KeyEvent.VK_RIGHT);
-		}
+		}*/
 		// updating box fade/slide animation stuff
 		// if the box animation is stopped
 		if (!smoothBox.isPlaying()) {
