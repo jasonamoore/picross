@@ -32,7 +32,7 @@ public class TextField extends Element {
 	}
 	
 	public TextField(String text, Font font, int x, int y, int w) {
-		this(text, font, x, y, w, font.getLineHeight());
+		this(text, font, x, y, w, getTextHeight(text, font, w));
 	}
 
 	public void setText(String text) {
@@ -58,27 +58,100 @@ public class TextField extends Element {
 		while (i < text.length()) {
 			// ~ first, calculate line width
 			int j = i;
-			// start width at the first char
-			int cw = font.getGlyph(text.charAt(j++)).getWidth();
-			// while fitting in line (and there is letters to fit)
-			while (j < text.length() && cw < dw)
+			// track how much whitespace this line has
+			boolean whitespaceSoFar = true;
+			boolean noWhiteSpace = true;
+			// the width of the line
+			int cw = 0;
+			// do while fitting in line (and there is letters to fit)
+			do {
 				// add next char to width and increment j
-				cw += font.getGlyph(text.charAt(j++)).getWidth() + font.getCharPadding();
+				char jth = text.charAt(j);
+				whitespaceSoFar &= Character.isWhitespace(jth);
+				noWhiteSpace &= (whitespaceSoFar || !Character.isWhitespace(jth));
+				if (whitespaceSoFar)
+					i++; // skipping drawing whitespace chars
+				else
+					cw += font.getGlyph(jth).getWidth() + font.getCharPadding();
+				j++;
+			}
+			while (j < text.length() && cw < dw);
+			j--; // the actual last fitting character
+			
+			// if we ended off mid-word, rollback to last whitespace char
+			boolean broken = !noWhiteSpace && cw > dw;
+			do {
+				// if there was any white space in the line but we did not break on it (or EOL)
+				broken &= !Character.isWhitespace(text.charAt(j));
+				// remove next char from width and decrement j
+				if (broken) {
+					cw -= font.getGlyph(text.charAt(j)).getWidth() + font.getCharPadding();
+					j--;	
+				}
+			}
+			while (broken);
+			
 			// the starting x offset - based on the width of the line
 			int cx = alignment == ALIGN_LEFT ? 0 : alignment == ALIGN_CENTER ? (dw - cw) / 2 : dw - cw;
-			for (int k = i; k < j; k++) {
+			for (int k = i; k <= j; k++) {
 				// get char glyph and draw it
 				BufferedImage glyph = font.getGlyph(text.charAt(k));
 				g.drawImage(glyph, xp + cx, yp + cy, null);
 				cx += glyph.getWidth() + font.getCharPadding();
 			}
 			// update i to next char to draw
-			i = j;
+			i = j + 1;
 			cy += font.getLineHeight();
 		}
 		//
 		g.setClip(null);
 		((Graphics2D) g).setComposite(oldComp);
+	}
+	
+	public static int getTextHeight(String text, Font font, int dw) {
+		int cy = 0;
+		int i = 0;
+		while (i < text.length()) {
+			// ~ first, calculate line width
+			int j = i;
+			// track how much whitespace this line has
+			boolean whitespaceSoFar = true;
+			boolean noWhiteSpace = true;
+			// the width of the line
+			int cw = 0;
+			// do while fitting in line (and there is letters to fit)
+			do {
+				// add next char to width and increment j
+				char jth = text.charAt(j);
+				whitespaceSoFar &= Character.isWhitespace(jth);
+				noWhiteSpace &= (whitespaceSoFar || !Character.isWhitespace(jth));
+				if (whitespaceSoFar)
+					i++; // skipping drawing whitespace chars
+				else
+					cw += font.getGlyph(jth).getWidth() + font.getCharPadding();
+				j++;
+			}
+			while (j < text.length() && cw < dw);
+			j--; // the actual last fitting character
+			
+			// if we ended off mid-word, rollback to last whitespace char
+			boolean broken = !noWhiteSpace && cw > dw;
+			do {
+				// if there was any white space in the line but we did not break on it (or EOL)
+				broken &= !Character.isWhitespace(text.charAt(j));
+				// remove next char from width and decrement j
+				if (broken) {
+					cw -= font.getGlyph(text.charAt(j)).getWidth() + font.getCharPadding();
+					j--;	
+				}
+			}
+			while (broken);
+			
+			// update i to next char to draw
+			i = j + 1;
+			cy += font.getLineHeight();
+		}
+		return cy;
 	}
 	
 }

@@ -126,7 +126,7 @@ public abstract class State {
 		// render children in ascending z-order
 		for (int i = 0; i < elements.size(); i++) {
 			Element e = elements.get(i);
-			if (e.isVisible())
+			if (e.isVisible() && e.onScreen())
 				e.render(g);
 		}
 	}

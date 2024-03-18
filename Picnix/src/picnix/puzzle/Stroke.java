@@ -1,5 +1,7 @@
 package picnix.puzzle;
 
+import picnix.Level;
+
 public class Stroke {
 	
 	public static int STROKE_BANK_SIZE = 50;
@@ -9,7 +11,8 @@ public class Stroke {
 	
 	private int numChanged;
 	private int[][] changed;
-	private int mistakes;
+	private int[] mistakes;
+	private int mistakeCount;
 	
 	private int layerId;
 
@@ -22,6 +25,7 @@ public class Stroke {
 	private Stroke(int layerId) {
 		this.layerId = layerId;
 		changed = new int[10][3];
+		mistakes = new int[Level.MAX_MISTAKES];
 	}
 	
 	public static Stroke newStroke(int layerId) {
@@ -42,7 +46,11 @@ public class Stroke {
 		return layerId;
 	}
 	
-	public int getMistakes() {
+	public int getMistakeCount() {
+		return mistakeCount;
+	}
+	
+	public int[] getMistakeIndices() {
 		return mistakes;
 	}
 	
@@ -60,12 +68,12 @@ public class Stroke {
 	public void addChange(int row, int col, int prevType, boolean mistake) {
 		if (numChanged == changed.length)
 			if (!upsize()) return;
-		changed[numChanged][0] = row;
-		changed[numChanged][1] = col;
-		changed[numChanged][2] = prevType;
-		numChanged++;
+		changed[numChanged][ROW] = row;
+		changed[numChanged][COL] = col;
+		changed[numChanged][MARK] = prevType;
 		if (mistake)
-			mistakes++;
+			mistakes[mistakeCount++] = numChanged;
+		numChanged++;
 	}
 	
 	private boolean upsize() {

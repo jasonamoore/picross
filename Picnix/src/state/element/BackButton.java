@@ -2,7 +2,6 @@ package state.element;
 
 import engine.Input;
 import resource.bank.ImageBank;
-import resource.bank.Palette;
 
 public class BackButton extends TiledButton {
 
@@ -14,7 +13,6 @@ public class BackButton extends TiledButton {
 	public BackButton() {
 		super(BACK_X, BACK_Y, BACK_W, BACK_H);
 		setAllTileMaps(ImageBank.goldbutton, ImageBank.goldbuttonclick, ImageBank.buttondisabled);
-		setMiddleFill(Palette.YELLOW);
 		setLabel(ImageBank.backbuttonlabel);
 		setZ(50);
 	}

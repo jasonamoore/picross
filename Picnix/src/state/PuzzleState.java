@@ -122,8 +122,9 @@ public class PuzzleState extends State {
 		layered = level.isLayered();
 		//timeSecLimit = level.getTimeLimit() * 60;
 		//mistakeCap = level.getMistakeCap();
-		timeSecLimit = 10 * 60;
-		mistakeCap = 3;
+		clock = new Timer(false);
+		timeSecLimit = level.getTimeLimit();
+		mistakeCap = level.getMistakeCap();
 		puzzleLayers = level.getPuzzles();
 		activeLayerId = layered ? MAGENTA : NO_LAYER;
 		activePuzzle = puzzleLayers[Math.max(0, activeLayerId)];
@@ -149,7 +150,7 @@ public class PuzzleState extends State {
 		
 	@Override
 	public void focus(int status) {
-		clock = new Timer(true);
+		clock.resume();
 	}
 	
 	/**
@@ -371,7 +372,7 @@ public class PuzzleState extends State {
 		updateClearEnabled();
 		updateUndoRedoEnabled();
 		// maybe lost?
-		handleMistake(s.getMistakes());
+		handleMistake(s);
 		// maybe won?
 		boolean won = true;
 		// check all puzzles are solved
@@ -394,7 +395,7 @@ public class PuzzleState extends State {
 		int changedLayer = toRevert.getLayerId();
 		Stroke toSave = Stroke.newStroke(changedLayer);
 		Puzzle revPuzzle = getPuzzleByLayerId(changedLayer);
-		int mistakesDuringRevert = 0;
+		//int mistakesDuringRevert = 0;
 		for (int i = 0; i < toRevert.size(); i++) {
 			int[] chngd = toRevert.getChange(i);
 			int crow = chngd[Stroke.ROW];
@@ -402,8 +403,8 @@ public class PuzzleState extends State {
 			// don't save mistakes in history; will be checked here when reverting
 			toSave.addChange(crow, ccol, revPuzzle.getMark(crow, ccol), false); // <- hence, false
 			boolean mistake = revPuzzle.markSpot(crow, ccol, chngd[Stroke.MARK]);
-			if (mistake)
-				mistakesDuringRevert++;
+			//if (mistake)
+			//	mistakesDuringRevert++;
 		}
 		to.add(toSave);
 		updatePlateEnabled();
@@ -412,7 +413,7 @@ public class PuzzleState extends State {
 		// change to layer that was changed
 		if (activeLayerId != changedLayer)
 			layerClicked(changedLayer);
-		handleMistake(mistakesDuringRevert);
+		//handleMistake(mistakesDuringRevert);
 	}
 	
 	/* ~~~~~~~~~~~~~~~~~~~~
@@ -465,10 +466,16 @@ public class PuzzleState extends State {
 	 * ~~~~~~~~~~~~~~~~~~~~~
 	 */
 	
-	private void handleMistake(int count) {
-		if (count < 1)
+	private void handleMistake(Stroke s) {
+		int strokeMisses = s.getMistakeCount();
+		if (strokeMisses == 0)
 			return;
-		mistakeCount += count;
+		int[] mIds = s.getMistakeIndices();
+		for (int i = 0; i < strokeMisses; i++) {
+			int[] change = s.getChange(mIds[i]);
+			getPuzzleByLayerId(s.getLayerId()).markSpot(change[Stroke.ROW], change[Stroke.COL], change[Stroke.MARK]);
+		}
+		mistakeCount += s.getMistakeCount();
 		if (mistakeCount >= mistakeCap)
 			lose();
 	}
@@ -482,7 +489,7 @@ public class PuzzleState extends State {
 	
 	private void win() {
 		winning = true;
-		UserData.setPuzzleScore(world.getId(), level.getId(), score);
+		UserData.setPuzzleScore(world.getId(), level.getId(), 20);
 		finish();
 	}
 	

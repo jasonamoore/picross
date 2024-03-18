@@ -4,6 +4,9 @@ import picnix.puzzle.Puzzle;
 
 public class Level {
 	
+	public static final int MIN_MISTAKES = 1;
+	public static final int MAX_MISTAKES = 10;
+	
 	private Puzzle[] layers;
 	private boolean layered;
 	
@@ -29,6 +32,14 @@ public class Level {
 	
 	public int getId() {
 		return id;
+	}
+
+	public int getMistakeCap() {
+		return 3;
+	}
+
+	public int getTimeLimit() {
+		return 60 * (layers[0].getRows() * 2 * layers.length);
 	}
 	
 }

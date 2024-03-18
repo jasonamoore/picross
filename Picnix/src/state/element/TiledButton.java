@@ -16,7 +16,10 @@ public class TiledButton extends Button {
 	private BufferedImage[] clickTiles;
 	private BufferedImage[] disabledTiles;
 	private BufferedImage label;
-	private Color middleFill;
+	
+	private Color fill;
+	private Color clickFill;
+	private Color disabledFill;
 	
 	public TiledButton(int x, int y, int w, int h) {
 		super(x, y, w, h);
@@ -32,22 +35,43 @@ public class TiledButton extends Button {
 		this.label = label;
 	}
 	
-	public void setMiddleFill(Color middleFill) {
-		this.middleFill = middleFill;
-	}
-	
 	public void setTileMap(BufferedImage[] tiles) {
 		this.tiles = tiles;
 		tileW = tiles[0].getWidth();
 		tileH = tiles[0].getHeight();
+		// try to make a fill color
+		BufferedImage midTile = tiles[4];
+		int color = midTile.getRGB(0, 0);
+		boolean solid = true;
+		for (int y = 0; y < midTile.getHeight() && solid; y++)
+			for (int x = 0; x < midTile.getWidth() && solid; x++)
+				 solid = midTile.getRGB(x, y) == color;
+		if (solid)
+			fill = new Color(tiles[4].getRGB(0, 0));
 	}
 	
 	public void setClickTileMap(BufferedImage[] clickTiles) {
 		this.clickTiles = clickTiles;
+		BufferedImage midTile = clickTiles[4];
+		int color = midTile.getRGB(0, 0);
+		boolean solid = true;
+		for (int y = 0; y < midTile.getHeight() && solid; y++)
+			for (int x = 0; x < midTile.getWidth() && solid; x++)
+				 solid = midTile.getRGB(x, y) == color;
+		if (solid)
+			clickFill = new Color(clickTiles[4].getRGB(0, 0));
 	}
 	
 	public void setDisabledTileMap(BufferedImage[] disabledTiles) {
 		this.disabledTiles = disabledTiles;
+		BufferedImage midTile = disabledTiles[4];
+		int color = midTile.getRGB(0, 0);
+		boolean solid = true;
+		for (int y = 0; y < midTile.getHeight() && solid; y++)
+			for (int x = 0; x < midTile.getWidth() && solid; x++)
+				 solid = midTile.getRGB(x, y) == color;
+		if (solid)
+			disabledFill = new Color(disabledTiles[4].getRGB(0, 0));
 	}
 	
 	@Override
@@ -61,9 +85,10 @@ public class TiledButton extends Button {
 		int dh = getHeight();
 		//
 		boolean clicking = beingClicked(Input.LEFT_CLICK);
+		boolean enabled = isEnabled();
 		BufferedImage[] curTiles = null;
 		// if disabled, and has a disabled background:
-		if (!isEnabled() && disabledTiles != null)
+		if (!enabled && disabledTiles != null)
 			curTiles = disabledTiles;
 		// if clicking, and has a click background:
 		else if (clicking && clickTiles != null)
@@ -76,8 +101,8 @@ public class TiledButton extends Button {
 			for (int y = 0; y < dh - tileH; y += tileH) {
 				for (int x = 0; x < dw - tileW; x += tileW) {
 					int tileNum = x == 0 ? y == 0 ? 0 : 3 : y == 0 ? 1 : 4;
-					if (tileNum == 4 && middleFill != null)
-						continue; // if we can just fill this tile with middleFill color, skip
+					if (tileNum == 4 && fill != null)
+						continue; // if we can just fill this tile with fill color, skip
 					g.drawImage(curTiles[tileNum], xp + x, yp + y, null);
 				}
 				g.drawImage(curTiles[y == 0 ? 2 : 5], xp + dw - tileW, yp + y, null);
@@ -88,8 +113,8 @@ public class TiledButton extends Button {
 			g.drawImage(curTiles[8], xp + dw - tileW, yp + dh - tileH, null);
 		}
 		// fill the middle of the button with color
-		if (middleFill != null) {
-			g.setColor(middleFill);
+		if (fill != null) {
+			g.setColor(enabled ? clicking ? clickFill : fill : disabledFill);
 			g.fillRect(xp + tileW, yp + tileH, dw - tileW * 2, dh - tileH * 2);
 		}
 		// now draw label over the button

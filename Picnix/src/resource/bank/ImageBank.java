@@ -6,12 +6,15 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import picnix.World;
-import state.Gallery;
+import state.element.Gallery;
 
 public class ImageBank {
 
 	public static BufferedImage[] backgrounds = new BufferedImage[World.NUM_WORLDS];
 	public static BufferedImage[][] tiledBackgrounds = new BufferedImage[World.NUM_WORLDS][];
+	public static BufferedImage paratest1;
+	public static BufferedImage paratest2;
+	public static BufferedImage paratest3;
 	//
 	public static BufferedImage title;
 	public static BufferedImage island;
@@ -40,7 +43,7 @@ public class ImageBank {
 	public static BufferedImage scrollthumbgripvert;
 	// --
 	public static BufferedImage locationboxframe;
-	public static BufferedImage[] locationlabels;
+	public static BufferedImage[] locationbanners;
 	public static BufferedImage[] levelsetbuttonlabels;
 	public static BufferedImage[] worldprogressbars;
 	public static BufferedImage worldprogressfill;
@@ -115,6 +118,10 @@ public class ImageBank {
 	public static BufferedImage[][] gallery;
 	
 	public static void loadGlobalResources() throws IOException {
+		// parallax test
+		paratest1 = loadSheet("testpara1.png");
+		paratest2 = loadSheet("testpara2.png");
+		paratest3 = loadSheet("testpara3.png");
 		// singles
 		title = loadSheet("title.png");
 		island = loadSheet("island.png");
@@ -124,7 +131,7 @@ public class ImageBank {
 		BufferedImage locSheet = loadSheet("locations.png");
 		tree = loadOne(locSheet, 321, 0, 13, 37);
 		locationboxframe = loadOne(locSheet, 0, 0, 168, 394);
-		locationlabels = loadMany(locSheet, 168, 0, 146, 44, 1, 6);
+		locationbanners = loadMany(locSheet, 168, 0, 146, 44, 1, 6);
 		levelsetbuttonlabels = loadMany(locSheet, 168, 264, 113, 27, 1, 2);
 		worldprogressbars = loadMany(locSheet, 168, 319, 132, 23, 1, 2);
 		worldprogressfill = loadOne(locSheet, 300, 319, 6, 21);

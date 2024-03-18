@@ -1,14 +1,9 @@
 package engine;
 
-import java.awt.AlphaComposite;
-import java.awt.Composite;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.util.Stack;
 
-import resource.bank.Palette;
 import state.State;
-import state.TitleState;
 import state.load.LoadState;
 import state.particle.Particle;
 
@@ -59,6 +54,7 @@ public class StateManager {
 	 * @param state
 	 */
 	public void openState(State state) {
+		Input.getInstance().consumeAll();
 		stateStack.push(state);
 		state.focus(State.NEWLY_OPENED);
 	}
@@ -78,6 +74,7 @@ public class StateManager {
 	 * Pops off the active (top) state, closing it.
 	 */
 	public void exitTopState(boolean error) {
+		Input.getInstance().consumeAll();
 		stateStack.pop();
 		if (!stateStack.empty())
 			stateStack.peek().focus(!error ? State.RETURNING : State.ERROR_RETURN);

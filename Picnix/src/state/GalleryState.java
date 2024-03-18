@@ -1,9 +1,7 @@
 package state;
 
-import engine.Engine;
-import engine.Transition;
 import state.element.BackButton;
-import state.element.Button;
+import state.element.Gallery;
 
 public class GalleryState extends State {
 
@@ -17,7 +15,7 @@ public class GalleryState extends State {
 
 	@Override
 	public void focus(int status) {
-		
+		// fancy reveal last completed puzzle (?)
 	}
 
 }

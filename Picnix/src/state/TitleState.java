@@ -7,10 +7,7 @@ import java.awt.geom.AffineTransform;
 import engine.Engine;
 import engine.Transition;
 import picnix.Island;
-import picnix.World;
-import picnix.data.UserData;
 import resource.bank.ImageBank;
-import resource.bank.Palette;
 import state.element.Container;
 import state.element.Icon;
 import state.element.TiledButton;
@@ -52,7 +49,6 @@ public class TitleState extends State {
 			}
 		};
 		play.setAllTileMaps(ImageBank.bluebutton, ImageBank.bluebuttonclick, ImageBank.buttondisabled);
-		play.setMiddleFill(Palette.CYAN);
 		TiledButton gallery = new TiledButton(Engine.getScreenCenterX(200), 300, 200, 50) {
 			public void onRelease(int mbutton) {
 				super.onRelease(mbutton);
@@ -61,7 +57,6 @@ public class TitleState extends State {
 			}
 		};
 		gallery.setAllTileMaps(ImageBank.greenbutton, ImageBank.bluebuttonclick, ImageBank.buttondisabled);
-		gallery.setMiddleFill(Palette.PEAR);
 		panel.add(titleIcon);
 		panel.add(play);
 		panel.add(gallery);
@@ -70,13 +65,8 @@ public class TitleState extends State {
 
 	@Override
 	public void focus(int status) {
-		if (status == State.NEWLY_OPENED) {
-			World.loadWorlds();
-			UserData.load();
-		}
-		else if (zoomState == READY_TO_ZOOM) {
+		if (zoomState == READY_TO_ZOOM)
 			startZoom(true);
-		}
 	}
 	
 	private boolean zooming() {
