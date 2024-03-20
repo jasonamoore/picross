@@ -8,36 +8,32 @@ import engine.Transition;
 import picnix.World;
 import picnix.data.UserData;
 import resource.bank.ImageBank;
+import state.element.BackButton;
 import state.element.Button;
 import state.element.NewLevelButton;
 import state.load.LoadPuzzleState;
-import util.Animation;
 
-public class NewLevelSelectState extends State {
-
-	public static final int TURNSTILE_COUNT = 3;
-	public static final int LEFT = 0;
-	public static final int CENTER = 1;
-	public static final int RIGHT = 2;
+public class NewLevelSelectState extends ScrollableState {
+	
+	private static final int BUTTON_MARGIN = Engine.SCREEN_WIDTH / 2;
+	private static final int SLIDE_THRESHOLD = 45;
 	
 	private World world;
 	// tile background
 	private BufferedImage[] background;
-	// the three buttons visible on the turnstile
-	private NewLevelButton[] turnstile;
-	// buttons for navigating the turnstile
+	// buttons for navigating the list
 	private Button prev, next;
-	// currently selected (centered level)
-	private int curLevelId;
-	
-	private Animation turnAnim;
 	
 	public NewLevelSelectState(World world) {
+		super(calculateWidth(world.getLevelCount()), Engine.SCREEN_HEIGHT);
 		this.world = world;
 		background = ImageBank.tiledBackgrounds[world.getId()];
-		curLevelId = getFirstUnclearedLevel();
-		turnAnim = new Animation(0, 1, 500, Animation.EASE_OUT, Animation.NO_LOOP, false);
 		generateUI();
+	}
+
+	private static int calculateWidth(int size) {
+		// + 1 for blank room on either side
+		return (size + 1) * BUTTON_MARGIN;
 	}
 
 	private int getFirstUnclearedLevel() {
@@ -50,7 +46,8 @@ public class NewLevelSelectState extends State {
 
 	@Override
 	public void focus(int status) {
-		slide(getFirstUnclearedLevel() - curLevelId);
+		if (status == NEWLY_OPENED)
+			slideTo(getFirstUnclearedLevel());
 	}
 
 	public World getWorld() {
@@ -58,21 +55,12 @@ public class NewLevelSelectState extends State {
 	}
 	
 	private void generateUI() {
-		// turnstile buttons
-		turnstile = new NewLevelButton[TURNSTILE_COUNT];
-		for (int i = 0; i < TURNSTILE_COUNT; i++) {
-			turnstile[i] = new NewLevelButton(this, i);
-			add(turnstile[i]);
+		// level buttons
+		for (int i = 0; i < world.getLevelCount(); i++) {
+			NewLevelButton lb = new NewLevelButton(this, i);
+			scrollContainer.add(lb);
 		}
 		// navigation buttons
-		Button back = new Button(5, 5, 20, 20) {
-			@Override
-			public void onRelease(int mbutton) {
-				super.onRelease(mbutton);
-				if (beingHovered())
-					navigateBack();
-			}
-		};
 		prev = new Button(5, 300, 20, 20) {
 			@Override
 			public void onRelease(int mbutton) {
@@ -89,79 +77,68 @@ public class NewLevelSelectState extends State {
 					slideNext();
 			}
 		};
-		back.setBackground(ImageBank.normallevelbutton[0]);
 		prev.setBackground(ImageBank.normallevelbutton[0]);
 		next.setBackground(ImageBank.normallevelbutton[0]);
-		add(back);
+		prev.setZ(2);
+		next.setZ(2);
 		add(prev);
 		add(next);
-	}
-
-	public int getButtonX(int tid) {
-		///int atid = turnAnim.getValue() < 0.5 ? tid : Math.abs(tid - 2);
-		int atid = tid;
-		if (turnAnim.getValue() > 0.5 && tid == 0)
-			atid = 3;
-		double maybe = -NewLevelButton.WIDTH / 2 + Engine.SCREEN_WIDTH / 2 * (atid - turnAnim.getValue());
-		return (int) maybe;
+		// disable arrow buttons on scroll bar
+		scrollContainer.getHorizontalScroller().disableArrowButtons();
+		scrollContainer.getHorizontalScroller().setNudgeSpeed(250);
+		// add back button
+		add(new BackButton());
 	}
 	
-	public int getButtonY(int tid) {
-		return 100;
-	}
-	
-	public double getButtonScale(int tid) {
-		return 1;
+	public int getFocalLevelId() {
+		int viewCenter = scrollContainer.getHorizontalScroller().getViewportOffset() + Engine.SCREEN_WIDTH / 4;
+		return (int) Math.ceil(viewCenter / BUTTON_MARGIN);
 	}
 
-	public int getLevelId(int tid) {
-		return curLevelId - tid - 1;
+	public int getFocalDistance(int levelId) {
+		int viewCenter = scrollContainer.getHorizontalScroller().getViewportOffset() + Engine.SCREEN_WIDTH / 2;
+		int distance = getButtonX(levelId) - viewCenter;
+		return distance;
 	}
 	
 	private void slidePrevious() {
-		slide(-1);
+		int cur = getFocalLevelId();
+		int dist = getFocalDistance(cur);
+		int dest = dist < 0 && Math.abs(dist) > SLIDE_THRESHOLD ? cur : cur - 1;
+		slideTo(dest);
 	}
-	
+
 	private void slideNext() {
-		slide(1);
+		int cur = getFocalLevelId();
+		int dist = getFocalDistance(cur);
+		int dest = dist > 0 && Math.abs(dist) > SLIDE_THRESHOLD ? cur : cur + 1;
+		slideTo(dest);
 	}
 	
-	private void slide(int amount) {
-		// find new level id, update curLevelId
-		int newId = Math.max(0, Math.min(world.getLevelCount() - 1, curLevelId + amount));
-		// the actual amount, after capping id within bounds
-		amount = newId - curLevelId;
-		curLevelId = newId;
-		// hide left or right buttons if at the edge
-		boolean prevExists = curLevelId > 0;
-		turnstile[LEFT].setExisting(prevExists);
-		prev.setEnabled(prevExists);
-		boolean nextExists = curLevelId < world.getLevelCount() - 1;
-		turnstile[RIGHT].setExisting(nextExists);
-		next.setEnabled(nextExists);
-		// restart anim (only if turnstile actually moved)
-		if (amount != 0) {
-			turnAnim.setForward(amount > 0); // if negative, reverse direction
-			turnAnim.reset(true);
-		}
-		System.out.println(curLevelId);
-	}
-	
-	private void navigateBack() {
-		Engine.getEngine().getStateManager().transitionExitState(Transition.FADE, 500, 0);
+	private void slideTo(int levelId) {
+		levelId = Math.max(0, Math.min(world.getLevelCount() - 1, levelId));
+		int buttonViewCenter = getButtonX(levelId) - Engine.SCREEN_WIDTH / 2;
+		scrollContainer.getHorizontalScroller().setViewportOffset(buttonViewCenter);
 	}
 
 	public void levelClicked(int id) {
-		LoadPuzzleState lss = new LoadPuzzleState(id, world.getId());
-		Engine.getEngine().getStateManager().transitionToState(lss, Transition.FADE, 500, 0);
+		// if this is center-screen, launch level
+		if (id == getFocalLevelId()) {
+			LoadPuzzleState lss = new LoadPuzzleState(id, world.getId());
+			Engine.getEngine().getStateManager().transitionToState(lss, Transition.FADE, 500, 0);
+		}
+		// otherwise, center this level button
+		else
+			slideTo(id);
 	}
 	
 	@Override
 	public void tick() {
 		super.tick();
-		// enable turnstile buttons only if animation is not playing
-		for (int i = 0; i < TURNSTILE_COUNT; i++)
-			turnstile[i].setEnabled(!turnAnim.isPlaying());
+		// if at the end, disable prev or next button
+		int viewOffset = scrollContainer.getHorizontalScroller().getViewportOffset();
+		prev.setEnabled(viewOffset > 0);
+		next.setEnabled(viewOffset < scrollContainer.getInnerWidth() - Engine.SCREEN_WIDTH);
 	}
 	
 	@Override
@@ -176,6 +153,11 @@ public class NewLevelSelectState extends State {
 			}
 		}
 		super.render(g);
+	}
+
+	public static int getButtonX(int levelId) {
+		// + 1 for the blank room at the start
+		return (levelId + 1) * BUTTON_MARGIN;
 	}
 	
 }
