@@ -4,7 +4,9 @@ import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import engine.Engine;
 import engine.Input;
+import engine.Transition;
 import state.element.Element;
 
 public abstract class State {
@@ -30,6 +32,11 @@ public abstract class State {
 	private boolean frozen;
 	
 	public abstract void focus(int status);
+
+	public void navigateBack() {
+		// default navigate back
+		Engine.getEngine().getStateManager().transitionExitState(Transition.FADE, 250, 0);
+	}
 	
 	public void add(Element e) {
 		if (!elements.contains(e))
@@ -119,7 +126,7 @@ public abstract class State {
 		// render children in ascending z-order
 		for (int i = 0; i < elements.size(); i++) {
 			Element e = elements.get(i);
-			if (e.isVisible())
+			if (e.isVisible() && e.onScreen())
 				e.render(g);
 		}
 	}

@@ -15,11 +15,12 @@ import java.io.IOException;
 
 import javax.swing.JFrame;
 
+import picnix.World;
+import picnix.data.UserData;
 import resource.bank.AudioBank;
 import resource.bank.FontBank;
 import resource.bank.ImageBank;
 import state.TitleState;
-import util.Debug;
 
 /**
  * Singleton class that handles all system-level jobs. Creates the native UI
@@ -165,7 +166,30 @@ public class Engine {
 		setCanvasSize(getDisplayWidth(), getDisplayHeight());
 		frame.pack();
 	}
-
+	
+	/**
+	 * Initializes and configures the engine's default fields and necessary objects.
+	 */
+	private void init() {
+		// creates the JFrame
+		frameInit();
+		// load global resources
+		try {
+			ImageBank.loadGlobalResources();
+			FontBank.loadGlobalResources();
+			AudioBank.loadGlobalResources();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return;
+		}
+		startup();
+		// create state manager
+		stateManager = new StateManager(new TitleState());
+		// enter game loop
+		running = true;
+		loop();
+	}
+	
 	/**
 	 * Creates and configures the native window (JFrame). Also
 	 * creates the Canvas, maximizing it to fit the user's display
@@ -227,25 +251,13 @@ public class Engine {
 	*/
 	
 	/**
-	 * Initializes and configures the engine's default fields and necessary objects.
+	 * Performs startup tasks, like loading any necessary
+	 * game data or user data from local storage before
+	 * entering the game loop.
 	 */
-	private void init() {
-		// creates the JFrame
-		frameInit();
-		// load global resources
-		try {
-			ImageBank.loadGlobalResources();
-			FontBank.loadGlobalResources();
-			AudioBank.loadGlobalResources();
-		} catch (IOException e) {
-			e.printStackTrace();
-			return;
-		}
-		// create state manager
-		stateManager = new StateManager(new TitleState());
-		// enter game loop
-		running = true;
-		loop();
+	private void startup() {
+		World.loadWorlds();
+		UserData.load();
 	}
 	
 	/**
@@ -262,8 +274,8 @@ public class Engine {
 		// game loop stuff
 		long lastTime = System.nanoTime();
 		double queuedTicks = 0;
-		long lastTick = System.nanoTime();
-		long lastRender = System.nanoTime();
+		//long lastTick = System.nanoTime();
+		//long lastRender = System.nanoTime();
 		//util.Timer timer = new util.Timer(true);
         VolatileImage image;
 		
@@ -274,10 +286,10 @@ public class Engine {
 			lastTime = now;
 			// do ticks
 			while (queuedTicks > 0) {
-				Debug.doTickDebug(now, lastTick);
+				//Debug.doTickDebug(now, lastTick);
 				stateManager.tick();
 				queuedTicks -= 1;
-				lastTick = now;
+				//lastTick = now;
 			}
 			
             // sleep to save CPU for next cycle
@@ -300,9 +312,9 @@ public class Engine {
 			}
 			image = canvas.createVolatileImage(Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
 
-			long nowR = System.nanoTime();
-			Debug.doRenderDebug(nowR, lastRender);
-            lastRender = nowR;
+			//long nowR = System.nanoTime();
+			//Debug.doRenderDebug(nowR, lastRender);
+            //lastRender = nowR;
             Graphics g = image.getGraphics();
             // render game
             stateManager.render(g);

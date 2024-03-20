@@ -63,12 +63,12 @@ public class UserData {
 			File saveFile = new File(getPath());
 			// if no save data was created yet
 			if (saveFile.createNewFile())
-				save(); // populate with default data (zeroes)
+				init(); // populate with default data (zeroes)
 			InputStream is = new FileInputStream(saveFile);
 			DataInputStream dis = new DataInputStream(is);
 			for (int i = 0; i < World.NUM_WORLDS; i++) {
-				puzzleScores[i] = new int[World.getWorld(i).getLevelCount()];
 				World w = World.getWorld(i);
+				puzzleScores[i] = new int[w.getLevelCount()];
 				for (int j = 0; j < w.getLevelCount(); j++)
 					setPuzzleScore(i, j, dis.readInt());
 			}
@@ -83,10 +83,24 @@ public class UserData {
 			OutputStream is = new FileOutputStream(getPath());
 			DataOutputStream dis = new DataOutputStream(is);
 			for (int i = 0; i < World.NUM_WORLDS; i++) {
-				puzzleScores[i] = new int[World.getWorld(i).getLevelCount()];
 				World w = World.getWorld(i);
 				for (int j = 0; j < w.getLevelCount(); j++)
 					dis.writeInt(getPuzzleScore(i, j));
+			}
+			dis.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private static void init() {
+		try {
+			OutputStream is = new FileOutputStream(getPath());
+			DataOutputStream dis = new DataOutputStream(is);
+			for (int i = 0; i < World.NUM_WORLDS; i++) {
+				World w = World.getWorld(i);
+				for (int j = 0; j < w.getLevelCount(); j++)
+					dis.writeInt(0);
 			}
 			dis.close();
 		} catch (IOException e) {

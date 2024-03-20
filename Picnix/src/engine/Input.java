@@ -1062,4 +1062,15 @@ public class Input implements KeyListener, MouseListener, MouseMotionListener, M
 			mouseButtonsReleased[i] = false;
 	}
 	
+	/**
+	 * Consumes all key and mouse button releases,
+	 * and any processed mouse wheel scroll.
+	 * Useful for switching between game states
+	 * when focus changes and input should be reset.
+	 */
+	public void consumeAll() {
+		consumeAllReleases();
+		consumeMouseWheelScroll();
+	}
+	
 }

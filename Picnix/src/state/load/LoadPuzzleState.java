@@ -2,6 +2,7 @@ package state.load;
 
 import picnix.Level;
 import picnix.World;
+import picnix.data.UserData;
 import state.PuzzleState;
 
 public class LoadPuzzleState extends LoadState {
@@ -26,7 +27,7 @@ public class LoadPuzzleState extends LoadState {
 
 	@Override
 	public void unload() {
-		// SaveData . write ...
+		UserData.save();
 		setNextState(null);
 		done();
 	}

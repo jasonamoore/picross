@@ -9,11 +9,18 @@ import state.State;
 import util.Timer;
 
 public abstract class LoadState extends State {
-	
-	public static final int MIN_WAIT_MS = 500;
+
+	public static final int DEFAULT_MIN_WAIT = 500;
+	public static final int DEFAULT_TRANS_TYPE = Transition.FADE;
+	public static final int DEFAULT_TRANS_DUR = 250;
 
 	private Timer timer;
+	private int minWait = DEFAULT_MIN_WAIT;
+	
 	private State nextState;
+	private int transType = DEFAULT_TRANS_TYPE;
+	private int transDur = DEFAULT_TRANS_DUR;
+	
 	protected boolean done;
 	
 	public LoadState() {
@@ -39,14 +46,27 @@ public abstract class LoadState extends State {
 		this.nextState = nextState;
 	}
 	
+	public void setTransitionType(int type) {
+		transType = type;
+	}
+	
+	public void setTransitionDuration(int duration) {
+		transDur = duration;
+	}
+	
+	public void setMinWaitTime(int time) {
+		minWait = time;
+	}
+	
+	
 	public abstract void load();
 	
 	public abstract void unload();
 	
 	@Override
 	public void tick() {
-		if (done && timer.elapsed() >= MIN_WAIT_MS)
-			Engine.getEngine().getStateManager().transitionToState(nextState, Transition.FADE, 0, 250);
+		if (done && timer.elapsed() >= minWait)
+			Engine.getEngine().getStateManager().transitionToState(nextState, transType, 0, transDur);
 	}
 
 	@Override

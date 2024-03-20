@@ -34,7 +34,7 @@ public class LevelSetBox extends Element {
 			@Override
 			public void onRelease(int mbutton) {
 				super.onRelease(mbutton);
-				if (mbutton == Input.LEFT_CLICK && beingHovered());
+				if (mbutton == Input.LEFT_CLICK && beingHovered())
 					worState.open(easy);
 			}
 		};

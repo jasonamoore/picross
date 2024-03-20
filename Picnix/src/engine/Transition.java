@@ -108,5 +108,17 @@ public class Transition {
 			g.fillRect((int) x2, 0, half, Engine.SCREEN_HEIGHT);
 		}
 	}
+
+	public static void renderClosedCurtains(Graphics g) {
+		int half = Engine.SCREEN_WIDTH / 2;
+		double progress = 1;
+		// curtain should hold closed for a while - adjust progress
+		progress = 1 - Math.min(1, progress / 0.5);
+		double x1 = -half * progress;
+		double x2 = half + half * progress;
+		g.setColor(Palette.RED);
+		g.fillRect((int) x1, 0, half, Engine.SCREEN_HEIGHT);
+		g.fillRect((int) x2, 0, half, Engine.SCREEN_HEIGHT);
+	}
 	
 }

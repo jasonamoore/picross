@@ -6,6 +6,7 @@ import picnix.data.UserData;
 import resource.bank.ImageBank;
 import state.WorldSelectState;
 import state.element.Container;
+import state.element.Icon;
 
 public class LocationBox extends Container {
 
@@ -15,6 +16,7 @@ public class LocationBox extends Container {
 	
 	private WorldSelectState worState;
 
+	private Icon banner;
 	private LevelSetBox easy;
 	private LevelSetBox hard;
 	private LockedSetBox lock;
@@ -23,6 +25,8 @@ public class LocationBox extends Container {
 		super(X_POS, 0, WIDTH, HEIGHT);
 		this.worState = worState;
 		setBackground(ImageBank.locationboxframe);
+		// location label at top
+		banner = new Icon(null, 11, 31, 146, 44);
 		easy = new LevelSetBox(worState, true);
 		easy.setBounds(11, 84, 146, 146);
 		hard = new LevelSetBox(worState, false);
@@ -31,6 +35,7 @@ public class LocationBox extends Container {
 		hard.setChildrenExisting(false);
 		lock = new LockedSetBox();
 		lock.setBounds(11, 239, 146, 146);
+		add(banner);
 		add(easy);
 		add(hard);
 		add(lock);
@@ -45,6 +50,7 @@ public class LocationBox extends Container {
 		int hardScore = UserData.getWorldScore(hardId);
 		int unlockScore = hardWorld.getUnlockScore();
 		boolean unlocked = easyScore >= unlockScore;
+		banner.setBackground(ImageBank.locationbanners[curLoc]);
 		hard.setExisting(unlocked);
 		hard.setChildrenExisting(unlocked);
 		lock.setExisting(!unlocked);

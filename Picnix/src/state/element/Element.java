@@ -7,7 +7,9 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
+import engine.Engine;
 import engine.Input;
+import resource.Font;
 import state.State;
 
 /**
@@ -40,6 +42,9 @@ public abstract class Element implements Comparable<Element> {
 	
 	// the background image to render for this element
 	protected BufferedImage background;
+	
+	// tooltip to display on element hover
+	private Tooltip tooltip;
 	
 	/**
 	 * Creates an Element with undefined bounds (all bounds set to zero).
@@ -200,14 +205,29 @@ public abstract class Element implements Comparable<Element> {
 	}
 	
 	/**
+	 * Sets the {@code visible} status of all
+	 * of this Element's children.
+	 * @see #setVisible(boolean)
+	 * @param enabled True if the children should become visible.
+	 */
+	public void setChildrenVisible(boolean visible) {
+		for (int i = 0; i < children.size(); i++) {
+			children.get(i).setVisible(visible);
+			children.get(i).setChildrenVisible(visible);
+		}
+	}
+	
+	/**
 	 * Sets the {@code enabled} status of all
 	 * of this Element's children.
 	 * @see #setEnabled(boolean)
 	 * @param enabled True if the children should become enabled.
 	 */
 	public void setChildrenEnabled(boolean enabled) {
-		for (int i = 0; i < children.size(); i++)
+		for (int i = 0; i < children.size(); i++) {
+			children.get(i).setEnabled(enabled);
 			children.get(i).setChildrenEnabled(enabled);
+		}
 	}
 	
 	/**
@@ -340,6 +360,29 @@ public abstract class Element implements Comparable<Element> {
 	}
 	
 	/**
+	 * Defines a tooltip to appear when this Element
+	 * is hovered. The tooltip will be created
+	 * according to the given arguments.
+	 * This method must be called after this Element
+	 * has been added to a State, otherwise, the
+	 * tooltip will not be created.
+	 * @param text The tip text.
+	 * @param font The font for the tip.
+	 * @param width The width of the tooltip.
+	 * @param distance The distance of the tooltip fromt his Element.
+	 * @param horizontal Whether the tooltip should appear to the
+	 * 				left/right or top/bottom side of this Element.
+	 */
+	public void setTooltip(String text, Font font, int width, int distance, boolean horizontal) {
+		if (state != null) {
+			if (tooltip != null)
+				state.remove(tooltip);
+			tooltip = new Tooltip(this, text, font, width, distance, horizontal);
+			state.add(tooltip);
+		}
+	}
+	
+	/**
 	 * Checks whether the Element is currently being hovered.
 	 * An Element is hovered until onLeave is called,
 	 * which occurs on the first tick when the mouse
@@ -422,6 +465,8 @@ public abstract class Element implements Comparable<Element> {
 	 */
 	public void onHover() {
 		hovering = true;
+		if (tooltip != null)
+			tooltip.show();
 	}
 
 	/**
@@ -430,6 +475,8 @@ public abstract class Element implements Comparable<Element> {
 	 */
 	public void onLeave() {
 		hovering = false;
+		if (tooltip != null)
+			tooltip.hide();
 	}
 	
 	/**
@@ -485,6 +532,20 @@ public abstract class Element implements Comparable<Element> {
 	}
 	
 	/**
+	 * Determines if this element is onscreen for rendering.
+	 * @return
+	 */
+	public boolean onScreen() {
+		int dx = getDisplayX();
+		int dy = getDisplayY();
+		int dw = getWidth();
+		int dh = getHeight();
+		return (dx + dw >= 0 && dy + dh >= 0
+				&& dx < Engine.SCREEN_WIDTH
+				&& dy < Engine.SCREEN_HEIGHT);
+	}
+	
+	/**
 	 * Sets the render clips for a Graphics context, based on
 	 * the bounds of this Element and its parent, if it has one.
 	 * Applying these clips before rendering prevents the Element
@@ -521,6 +582,8 @@ public abstract class Element implements Comparable<Element> {
 	 * @param g Graphics, passed by the State.
 	 */
 	public void render(Graphics g) {
+		//if (getOpacity() == 0f)
+		//	return;
 		setRenderClips(g);
 		Composite oldComp = setRenderComposite(g);
 		if (background != null)

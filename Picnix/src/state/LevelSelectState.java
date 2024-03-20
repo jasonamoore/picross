@@ -1,108 +1,175 @@
 package state;
 
-import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.image.BufferedImage;
 
 import engine.Engine;
 import engine.Transition;
+import picnix.Parallax;
 import picnix.World;
+import picnix.data.UserData;
 import resource.bank.ImageBank;
-import state.element.Button;
+import state.element.BackButton;
 import state.element.LevelButton;
+import state.element.TiledButton;
 import state.load.LoadPuzzleState;
 
 public class LevelSelectState extends ScrollableState {
-
-	public static final int TOP_MARGIN = 80;
-	public static final int LEVEL_BUTTON_WIDTH = 48;
-	public static final int LEVEL_BUTTON_HEIGHT = 48;
-	public static final int LEVEL_BUTTON_MARGIN = 16;
+	
+	private static final int BUTTON_MARGIN = Engine.SCREEN_WIDTH / 2;
+	private static final int SLIDE_THRESHOLD = 45;
 	
 	private World world;
-	
 	// tile background
-	private BufferedImage[] background;
+	//private BufferedImage[] background;
+	// parallax background
+	private Parallax background;
+	// buttons for navigating the list
+	private TiledButton prev, next;
 	
 	public LevelSelectState(World world) {
-		super(Engine.SCREEN_WIDTH, 1000);
-				//calculateInnerHeight(world.getLevelCount()));
+		super(calculateWidth(world.getLevelCount()), Engine.SCREEN_HEIGHT);
 		this.world = world;
-		background = ImageBank.tiledBackgrounds[world.getId()];
-		setupLevels(world.getLevels());
-		Button back = new Button(5, 5, 20, 20) {
-			@Override
-			public void onRelease(int mbutton) {
-				super.onRelease(mbutton);
-				if (beingHovered())
-					navigateBack();
-			}
-			@Override
-			public void render(Graphics g) {
-				g.setColor(Color.BLACK);
-				g.fillRect(getDisplayX(), getDisplayY(), getWidth(), getHeight());
-			}
-		};
-		add(back);
+		//background = ImageBank.tiledBackgrounds[world.getId()];
+		background = new Parallax(true, false);
+		background.addLayer(ImageBank.paratest1, 6000, false);
+		background.addLayer(ImageBank.paratest2, 2000, false);
+		background.addLayer(ImageBank.paratest3, 10000, true);
+		background.resumeScroll();
+		generateUI();
 	}
 
 	@Override
 	public void focus(int status) {
-		// TODO Auto-generated method stub
+		//if (status == NEWLY_OPENED)
+			slideTo(getFirstUnclearedLevel());
+	}
+
+	private int getFirstUnclearedLevel() {
+		int i;
+		for (i = 0; i < world.getLevelCount(); i++)
+			if (!UserData.isPuzzleCleared(world.getId(), i))
+				return i;
+		return i - 1;
+	}
+	
+	private void generateUI() {
+		// level buttons
+		for (int i = 0; i < world.getLevelCount(); i++) {
+			LevelButton lb = new LevelButton(this, i);
+			scrollContainer.add(lb);
+		}
+		// navigation buttons
+		prev = new TiledButton(15, 330, 48, 48) {
+			@Override
+			public void onRelease(int mbutton) {
+				super.onRelease(mbutton);
+				if (beingHovered())
+					slidePrevious();
+			}
+		};
+		next = new TiledButton(417, 330, 48, 48) {
+			@Override
+			public void onRelease(int mbutton) {
+				super.onRelease(mbutton);
+				if (beingHovered())
+					slideNext();
+			}
+		};
+		prev.setAllTileMaps(ImageBank.goldbutton, ImageBank.goldbuttonclick, ImageBank.buttondisabled);
+		prev.setLabel(ImageBank.arrowlabels[0]);
+		next.setAllTileMaps(ImageBank.goldbutton, ImageBank.goldbuttonclick, ImageBank.buttondisabled);
+		next.setLabel(ImageBank.arrowlabels[1]);
+		prev.setZ(2);
+		next.setZ(2);
+		add(prev);
+		add(next);
+		// disable arrow buttons on scroll bar
+		scrollContainer.getHorizontalScroller().disableArrowButtons();
+		scrollContainer.getHorizontalScroller().setNudgeSpeed(250);
+		// add back button
+		add(new BackButton());
 	}
 
 	public World getWorld() {
 		return world;
 	}
 	
-	private void navigateBack() {
-		Engine.getEngine().getStateManager().transitionExitState(Transition.FADE, 500, 0);
+	public int getFocalLevelId() {
+		int viewCenter = scrollContainer.getHorizontalScroller().getViewportOffset() + Engine.SCREEN_WIDTH / 4;
+		return (int) Math.ceil(viewCenter / BUTTON_MARGIN);
+	}
+
+	public int getFocalDistance(int levelId) {
+		int viewCenter = scrollContainer.getHorizontalScroller().getViewportOffset() + Engine.SCREEN_WIDTH / 2;
+		int distance = getButtonX(levelId) - viewCenter;
+		return distance;
 	}
 	
-	private void setupLevels(boolean[] levels) {
-		int xp, yp;
-		xp = LEVEL_BUTTON_MARGIN;
-		yp = TOP_MARGIN;
-		for (int i = 0; i < levels.length; i++) {
-			LevelButton lb = new LevelButton(this, i, xp, yp, LEVEL_BUTTON_WIDTH, LEVEL_BUTTON_HEIGHT);
-			BufferedImage[] sheet = levels[i] ? ImageBank.layeredlevelbutton : ImageBank.normallevelbutton;
-			lb.setBackgrounds(sheet[0], sheet[1], null);
-			scrollContainer.add(lb);
-			xp += LEVEL_BUTTON_WIDTH + LEVEL_BUTTON_MARGIN;
-			if (Engine.SCREEN_WIDTH - xp - LEVEL_BUTTON_WIDTH < LEVEL_BUTTON_MARGIN) {
-				xp = LEVEL_BUTTON_MARGIN;
-				yp += LEVEL_BUTTON_HEIGHT + LEVEL_BUTTON_MARGIN;
-			}
-		}
+	private void slidePrevious() {
+		int cur = getFocalLevelId();
+		int dist = getFocalDistance(cur);
+		int dest = dist < 0 && Math.abs(dist) > SLIDE_THRESHOLD ? cur : cur - 1;
+		slideTo(dest);
+	}
+
+	private void slideNext() {
+		int cur = getFocalLevelId();
+		int dist = getFocalDistance(cur);
+		int dest = dist > 0 && Math.abs(dist) > SLIDE_THRESHOLD ? cur : cur + 1;
+		slideTo(dest);
 	}
 	
-	public static int calculateInnerHeight(int numLevels) {
-		int h = TOP_MARGIN;
-		int buttsPerRow = Engine.SCREEN_WIDTH / (LEVEL_BUTTON_WIDTH + LEVEL_BUTTON_MARGIN);
-		h += LEVEL_BUTTON_HEIGHT * Math.ceil(numLevels / buttsPerRow) + LEVEL_BUTTON_MARGIN;
-		return h;
+	private void slideTo(int levelId) {
+		levelId = Math.max(0, Math.min(world.getLevelCount() - 1, levelId));
+		int buttonViewCenter = getButtonX(levelId) - Engine.SCREEN_WIDTH / 2;
+		scrollContainer.getHorizontalScroller().setViewportOffset(buttonViewCenter);
 	}
 
 	public void levelClicked(int id) {
-		LoadPuzzleState lss = new LoadPuzzleState(id, world.getId());
-		Engine.getEngine().getStateManager().transitionToState(lss, Transition.FADE, 500, 0);
+		// if this is center-screen, launch level
+		if (id == getFocalLevelId()) {
+			LoadPuzzleState lss = new LoadPuzzleState(id, world.getId());
+			Engine.getEngine().getStateManager().transitionToState(lss, Transition.FADE, 500, 0);
+		}
+		// otherwise, center this level button
+		else
+			slideTo(id);
+	}
+	
+	@Override
+	public void tick() {
+		super.tick();
+		// if at the end, disable prev or next button
+		int viewOffset = scrollContainer.getHorizontalScroller().getViewportOffset();
+		prev.setEnabled(viewOffset > 0);
+		next.setEnabled(viewOffset < scrollContainer.getInnerWidth() - Engine.SCREEN_WIDTH);
 	}
 	
 	@Override
 	public void render(Graphics g) {
-		int camY = scrollContainer.getScrollY();
+		/*
 		// background tiling / chunking ;)
-		g.translate(0, -camY);
 		for (int x = 0; x * 100 < Engine.SCREEN_WIDTH; x++) {
-			for (int y = camY / 45; y * 45 < Engine.SCREEN_HEIGHT + camY; y++) {
+			for (int y = 0; y * 45 < Engine.SCREEN_HEIGHT; y++) {
 				if (x + y * 10 >= background.length)
 					continue;
 				BufferedImage tile = background[x + y * 10];
 				g.drawImage(tile, x * 100, y * 45, null);
 			}
-		}
-		g.translate(0, camY);
+		}*/
+		background.setScroll(scrollContainer.getScrollX());
+		background.render(g);
 		super.render(g);
+	}
+
+	public static int getButtonX(int levelId) {
+		// + 1 for the blank room at the start
+		return (levelId + 1) * BUTTON_MARGIN;
+	}
+
+	private static int calculateWidth(int size) {
+		// + 1 for blank room on either side
+		return (size + 1) * BUTTON_MARGIN;
 	}
 	
 }
