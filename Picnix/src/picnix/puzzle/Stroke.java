@@ -1,7 +1,5 @@
 package picnix.puzzle;
 
-import picnix.Level;
-
 public class Stroke {
 	
 	public static int STROKE_BANK_SIZE = 50;
@@ -11,8 +9,9 @@ public class Stroke {
 	
 	private int numChanged;
 	private int[][] changed;
-	private int[] mistakes;
-	private int mistakeCount;
+	
+	private boolean mistaken;
+	private int[] mistake;
 	
 	private int layerId;
 
@@ -25,7 +24,7 @@ public class Stroke {
 	private Stroke(int layerId) {
 		this.layerId = layerId;
 		changed = new int[10][3];
-		mistakes = new int[Level.MAX_MISTAKES];
+		mistake = new int[3];
 	}
 	
 	public static Stroke newStroke(int layerId) {
@@ -41,17 +40,29 @@ public class Stroke {
 	public int size() {
 		return numChanged;
 	}
+
+	public boolean isEmpty() {
+		return numChanged == 0 && !mistaken;
+	}
 	
 	public int getLayerId() {
 		return layerId;
 	}
 	
-	public int getMistakeCount() {
-		return mistakeCount;
+	public boolean hasMistake() {
+		return mistaken;
 	}
 	
-	public int[] getMistakeIndices() {
-		return mistakes;
+	public int getMistakeRow() {
+		return mistake[ROW];
+	}
+	
+	public int getMistakeCol() {
+		return mistake[COL];
+	}
+	
+	public int getMistakeMark() {
+		return mistake[MARK];
 	}
 	
 	public int[] getRecentChange(int lookback) {
@@ -65,15 +76,22 @@ public class Stroke {
 		return changed[index];
 	}
 	
-	public void addChange(int row, int col, int prevType, boolean mistake) {
-		if (numChanged == changed.length)
-			if (!upsize()) return;
-		changed[numChanged][ROW] = row;
-		changed[numChanged][COL] = col;
-		changed[numChanged][MARK] = prevType;
-		if (mistake)
-			mistakes[mistakeCount++] = numChanged;
-		numChanged++;
+	public void addChange(int row, int col, int prevType, boolean miss) {
+		if (miss) {
+			// don't save change, but save its location
+			mistaken = true;
+			mistake[ROW] = row;
+			mistake[COL] = col;
+			mistake[MARK] = prevType;
+		}
+		else {
+			if (numChanged == changed.length)
+				if (!upsize()) return;
+			changed[numChanged][ROW] = row;
+			changed[numChanged][COL] = col;
+			changed[numChanged][MARK] = prevType;
+			numChanged++;
+		}
 	}
 	
 	private boolean upsize() {

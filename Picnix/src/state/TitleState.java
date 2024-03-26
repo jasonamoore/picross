@@ -41,7 +41,7 @@ public class TitleState extends State {
 		zoomToIsland = new Animation(0, 1, 1000, Animation.EASE_OUT, Animation.NO_LOOP, false);
 		panel = new Container(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
 		Icon titleIcon = new Icon(ImageBank.title, Engine.getScreenCenterX(350), 50);
-		TiledButton play = new TiledButton(Engine.getScreenCenterX(200), 250, 200, 50) {
+		TiledButton play = new TiledButton(Engine.getScreenCenterX(200), 175, 200, 70) {
 			public void onRelease(int mbutton) {
 				super.onRelease(mbutton);
 				if (beingHovered())
@@ -49,14 +49,16 @@ public class TitleState extends State {
 			}
 		};
 		play.setAllTileMaps(ImageBank.bluebutton, ImageBank.bluebuttonclick, ImageBank.buttondisabled);
-		TiledButton gallery = new TiledButton(Engine.getScreenCenterX(200), 300, 200, 50) {
+		play.setLabel(ImageBank.playlabel);
+		TiledButton gallery = new TiledButton(Engine.getScreenCenterX(200), 255, 200, 50) {
 			public void onRelease(int mbutton) {
 				super.onRelease(mbutton);
 				if (beingHovered())
 					galleryButtonClicked();
 			}
 		};
-		gallery.setAllTileMaps(ImageBank.greenbutton, ImageBank.bluebuttonclick, ImageBank.buttondisabled);
+		gallery.setAllTileMaps(ImageBank.greenbutton, ImageBank.greenbuttonclick, ImageBank.buttondisabled);
+		gallery.setLabel(ImageBank.gallerylabel);
 		panel.add(titleIcon);
 		panel.add(play);
 		panel.add(gallery);

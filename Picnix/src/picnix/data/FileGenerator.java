@@ -12,11 +12,11 @@ import javax.imageio.ImageIO;
 
 public class FileGenerator {
 
-	private static final String SOURCE = "L:\\Users\\Jason\\Documents\\Programming\\picross\\levels\\worldbeach";
+	private static final String SOURCE = "L:\\Users\\Jason\\Documents\\Programming\\picross\\levels\\black";
 	
 	public static void main(String args[]) throws IOException {
 		encodeAll(SOURCE);
-		combineIntoWorld("beach", 5000, SOURCE);
+		combineIntoWorld("black", 5000, SOURCE);
 	}
 	
 	private static void combineIntoWorld(String name, int unlockScore, String source) throws IOException {

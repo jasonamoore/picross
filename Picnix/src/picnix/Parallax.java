@@ -26,8 +26,8 @@ public class Parallax {
 		layers = new ArrayList<Layer>(4);
 	}
 	
-	public void addLayer(BufferedImage sheet, int speed, boolean auto) {
-		layers.add(new Layer(sheet, speed, auto));
+	public void addLayer(BufferedImage sheet, int offset, int speed, boolean auto) {
+		layers.add(new Layer(sheet, offset, speed, auto));
 	}
 	
 	public void resumeScroll() {
@@ -51,16 +51,20 @@ public class Parallax {
 	}
 	
 	protected int getStartX(int layerIndex) {
-		Layer layer = layers.get(layerIndex);
-		long elapsed = !layer.auto ? scrollAmount : scrollTimer.elapsed();
-		int speed = layer.speed;
+		Layer lay = layers.get(layerIndex);
+		if (!horizontal)
+			return lay.offset;
+		long elapsed = !lay.auto ? scrollAmount : scrollTimer.elapsed();
+		int speed = lay.speed;
 		elapsed %= speed;
 		double progress = elapsed / (double) speed;
-		return (int) -(progress * layer.sheet.getWidth());
+		return (int) -(progress * lay.sheet.getWidth());
 	}
 	
 	protected int getStartY(int layerIndex) {
 		Layer lay = layers.get(layerIndex);
+		if (!vertical)
+			return lay.offset;
 		long elapsed = !lay.auto ? scrollAmount : scrollTimer.elapsed();
 		int speed = lay.speed;
 		elapsed %= speed;
@@ -71,14 +75,20 @@ public class Parallax {
 	public void render(Graphics g) {
 		for (int i = 0; i < layers.size(); i++) {
 			BufferedImage sheet = layers.get(i).sheet;
-			int sx = horizontal ? getStartX(i) : 0;
-			int sy = vertical ? getStartY(i) : 0;
+			int sx = getStartX(i);
+			int sy = getStartY(i);
 			int imgw = sheet.getWidth();
 			int imgh = sheet.getHeight();
 			// tile the texture to fill screen
-			for (int y = sy; y < Engine.SCREEN_HEIGHT; y += imgh)
-				for (int x = sx; x < Engine.SCREEN_WIDTH; x += imgw)
+			for (int y = sy; y < Engine.SCREEN_HEIGHT; y += imgh) {
+				for (int x = sx; x < Engine.SCREEN_WIDTH; x += imgw) {
 					g.drawImage(sheet, x, y, null);
+					if (!horizontal)
+						break;
+				}
+				if (!vertical)
+					break;
+			}
 		}
 	}
 	
@@ -87,11 +97,13 @@ public class Parallax {
 class Layer {
 	
 	BufferedImage sheet;
+	int offset;
 	int speed;
 	boolean auto;
 	
-	Layer(BufferedImage sheet, int speed, boolean auto) {
+	Layer(BufferedImage sheet, int offset, int speed, boolean auto) {
 		this.sheet = sheet;
+		this.offset = offset;
 		this.speed = speed;
 		this.auto = auto;
 	}

@@ -3,6 +3,7 @@ package picnix;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 
 import engine.Engine;
 import resource.bank.ImageBank;
@@ -12,7 +13,10 @@ public class Island {
 
 	private static final double HEIGHT_WIDTH_RATIO = 0.5;
 	
+	private static final int NUM_OBJS = 1;
+	
 	private static double[][] trees;
+	private static IslandObject[] objs;
 	
 	static {
 		// make 25 random trees
@@ -21,6 +25,9 @@ public class Island {
 			trees[i][0] = Math.random() * 175;
 			trees[i][1] = Math.random() * 2 * Math.PI;
 		}
+		// make objects
+		objs = new IslandObject[NUM_OBJS];
+		objs[0] = new IslandObject(ImageBank.parkobjsheet, 25, Math.PI / 5, 24, 17);
 	}
 	
 	public static void renderIsland(Graphics g, int skyHeight, int islandOffsetX, int islandOffsetY, double islandScale, double islandRotation) {
@@ -58,6 +65,43 @@ public class Island {
 			int ty = (int) (-offy + islandOffsetY + Engine.SCREEN_HEIGHT / 2 + Math.sin(-islandRotation + rot) * rad * HEIGHT_WIDTH_RATIO);
 			g.drawImage(ImageBank.tree, tx, ty, null);
 		}
+		// draw island objects
+		for (int i = 0; i < objs.length; i++) {
+			IslandObject obj = objs[i];
+			int offx = obj.width / 2;
+			int offy = obj.height;
+			int tx = (int) (-offx + islandOffsetX + Engine.SCREEN_WIDTH / 2 + Math.cos(-islandRotation + obj.rot) * obj.rad);
+			int ty = (int) (-offy + islandOffsetY + Engine.SCREEN_HEIGHT / 2 + Math.sin(-islandRotation + obj.rot) * obj.rad * HEIGHT_WIDTH_RATIO);
+			g.drawImage(obj.getSprite(islandRotation + obj.rot), tx, ty, null);
+		}
+	}
+	
+}
+
+class IslandObject {
+	
+	BufferedImage[] sheet;
+	double rot, rad;
+	int width, height;
+	
+	public IslandObject(BufferedImage[] sheet, double rad, double rot, int width, int height) {
+		this.sheet = sheet;
+		this.rad = rad;
+		this.rot = rot;
+		this.width = width;
+		this.height = height;
+	}
+
+	public BufferedImage getSprite(double totalRot) {
+		// bound totalRot between 0 and 2PI:
+		int circles = (int) (totalRot / (2 * Math.PI));
+		double adjRot = totalRot - (circles * 2 * Math.PI);
+		if (adjRot < 0)
+			adjRot += 2 * Math.PI;
+		double chunkSize = (2 * Math.PI) / sheet.length;
+		// index will be between 0 and sheet.length:
+		int index = (int) Math.floor(adjRot / chunkSize);
+		return sheet[index];
 	}
 	
 }

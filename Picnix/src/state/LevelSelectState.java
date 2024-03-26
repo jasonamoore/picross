@@ -31,9 +31,10 @@ public class LevelSelectState extends ScrollableState {
 		this.world = world;
 		//background = ImageBank.tiledBackgrounds[world.getId()];
 		background = new Parallax(true, false);
-		background.addLayer(ImageBank.paratest1, 6000, false);
-		background.addLayer(ImageBank.paratest2, 2000, false);
-		background.addLayer(ImageBank.paratest3, 10000, true);
+		background.addLayer(ImageBank.paratest1, 0, 6000, false);
+		int bottom = Engine.SCREEN_HEIGHT - ImageBank.paratest2.getHeight();
+		background.addLayer(ImageBank.paratest2, bottom, 2000, false);
+		background.addLayer(ImageBank.paratest3, 0, 10000, true);
 		background.resumeScroll();
 		generateUI();
 	}
@@ -41,7 +42,7 @@ public class LevelSelectState extends ScrollableState {
 	@Override
 	public void focus(int status) {
 		//if (status == NEWLY_OPENED)
-			slideTo(getFirstUnclearedLevel());
+		slideTo(getFirstUnclearedLevel());
 	}
 
 	private int getFirstUnclearedLevel() {

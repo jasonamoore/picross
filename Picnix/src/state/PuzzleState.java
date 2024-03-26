@@ -1,5 +1,6 @@
 package state;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Graphics;
@@ -45,8 +46,11 @@ public class PuzzleState extends State {
 	public static final int YELLOW = 1;
 	public static final int CYAN = 2;
 	public static final int TOTAL = 3;
-
+	// constant for win/lose screen
 	public static final int FINISH_DURATION = 5000;
+	// constants for streak info positioning
+	public static final int STREAK_X = 380;
+	public static final int STREAK_Y = 300;
 	
 	// the puzzle(s)
 	private Puzzle[] puzzleLayers;
@@ -150,7 +154,8 @@ public class PuzzleState extends State {
 		
 	@Override
 	public void focus(int status) {
-		clock.resume();
+		if (status == NEWLY_OPENED)
+			clock.resume();
 	}
 	
 	/**
@@ -245,6 +250,14 @@ public class PuzzleState extends State {
 	 * 	GETTERS FOR TOOL/LAYER STATE
 	 * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	 */
+	
+	public int getRows() {
+		return activePuzzle.getRows();
+	}
+	
+	public int getColumns() {
+		return activePuzzle.getColumns();
+	}
 	
 	public int getCurrentTool() {
 		return currentToolId;
@@ -360,7 +373,7 @@ public class PuzzleState extends State {
 	}
 	
 	public void pushStroke(Stroke s, int drawMode) {
-		if (s.size() < 1) // empty stroke
+		if (s.isEmpty()) // empty stroke
 			return;
 		undo.add(s);
 		// maintain undo history limit
@@ -400,9 +413,9 @@ public class PuzzleState extends State {
 			int[] chngd = toRevert.getChange(i);
 			int crow = chngd[Stroke.ROW];
 			int ccol = chngd[Stroke.COL];
-			// don't save mistakes in history; will be checked here when reverting
+			// mistakes should never be in history since they are immediately fixed
 			toSave.addChange(crow, ccol, revPuzzle.getMark(crow, ccol), false); // <- hence, false
-			boolean mistake = revPuzzle.markSpot(crow, ccol, chngd[Stroke.MARK]);
+			//boolean mistake = revPuzzle.markSpot(crow, ccol, chngd[Stroke.MARK]);
 			//if (mistake)
 			//	mistakesDuringRevert++;
 		}
@@ -466,18 +479,22 @@ public class PuzzleState extends State {
 	 * ~~~~~~~~~~~~~~~~~~~~~
 	 */
 	
+	public void increaseScore(int amount) {
+		score += amount;
+	}
+	
 	private void handleMistake(Stroke s) {
-		int strokeMisses = s.getMistakeCount();
-		if (strokeMisses == 0)
-			return;
-		int[] mIds = s.getMistakeIndices();
-		for (int i = 0; i < strokeMisses; i++) {
-			int[] change = s.getChange(mIds[i]);
-			getPuzzleByLayerId(s.getLayerId()).markSpot(change[Stroke.ROW], change[Stroke.COL], change[Stroke.MARK]);
+		if (s.hasMistake()) {
+			int mr = s.getMistakeRow();
+			int mc = s.getMistakeCol();
+			// do mistake particle
+			popParticle(mr, mc, activePuzzle.getMark(mr, mc));
+			// clear the mistake spot
+			activePuzzle.markSpot(mr, mc, Puzzle.EMPTY);
+			mistakeCount++;
+			if (mistakeCount >= mistakeCap)
+				lose();
 		}
-		mistakeCount += s.getMistakeCount();
-		if (mistakeCount >= mistakeCap)
-			lose();
 	}
 	
 	private void finish() {
@@ -489,40 +506,41 @@ public class PuzzleState extends State {
 	
 	private void win() {
 		winning = true;
-		UserData.setPuzzleScore(world.getId(), level.getId(), 20);
+		UserData.setPuzzleScore(world.getId(), level.getId(), score);
 		finish();
 	}
 	
 	private void lose() {
 		losing = true;
 		finish();
-		// make particles
+		// make particles for each cell
+		for (int r = 0; r < activePuzzle.getRows(); r++)
+			for (int c = 0; c < activePuzzle.getColumns(); c++)
+				popParticle(r, c, activePuzzle.getMark(r, c));
+		clearMarks();
+	}
+	
+	private void popParticle(int row, int col, int mark) {
 		BufferedImage[] plates = Blanket.getPlateSheet(cellSize);
 		BufferedImage[] forks = Blanket.getForkSheet(cellSize);
 		int bx = field.getBlanket().getDisplayX();
 		int by = field.getBlanket().getDisplayY();
-		for (int r = 0; r < activePuzzle.getRows(); r++) {
-			for (int c = 0; c < activePuzzle.getColumns(); c++) {
-				int mark = activePuzzle.getMark(r, c);
-				BufferedImage image = null;
-				if (mark == Puzzle.FILLED)
-					image = plates[activeLayerId + 1];
-				else if (mark == Puzzle.FLAGGED)
-					image = forks[0];
-				else if (mark == Puzzle.MAYBE_FILLED)
-					image = plates[4];
-				else if (mark == Puzzle.MAYBE_FLAGGED)
-					image = forks[2];
-				if (image != null) {
-					double randXVel = Math.random() * 200 - 100;
-					double randYVel = Math.random() * 100 - 150;
-					Particle.generateParticle(image, bx + c * cellSize, by + r * cellSize, randXVel, randYVel, 0.92, 0, 10, 7000);
-				}
-			}
+		BufferedImage image = null;
+		if (mark == Puzzle.FILLED)
+			image = plates[activeLayerId + 1];
+		else if (mark == Puzzle.FLAGGED)
+			image = forks[0];
+		else if (mark == Puzzle.MAYBE_FILLED)
+			image = plates[4];
+		else if (mark == Puzzle.MAYBE_FLAGGED)
+			image = forks[2];
+		if (image != null) {
+			double randXVel = Math.random() * 200 - 100;
+			double randYVel = Math.random() * 100 - 150;
+			Particle.generateParticle(image, bx + col * cellSize, by + row * cellSize, randXVel, randYVel, 0.92, 0, 10, 7000);
 		}
-		clearMarks();
 	}
-	
+
 	private void goOn(boolean win) {
 		if (win) {
 			LoadWinState lws = new LoadWinState(world, level);
@@ -570,7 +588,7 @@ public class PuzzleState extends State {
 		for (b = 24; b < Engine.SCREEN_WIDTH - 24; b += 24)
 			g.drawImage(ImageBank.topbar[b % 48 > 0 ? 1 : 2], b, 0, null);
 		g.drawImage(ImageBank.topbar[3], b, 0, null);
-		g.drawImage(ImageBank.time, 20, 5, null);
+		g.drawImage(ImageBank.time, 15, 5, null);
 		int time = timeSecLimit - (int) clock.elapsedSec();
 		int min = time / 60;
 		int sec = time % 60;
@@ -583,13 +601,50 @@ public class PuzzleState extends State {
 				symbol = ImageBank.colon;
 			else
 				symbol = ImageBank.digits[c - '0'];
-			g.drawImage(symbol, 80 + x, c == ':' ? 12 : 7, null);
+			g.drawImage(symbol, 75 + x, c == ':' ? 12 : 7, null);
 			x += symbol.getWidth() + 1;
 		}
-		g.drawImage(ImageBank.score, 160, 5, null);
-		g.drawImage(ImageBank.mistakes, 300, 5, null);
+		g.drawImage(ImageBank.score, 140, 5, null);
+		StringBuilder scoreSB = new StringBuilder(Integer.toString(score));
+		int cc = 0;
+		for (int i = scoreSB.length() - 1; i > 0; i--) {
+			if ((cc + 1) % 3 == 0)
+				scoreSB.insert(i, ',');
+			cc++;
+		}
+		String scoreString = scoreSB.toString();
+		x = 0;
+		for (int i = 0; i < scoreString.length(); i++) {
+			char c = scoreString.charAt(i);
+			BufferedImage symbol;
+			if (c == ',')
+				symbol = ImageBank.comma;
+			else
+				symbol = ImageBank.digits[c - '0'];
+			g.drawImage(symbol, 215 + x, c == ',' ? 20 : 7, null);
+			x += symbol.getWidth() + 1;
+		}
+		g.drawImage(ImageBank.mistakes, 305, 5, null);
 		for (int i = 0; i < mistakeCap; i++)
-			g.drawImage(ImageBank.mistakeLives[mistakeCount < mistakeCap - i ? 0 : 1], 400 + i * 20, 5, null);
+			g.drawImage(ImageBank.mistakeLives[mistakeCount < mistakeCap - i ? 0 : 1], 405 + i * 20, 5, null);
+		int streak = field.getBlanket().getStreak();
+		if (streak > 0) {
+			final int max = ImageBank.streakWords.length - 1;
+			int remTime = field.getBlanket().getStreakTimeRemaining();
+			int fadeTime = Math.max(0, remTime + Blanket.STREAK_GAP);
+			float opacity = Math.min(1f, fadeTime / (Blanket.STREAK_GAP / 2f));
+			Graphics2D gg = (Graphics2D) g;
+			gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
+			g.drawImage(ImageBank.streakWords[Math.min(streak - 1, max)], STREAK_X, STREAK_Y, null);
+			gg.setComposite(oldComp);
+			final int w = 75;
+			int barW = (int) ((w - 1) * Math.max(0, remTime) / (double) Blanket.STREAK_GAP);
+			int yup = 20;
+			g.setColor(Palette.BLACK);
+			g.drawRect(STREAK_X, STREAK_Y - yup, w, 10);
+			g.setColor(Palette.RED);
+			g.fillRect(STREAK_X + 1 + w - barW, STREAK_Y + 1 - yup, barW, 9);
+		}
 		// draw big oh no text if you're a loser
 		if (losing) {
 			g.drawImage(ImageBank.ohno, 37, textDrop.getIntValue(), null);

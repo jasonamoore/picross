@@ -16,7 +16,7 @@ import util.Animation;
 import util.Timer;
 
 public class Blanket extends Element {
-
+	
 	// parent puzzle state
 	private PuzzleState puzState;
 	// the parent field
@@ -44,6 +44,18 @@ public class Blanket extends Element {
 	private final int FADE_TIME = 550;
 	private Timer fadeTimer;
 	
+	// streak constants
+	public static final double[] MULTIPLIERS = {1, 1.2, 1.5, 2, 3, 5};
+	public static final int STREAK_GAP = 3500;
+	private static final int PLATE_SCORE = 1000;
+	
+	// for keeping track of what grids have ever been marked (for score)
+	private boolean[][] scoreChart;
+	// timer for score streak
+	private Timer streakTimer;
+	// size of the streak
+	private int streak;
+	
 	public Blanket(Field field) {
 		this.field = field;
 		puzState = field.getPuzzleState();
@@ -54,6 +66,8 @@ public class Blanket extends Element {
 		blobSizeAnim[1] = new Animation(100, Animation.EASE_OUT, Animation.NO_LOOP);
 		hintFade = new Animation(0, 1, 350, Animation.CUBIC, Animation.NO_LOOP, true);
 		fadeTimer = new Timer(false);
+		scoreChart = new boolean[puzState.getRows()][puzState.getColumns()];
+		streakTimer = new Timer(false);
 	}
 	
 	private boolean inHintBounds() {
@@ -196,13 +210,51 @@ public class Blanket extends Element {
 	}
 	
 	private void tryDraw(Puzzle puzzle, int row, int col) {
-		if (!puzzle.validSpot(row, col))
+		// prevent drawing if drawing was stopped, also sanity check for row/col
+		if (!drawing || !puzzle.validSpot(row, col))
 			return;
 		int oldMark = puzzle.getMark(row, col);
 		if (oldMark != drawMode) {
-			boolean mistake = puzzle.markSpot(row, col, drawMode);    
+			boolean mistake = puzzle.markSpot(row, col, drawMode);   
 			drawStroke.addChange(row, col, oldMark, mistake);
+			if (mistake)
+				stopDraw();
+			// if not mistake, is plate draw, and not scored yet
+			else if (drawMode == Puzzle.FILLED && !scoreChart[row][col]) {
+				if (streakTimer.elapsed() < STREAK_GAP)
+					streak++;
+				else
+					streak = 1;
+				scoreChart[row][col] = true;
+				puzState.increaseScore(getPlateScoreBonus());
+				streakTimer.reset(true);
+			}
 		}
+	}
+
+	public int getStreak() {
+		return streak;
+	}
+	
+	public int getStreakTimeRemaining() {
+		return STREAK_GAP - (int) streakTimer.elapsed();
+	}
+
+	private int getPlateScoreBonus() {
+		/*if (streak == 1)
+			System.out.println("Ok");
+		if (streak == 2)
+			System.out.println("Nice");
+		if (streak == 3)
+			System.out.println("Awesome");
+		if (streak == 4)
+			System.out.println("Swag");
+		if (streak >= 5)
+			System.out.println("Fantastic!");*/
+		int size = Math.max(puzState.getRows(), puzState.getColumns());
+		double sizeMultiplier = 25.0 / (size * size);
+		return (int) (PLATE_SCORE * sizeMultiplier *
+				MULTIPLIERS[Math.min(streak, MULTIPLIERS.length - 1)]);
 	}
 
 	@Override

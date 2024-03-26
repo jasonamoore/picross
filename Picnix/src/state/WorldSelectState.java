@@ -7,6 +7,7 @@ import engine.Input;
 import engine.Transition;
 import picnix.Island;
 import picnix.World;
+import picnix.data.UserData;
 import resource.bank.FontBank;
 import resource.bank.ImageBank;
 import state.element.BackButton;
@@ -25,30 +26,42 @@ public class WorldSelectState extends State {
 	private static final int ISLAND_SCROLL_THRESHOLD = 2;
 	
 	private LocationBox locationBox;
-	
-	private int curLoc;
+	private TiledButton left, right;
 
+	private int curLoc;
+	private int highLoc;
+
+	private Animation fadeIn;
 	private Animation smoothBox;
 	private Animation smoothRot;
 	
 	public WorldSelectState(double initRot) {
+		fadeIn = new Animation(0, 1, 100, Animation.EASE_OUT, Animation.NO_LOOP, false);
 		smoothBox = new Animation(0, 1, 125, Animation.CUBIC, Animation.NO_LOOP, false);
 		smoothRot = new Animation(initRot, 0, 500, Animation.EASE_OUT, Animation.NO_LOOP, true);
 		locationBox = new LocationBox(this);
-		TiledButton left = new TiledButton(15, 350, 48, 48) {
+		left = new TiledButton(15, 350, 48, 48) {
 			@Override
 			public void onRelease(int mbutton) {
 				super.onRelease(mbutton);
 				if (mbutton == Input.LEFT_CLICK && beingHovered())
 					switchLocation(-1);
 			}
+			@Override
+			public float getOpacity() {
+				return (float) fadeIn.getValue();
+			}
 		};
-		TiledButton right = new TiledButton(240, 350, 48, 48) {
+		right = new TiledButton(240, 350, 48, 48) {
 			@Override
 			public void onRelease(int mbutton) {
 				super.onRelease(mbutton);
 				if (mbutton == Input.LEFT_CLICK && beingHovered())
 					switchLocation(1);
+			}
+			@Override
+			public float getOpacity() {
+				return (float) fadeIn.getValue();
 			}
 		};
 		add(locationBox);
@@ -61,22 +74,38 @@ public class WorldSelectState extends State {
 		//right.setMiddleFill(Palette.YELLOW);
 		right.setLabel(ImageBank.arrowlabels[1]);
 		right.setTooltip("press this button to go to the right", FontBank.test, 50, 0, true);
-		add(new BackButton());
+		BackButton back = new BackButton() {
+			@Override
+			public float getOpacity() {
+				return (float) fadeIn.getValue();
+			}
+		};
+		add(back);
 	}
 	
 	@Override
 	public void focus(int status) {
 		if (status == NEWLY_OPENED)
 			smoothBox.reset(true);
+		fadeIn.setForward(true);
+		fadeIn.reset(true);
 		// update info for this location
 		locationBox.update(curLoc);
+		highLoc = findHighestUnlockedLocation();
+		// disable if no locs are unlocked
+		left.setEnabled(highLoc > 0);
+		right.setEnabled(highLoc > 0);
 	}
-	
+
 	@Override
 	public void navigateBack() {
+		fadeIn.setForward(false);
+		fadeIn.reset(true);
+		smoothBox.setForward(false);
+		smoothBox.resume();
 		TitleState ts = (TitleState) Engine.getEngine().getStateManager().getPreviousState();
 		ts.setZoomAnim(false, 0, smoothRot.getValue());
-		Engine.getEngine().getStateManager().transitionExitState(Transition.NONE, 0, TitleState.ZOOM_TIME);
+		Engine.getEngine().getStateManager().transitionExitState(Transition.NONE, 125, TitleState.ZOOM_TIME);
 	}
 
 	public void open(boolean easy) {
@@ -93,9 +122,20 @@ public class WorldSelectState extends State {
 		return (float) smoothBox.getValue();
 	}
 	
+	private int findHighestUnlockedLocation() {
+		int i;
+		for (i = 0; i < World.NUM_LOCATIONS; i++) {
+			int easyId = World.getEasyWorldId(i);
+			int compLevs = UserData.getPuzzlesCompleted(easyId);
+			if (compLevs < World.getWorld(easyId).getLevelCount())
+				break;
+		}
+		return i;
+	}
+	
 	private void switchLocation(int amount) {
 		int oldLoc = curLoc;
-		curLoc = (curLoc - amount + World.NUM_LOCATIONS) % World.NUM_LOCATIONS;
+		curLoc = (curLoc - amount + World.NUM_LOCATIONS) % highLoc;
 		smoothRotate(oldLoc);
 		smoothBox.setForward(false);
 		smoothBox.resume();
@@ -121,13 +161,13 @@ public class WorldSelectState extends State {
 	public void tick() {
 		super.tick();
 		Input input = Input.getInstance();
-		// check for rotating the island
-		double scroll = input.getUnconsumedScrollAmount();
-		if (scroll > ISLAND_SCROLL_THRESHOLD) {
+		// check for rotating the island (ignore scroll if no locs unlocked)
+		double scroll = highLoc > 0 ? input.getUnconsumedScrollAmount() : 0;
+		if (scroll < -ISLAND_SCROLL_THRESHOLD) {
 			switchLocation(-1);
 			input.consumeMouseWheelScroll();
 		}
-		else if (scroll < -ISLAND_SCROLL_THRESHOLD) {
+		else if (scroll > ISLAND_SCROLL_THRESHOLD) {
 			switchLocation(1);
 			input.consumeMouseWheelScroll();
 		}

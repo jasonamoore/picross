@@ -15,8 +15,11 @@ public class ImageBank {
 	public static BufferedImage paratest1;
 	public static BufferedImage paratest2;
 	public static BufferedImage paratest3;
+	public static BufferedImage[] parkobjsheet;
 	//
 	public static BufferedImage title;
+	public static BufferedImage playlabel;
+	public static BufferedImage gallerylabel;
 	public static BufferedImage island;
 	public static BufferedImage tree;
 	public static BufferedImage ohno;
@@ -112,21 +115,28 @@ public class ImageBank {
 	public static BufferedImage[] numsbig;
 	public static BufferedImage[] numsmed;
 	public static BufferedImage[] numstiny;
+	public static BufferedImage[] streakWords;
 	public static BufferedImage isoplate;
 	
 	// gallery images
 	public static BufferedImage[][] gallery;
 	
 	public static void loadGlobalResources() throws IOException {
-		// parallax test
+		// tests
 		paratest1 = loadSheet("testpara1.png");
 		paratest2 = loadSheet("testpara2.png");
 		paratest3 = loadSheet("testpara3.png");
+		BufferedImage parkobj = loadSheet("parkobj.png");
+		parkobjsheet = loadMany(parkobj, 0, 0, 24, 17, 1, 10);
 		// singles
-		title = loadSheet("title.png");
 		island = loadSheet("island.png");
 		ohno = loadSheet("ohno.png");
 		youwin = loadSheet("youwin.png");
+		// title sprite sheet
+		BufferedImage titleSheet = loadSheet("title.png");
+		title = loadOne(titleSheet, 0, 0, 346, 125);
+		playlabel = loadOne(titleSheet, 0, 125, 148, 50);
+		gallerylabel = loadOne(titleSheet, 0, 175, 182, 35);
 		// location (world select) sprite sheet
 		BufferedImage locSheet = loadSheet("locations.png");
 		tree = loadOne(locSheet, 321, 0, 13, 37);
@@ -221,6 +231,7 @@ public class ImageBank {
 		numsmed = loadMany(blanketSheet, 86, 140, 8, 10, 5, 2);
 		numstiny = loadMany(blanketSheet, 161, 75, 6, 7, 5, 4);
 		isoplate = loadOne(blanketSheet, 141, 218, 33, 16);
+		streakWords = loadMany(blanketSheet, 126, 110, 75, 17, 1, 5);
 	}
 	
 	public static void loadWorldResources(int worldId) throws IOException {
