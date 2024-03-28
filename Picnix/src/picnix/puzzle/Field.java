@@ -16,6 +16,9 @@ public class Field extends Container {
 	private static final int FIELD_WIDTH = 1000;
 	private static final int FIELD_HEIGHT = 675;
 	
+	private static final int EDGE_SCROLL_THRESHOLD = 20;
+	private static final int EDGE_SCROLL_AMOUNT = 3;
+	
 	// parent puzzle state
 	private PuzzleState puzState;
 	// the picnic blanket, which has the puzzle loaded
@@ -45,12 +48,13 @@ public class Field extends Container {
 		blanket = new Blanket(this);
 		bw = puzState.getPuzzleDisplayWidth();
 		bh = puzState.getPuzzleDisplayHeight();
-		bx = (FIELD_WIDTH - bw + puzState.getPuzzleLeftPadding()) / 2;
-		by = (FIELD_HEIGHT - bh + puzState.getPuzzleTopPadding()) / 2;
+		bx = (FIELD_WIDTH - bw) / 2;
+		by = (FIELD_HEIGHT - bh) / 2;
 		blanket.setBounds(bx, by, bw, bh);
 		add(blanket);
-		setCamX(getCamCenterX());
-		setCamY(getCamCenterY());
+		// set to padded center camera
+		setCamX(getCamCenterX(true));
+		setCamY(getCamCenterY(true));
 	}
 
 	public Blanket getBlanket() {
@@ -61,18 +65,20 @@ public class Field extends Container {
 		return puzState;
 	}
 	
-	public int getCamCenterX() {
-		return (FIELD_WIDTH - camW) / 2;
+	public int getCamCenterX(boolean padded) {
+		int padding = padded ? puzState.getPuzzleLeftPadding() : 0;
+		return (FIELD_WIDTH - camW - padding) / 2;
 	}
 	
-	public int getCamCenterY() {
-		return (FIELD_HEIGHT - camH) / 2;	
+	public int getCamCenterY(boolean padded) {
+		int padding = padded ? puzState.getPuzzleTopPadding() : 0;
+		return (FIELD_HEIGHT - camH - padding) / 2;
 	}
 	
 	
-	public void recenter() {
-		camXAnim = new Animation(camX, getCamCenterX(), 777, Animation.EASE_OUT, Animation.NO_LOOP, true);
-		camYAnim = new Animation(camY, getCamCenterY(), 777, Animation.EASE_OUT, Animation.NO_LOOP, true);
+	public void recenter(boolean padded) {
+		camXAnim = new Animation(camX, getCamCenterX(padded), 777, Animation.EASE_OUT, Animation.NO_LOOP, true);
+		camYAnim = new Animation(camY, getCamCenterY(padded), 777, Animation.EASE_OUT, Animation.NO_LOOP, true);
 	}
 	
 	public void setCamX(int newX) {
@@ -134,18 +140,19 @@ public class Field extends Container {
 		super.tick();
 		// update camera if dragging
 		Input input = Input.getInstance();
-		if (dragging) {
-			int movedX = input.getMouseX() - clickXOffset;
-			int movedY = input.getMouseY() - clickYOffset;
-			setCamX(camXAtClick - movedX);
-			setCamY(camYAtClick - movedY);
-		}
-		else {
-			// if a cam anim is going, set camera to it
-			if (camXAnim != null && camXAnim.isPlaying())
-				setCamX(camXAnim.getIntValue());
-			if (camYAnim != null && camYAnim.isPlaying())
-				setCamY(camYAnim.getIntValue());
+		// if mouse is near edges in food puzzle mode, auto scroll
+		if (puzState.getState() == PuzzleState.FOOD_SOLVING
+				&& !dragging && blanket.isDraggingFood()) {
+			int mx = input.getMouseX();
+			int my = input.getMouseY();
+			if (mx < EDGE_SCROLL_THRESHOLD)
+				setCamX(camX - EDGE_SCROLL_AMOUNT);
+			else if (mx > Engine.SCREEN_WIDTH - EDGE_SCROLL_THRESHOLD)
+				setCamX(camX += EDGE_SCROLL_AMOUNT);
+			if (my < EDGE_SCROLL_THRESHOLD)
+				setCamY(camY -= EDGE_SCROLL_AMOUNT);
+			else if (my > Engine.SCREEN_HEIGHT - EDGE_SCROLL_THRESHOLD)
+				setCamY(camY += EDGE_SCROLL_AMOUNT);
 		}
 	}
 	
@@ -159,6 +166,13 @@ public class Field extends Container {
 			int movedY = input.getMouseY() - clickYOffset;
 			setCamX(camXAtClick - movedX);
 			setCamY(camYAtClick - movedY);
+		}
+		else {
+			// if a cam anim is going, set camera to it
+			if (camXAnim != null && camXAnim.isPlaying())
+				setCamX(camXAnim.getIntValue());
+			if (camYAnim != null && camYAnim.isPlaying())
+				setCamY(camYAnim.getIntValue());
 		}
 		// background tiling / chunking ;)
 		g.translate(-camX, -camY);

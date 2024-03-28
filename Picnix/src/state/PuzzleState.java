@@ -9,17 +9,22 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import engine.Engine;
+import engine.Input;
 import engine.Transition;
 import picnix.Level;
 import picnix.World;
 import picnix.data.UserData;
 import picnix.puzzle.Blanket;
 import picnix.puzzle.Field;
+import picnix.puzzle.FoodBar;
+import picnix.puzzle.FoodWidget;
 import picnix.puzzle.Puzzle;
 import picnix.puzzle.Stroke;
+import resource.bank.FontBank;
 import resource.bank.ImageBank;
 import resource.bank.Palette;
 import state.element.Icon;
+import state.element.TextField;
 import state.element.puzzle.LayerButton;
 import state.element.puzzle.LayerProgress;
 import state.element.puzzle.Sidebar;
@@ -46,11 +51,22 @@ public class PuzzleState extends State {
 	public static final int YELLOW = 1;
 	public static final int CYAN = 2;
 	public static final int TOTAL = 3;
-	// constant for win/lose screen
-	public static final int FINISH_DURATION = 5000;
-	// constants for streak info positioning
-	public static final int STREAK_X = 380;
-	public static final int STREAK_Y = 300;
+	// constants for win/lose screen
+	private static final int SWITCH_DURATION = 5000;
+	private static final int SWITCH_HIDE_DURATION = 500;
+	private static final double SCORE_LINES_DELAY = 1000;
+	// lose messages
+	private static final String LOSE_MESSAGE_TIME = "hurry up next time";
+	private static final String LOSE_MESSAGE_MISTAKE = "keep your plates in order";
+	// score messages and text fields
+	private static final int NUM_SCORE_LINES = 5;
+	private static final String[] SCORE_MESSAGES = {"time bonus", "accuracy bonus", "plate bonus", "critter bonus", "total score"};
+	private TextField[] scoreLines;
+	
+	// render positioning constants;
+	private static final int TOPBAR_HEIGHT = 32;
+	private static final int STREAK_X = 380;
+	private static final int STREAK_Y = 300;
 	
 	// the puzzle(s)
 	private Puzzle[] puzzleLayers;
@@ -65,8 +81,15 @@ public class PuzzleState extends State {
 	// clock for hwo long the puzzle has been running
 	private Timer clock; 
 	private int timeSecLimit;
-	// score
-	private int score;
+	// score constants
+	public static final int PLATE_SCORE = 1000;
+	public static final int MISTAKE_BONUS = 10_000;
+	private static final int MAX_TIME_BONUS = 100_000;
+	private static final double MS_PER_POINT = 0.9;
+	// score fields
+	private int plateScore;
+	private int critterScore;
+	private Animation scoreAnim;
 	// keeps track of mistakes
 	private int mistakeCap;
 	private int mistakeCount;
@@ -107,9 +130,15 @@ public class PuzzleState extends State {
 	
 	// lose/win text drop animation
 	private MultiAnimation textDrop;
-	// lose/win status info
-	private boolean winning, losing;
-	private Timer finishTimer;
+	// state constants
+	public static final int LOSING = -1;
+	public static final int PICTURE_SOLVING = 0;
+	public static final int PICTURE_WINNING = 1;
+	public static final int FOOD_SOLVING = 2;
+	public static final int COMPLETE_WINNING = 3;
+	// puzzle status info - tracks losing/winning etc
+	private int state;
+	private Timer switchTimer;
 	
 	private World world;
 	private Level level;
@@ -122,10 +151,8 @@ public class PuzzleState extends State {
 	public PuzzleState(World world, Level level) {
 		this.world = world;
 		this.level = level;
-		//win();
+		state = PICTURE_SOLVING;
 		layered = level.isLayered();
-		//timeSecLimit = level.getTimeLimit() * 60;
-		//mistakeCap = level.getMistakeCap();
 		clock = new Timer(false);
 		timeSecLimit = level.getTimeLimit();
 		mistakeCap = level.getMistakeCap();
@@ -136,9 +163,11 @@ public class PuzzleState extends State {
 		cellSize =  msize <= 5 ? CELL_SIZE_5x5 :
 			msize <= 10 ? CELL_SIZE_10x10 :
 			msize <= 15 ? CELL_SIZE_15x15 :
-			/*msize>15?*/ CELL_SIZE_20x20;
+			/*msize>15?*/ CELL_SIZE_15x15;
 		field = new Field(this, world.getId());
 		add(field);
+		// scoreAnim duration will be set dynamically, proportional to score increase
+		scoreAnim = new Animation(0, 0, 0, Animation.LINEAR, Animation.NO_LOOP, false);
 		toolArrowAnim = new Animation(100, Animation.EASE_OUT, Animation.NO_LOOP);
 		toolClicked(ToolButton.PLATE);
 		undo = new ArrayList<Stroke>();
@@ -148,8 +177,9 @@ public class PuzzleState extends State {
 				new double[][] {MultiAnimation.EASE_IN, MultiAnimation.EASE_OUT, MultiAnimation.EASE_IN,
 						MultiAnimation.EASE_OUT, MultiAnimation.EASE_IN, MultiAnimation.HOLD},
 				0, 0, false);
-		finishTimer = new Timer(false);
+		switchTimer = new Timer(false);
 		generateUI();
+		pictureWin();
 	}
 		
 	@Override
@@ -351,7 +381,7 @@ public class PuzzleState extends State {
 	}
 	
 	private void centerCam() {
-		field.recenter();
+		field.recenter(true);
 		setCenterEnabled(false);
 	}
 
@@ -386,13 +416,13 @@ public class PuzzleState extends State {
 		updateUndoRedoEnabled();
 		// maybe lost?
 		handleMistake(s);
-		// maybe won?
-		boolean won = true;
+		// maybe finished the board?
+		boolean bwon = true;
 		// check all puzzles are solved
 		for (int i = 0; i < puzzleLayers.length; i++)
-			won = won && puzzleLayers[i].isSolved();
-		if (won)
-			win();
+			bwon = bwon && puzzleLayers[i].isSolved();
+		if (bwon)
+			pictureWin();
 	}
 	
 	public void undo() {
@@ -474,51 +504,60 @@ public class PuzzleState extends State {
 		layerbar.setFade(fade);
 	}
 	
+	public void disableSidebars() {
+		toolbar.setExisting(false);
+		toolbar.setChildrenExisting(false);
+		layerbar.setExisting(false);
+		layerbar.setChildrenExisting(false);
+	}
+	
+	private void updateScore() {
+		int orig = scoreAnim.getIntValue();
+		int nnew = getScore();
+		scoreAnim.setFrom(orig);
+		scoreAnim.setTo(nnew);
+		scoreAnim.setDuration((int) (MS_PER_POINT * (nnew - orig)));
+		scoreAnim.reset(true);
+	}
+	
 	/* ~~~~~~~~~~~~~~~~~~~~~
-	 * GAME HOOKS (LOSING/WINNING)
+	 * SCORE AND TIME STUFF
 	 * ~~~~~~~~~~~~~~~~~~~~~
 	 */
 	
-	public void increaseScore(int amount) {
-		score += amount;
+	public void increasePlateScore(int amount) {
+		plateScore += amount;
+		updateScore();
 	}
 	
-	private void handleMistake(Stroke s) {
-		if (s.hasMistake()) {
-			int mr = s.getMistakeRow();
-			int mc = s.getMistakeCol();
-			// do mistake particle
-			popParticle(mr, mc, activePuzzle.getMark(mr, mc));
-			// clear the mistake spot
-			activePuzzle.markSpot(mr, mc, Puzzle.EMPTY);
-			mistakeCount++;
-			if (mistakeCount >= mistakeCap)
-				lose();
-		}
+	public void increaseCritterScore(int amount) {
+		critterScore += amount;
+		updateScore();
 	}
 	
-	private void finish() {
-		clock.pause();
-		freezeInput(true);
-		textDrop.resume();
-		finishTimer.resume();
+	private int getScore() {
+		// if beat the picture, add the bonus from the extra time
+		int timeBonus = state == PICTURE_WINNING ? getTimeBonus() : 0;
+		int missBonus = state == PICTURE_WINNING ? getMistakeBonus() : 0;
+		return timeBonus + missBonus + plateScore + critterScore;
 	}
 	
-	private void win() {
-		winning = true;
-		UserData.setPuzzleScore(world.getId(), level.getId(), score);
-		finish();
+	private int getMistakeBonus() {
+		return MISTAKE_BONUS * (mistakeCap - mistakeCount);
 	}
 	
-	private void lose() {
-		losing = true;
-		finish();
-		// make particles for each cell
-		for (int r = 0; r < activePuzzle.getRows(); r++)
-			for (int c = 0; c < activePuzzle.getColumns(); c++)
-				popParticle(r, c, activePuzzle.getMark(r, c));
-		clearMarks();
+	private int getTimeBonus() {
+		return (int) (MAX_TIME_BONUS * (getRemainingTime() / (double) timeSecLimit));
 	}
+	
+	private int getRemainingTime() {
+		return timeSecLimit - (int) clock.elapsedSec();
+	}
+	
+	/* ~~~~~~~~~~~~~~~~~~~~~
+	 * PARTICLES
+	 * ~~~~~~~~~~~~~~~~~~~~~
+	 */
 	
 	private void popParticle(int row, int col, int mark) {
 		BufferedImage[] plates = Blanket.getPlateSheet(cellSize);
@@ -540,19 +579,205 @@ public class PuzzleState extends State {
 			Particle.generateParticle(image, bx + col * cellSize, by + row * cellSize, randXVel, randYVel, 0.92, 0, 10, 7000);
 		}
 	}
+	
+	/* ~~~~~~~~~~~~~~~~~~~~~
+	 * GAME HOOKS (LOSING/WINNING)
+	 * ~~~~~~~~~~~~~~~~~~~~~
+	 */
+	
+	public int getState() {
+		return state;
+	}
+	
+	private double getScoreLinesProgress() {
+		if (state != PICTURE_WINNING)
+			return 0;
+		else
+			return Math.min(1, (switchTimer.elapsed() - SCORE_LINES_DELAY) / (double) SWITCH_DURATION);
+	}
+	
+	public double getSwitchHideProgress() {
+		if (state != PICTURE_WINNING && state != COMPLETE_WINNING)
+			return 0;
+		else
+			return Math.min(1, switchTimer.elapsed() / (double) SWITCH_HIDE_DURATION);
+	}
+	
+	private void handleMistake(Stroke s) {
+		if (s.hasMistake()) {
+			int mr = s.getMistakeRow();
+			int mc = s.getMistakeCol();
+			// do mistake particle
+			popParticle(mr, mc, activePuzzle.getMark(mr, mc));
+			// clear the mistake spot
+			activePuzzle.markSpot(mr, mc, Puzzle.EMPTY);
+			mistakeCount++;
+			if (mistakeCount >= mistakeCap)
+				lose();
+		}
+	}
+	
+	private void pictureWin() {
+		state = PICTURE_WINNING;
+		scoreLines = new TextField[NUM_SCORE_LINES];
+		clock.pause();
+		disableSidebars();
+		updateScore();
+		finish();
+	}
+	
+	private void lose() {
+		state = LOSING;
+		finish();
+		// make particles for each cell
+		for (int r = 0; r < activePuzzle.getRows(); r++)
+			for (int c = 0; c < activePuzzle.getColumns(); c++)
+				popParticle(r, c, activePuzzle.getMark(r, c));
+		clearMarks();
+		// add lose text
+		boolean lostByMistakes = mistakeCount == mistakeCap;
+		TextField loss = new TextField(lostByMistakes ? LOSE_MESSAGE_MISTAKE : LOSE_MESSAGE_TIME, FontBank.test, 0, 300, Engine.SCREEN_WIDTH);
+		loss.setAlignment(TextField.ALIGN_CENTER);
+		add(loss);
+	}
+	
+	private void finish() {
+		freezeInput(true);
+		textDrop.resume();
+		switchTimer.resume();
+	}
+	
+	private void foodWin() {
+		state = COMPLETE_WINNING;
+		UserData.setPuzzleScore(world.getId(), level.getId(), getScore());
+		finish();
+	}
 
-	private void goOn(boolean win) {
-		if (win) {
+	private void goOn() {
+		switch (state) {
+		case PICTURE_WINNING:
+			freezeInput(false);
+			switchToFoodSolving();
+			break;
+		case COMPLETE_WINNING:
 			LoadWinState lws = new LoadWinState(world, level);
 			Engine.getEngine().getStateManager().transitionToState(lws, Transition.CURTAIN, 500, 750);
-		}
-		else {
+			break;
+		case LOSING:
 			Engine.getEngine().getStateManager().transitionExitState(Transition.FADE, 500, 0);
+			break;
 		}
 	}
 
-	public boolean isOver() {
-		return winning || losing;
+	public boolean isPictureOver() {
+		return state > PICTURE_SOLVING;
+	}
+	
+	/* ~~~~~~~~~~~~~~~~~~~~~
+	 * FOOD SOLVING MINIGAME
+	 * ~~~~~~~~~~~~~~~~~~~~~
+	 */
+
+	private static int[][] FOOD_TYPES = {
+			{1, 1}, {1, 2}, {2, 1}, {2, 2}, {1, 3}, {3, 1}, {2, 3}, {3, 2}, {3, 3}
+	};
+	public static final int F_WIDTH = 0, F_HEIGHT = 1;
+	public static final int NUM_FOOD_TYPES = FOOD_TYPES.length;
+	
+	private FoodBar foodbar;
+
+	public static int[] getFoodById(int foodId) {
+		return FOOD_TYPES[foodId];
+	}
+	
+	public void switchToFoodSolving() {
+		state = FOOD_SOLVING;
+		// hide score lines
+		for (int i = 0; i < scoreLines.length; i++)
+			remove(scoreLines[i]);
+		// center, not padded for hints
+		field.recenter(false);
+		// CREATE FOODS
+		Puzzle p = getActivePuzzle();
+		// use to keep track of how many of each food type was placed
+		int[] foodsList = new int[NUM_FOOD_TYPES];
+		boolean[][] foodMap = new boolean[p.getRows()][p.getColumns()];
+		// mark any spots without plates true, rest are false (open)
+		for (int r = 0; r < p.getRows(); r++)
+			for (int c = 0; c < p.getColumns(); c++)
+				foodMap[r][c] = !p.isFilledInSolution(r, c);
+		// TODO to (maybe) make this better, choose grids randomly
+		for (int r = 0; r < p.getRows(); r++) {
+			for (int c = 0; c < p.getColumns(); c++) {
+				// no food occupying this space - try placing
+				if (!foodMap[r][c])
+					// placeRandomFood returns the type id of food placed
+					foodsList[placeRandomFood(foodMap, r, c)]++;
+			}
+		}
+		// create "food bar"
+		foodbar = new FoodBar(foodsList);
+		add(foodbar);
+	}
+	
+	private int placeRandomFood(boolean[][] foodMap, int r, int c) {
+		// determine which foods could be placed here
+		boolean[] valid = new boolean[NUM_FOOD_TYPES];
+		int validCount = 0;
+		for (int i = 0; i < NUM_FOOD_TYPES; i++) {
+			valid[i] = canFoodGoHere(foodMap, FOOD_TYPES[i], r, c);
+			if (valid[i])
+				validCount++;
+		}
+		// generate a random number up to validCount
+		int validNum = (int) (Math.random() * validCount);
+		// find which food id that is
+		int seen = 0;
+		int foodType = -1;
+		for (int i = 0; foodType < 0 && i < valid.length; i++) {
+			if (valid[i])
+				seen++;
+			if (seen > validNum)
+				foodType = i;
+		}
+		// place the chosen food item
+		int[] cfood = FOOD_TYPES[foodType];
+		for (int or = 0; or < cfood[F_WIDTH]; or++)
+			for (int oc = 0; oc < cfood[F_HEIGHT]; oc++)
+				foodMap[r + or][c + oc] = true;
+		// return what id of food placed
+		return foodType;
+	}
+	
+	private boolean canFoodGoHere(boolean[][] foodMap, int[] food, int r, int c) {
+		boolean can = true;
+		// loop through all spaces this food would occupy
+		// return true if all spaces are available (and exist)
+		for (int or = 0; can && or < food[F_WIDTH]; or++) {
+			for (int oc = 0; can && oc < food[F_HEIGHT]; oc++) {
+					// check for out of bounds
+				if (r + or >= foodMap.length ||
+					c + oc >= foodMap[r].length ||
+					// check for the space being full
+					foodMap[r + or][c + oc])
+					// if so, can't place here
+					can = false;
+			}
+		}
+		return can;
+	}
+	
+	public void dragNewFood(FoodWidget fw) {
+		field.getBlanket().startDrag(fw.getFoodId());
+	}
+	
+	public void tryDropNewFood() {
+		field.getBlanket().tryDrop();
+	}
+	
+	public void returnFoodToWidget(int foodId) {
+		// increment that food type
+		foodbar.incrementWidget(foodId);
 	}
 	
 	// ~~~~~~~~~~ TICK
@@ -563,10 +788,41 @@ public class PuzzleState extends State {
 		// check for time failure
 		if (clock.elapsedSec() > timeSecLimit)
 			lose();
-		// check to go on from this state (after lose/win)
-		if (finishTimer.elapsed() > FINISH_DURATION) {
-			finishTimer.reset(false);
-			goOn(winning);
+		/* check to go on from this state (after lose/win)
+		   switches after switch time has elapsed, or in the case
+		   of PICTURE_WINNING state, when time is elapsed AND clicking */
+		if (switchTimer.elapsed() > SWITCH_DURATION && (state != PICTURE_WINNING ||
+				Input.getInstance().isPressingMouseButton(Input.LEFT_CLICK))) {
+			switchTimer.reset(false);
+			goOn();
+		}
+		// if mid-win state, staggered add score lines
+		else if (state == PICTURE_WINNING) {
+			double progress = getScoreLinesProgress();
+			double step = (1.0 / NUM_SCORE_LINES);
+			double progThresh = 0;
+			for (int i = 0; i < NUM_SCORE_LINES; i++, progThresh += step) {
+				// if progress has reached enough that line should exist (and it doesn't yet)
+				if (scoreLines[i] == null && progress >= progThresh) {
+					int iscore = 0;
+					switch(i) {
+					case 0: iscore = getTimeBonus(); break;
+					case 1: iscore = getMistakeBonus(); break;
+					case 2: iscore = plateScore; break;
+					case 3: iscore = critterScore; break;
+					case 4: iscore = getScore(); break;
+					}
+					String scoreStr = Integer.toString(iscore);
+					// create new score line using the ith message - put in array and add to state
+					final int strLength = 30;
+					int numSpaces = strLength - SCORE_MESSAGES[i].length() - scoreStr.length();
+					String message = SCORE_MESSAGES[i] + " ".repeat(numSpaces) + scoreStr;
+					TextField tf = new TextField(message, FontBank.test, 0, 250 + i * 20, Engine.SCREEN_WIDTH);
+					tf.setAlignment(TextField.ALIGN_CENTER);
+					scoreLines[i] = tf;
+					add(tf);
+				}
+			}
 		}
 	}
 	
@@ -575,6 +831,62 @@ public class PuzzleState extends State {
 	@Override
 	public void render(Graphics g) {
 		super.render(g);
+		
+		double switchHideProg = getSwitchHideProgress();
+		// top bar rendering
+		if (state < FOOD_SOLVING) {
+			int offY = (int) (switchHideProg * -TOPBAR_HEIGHT);
+			// translate if top bar is sliding away
+			g.translate(0, offY);
+			g.drawImage(ImageBank.topbar[0], 0, 0, null);
+			int b;
+			for (b = 24; b < Engine.SCREEN_WIDTH - 24; b += 24)
+				g.drawImage(ImageBank.topbar[b % 48 > 0 ? 1 : 2], b, 0, null);
+			g.drawImage(ImageBank.topbar[3], b, 0, null);
+			g.drawImage(ImageBank.time, 15, 5, null);
+			int time = getRemainingTime();
+			int min = time / 60;
+			int sec = time % 60;
+			String timeString = String.format("%02d:%02d", min, sec);
+			int x = 0;
+			for (int i = 0; i < timeString.length(); i++) {
+				char c = timeString.charAt(i);
+				BufferedImage symbol;
+				if (c == ':')
+					symbol = ImageBank.colon;
+				else
+					symbol = ImageBank.digits[c - '0'];
+				g.drawImage(symbol, 75 + x, c == ':' ? 12 : 7, null);
+				x += symbol.getWidth() + 1;
+			}
+			g.drawImage(ImageBank.score, 140, 5, null);
+			int rendScore = scoreAnim.getIntValue();
+			StringBuilder scoreSB = new StringBuilder(Integer.toString(rendScore));
+			int cc = 0;
+			for (int i = scoreSB.length() - 1; i > 0; i--) {
+				if ((cc + 1) % 3 == 0)
+					scoreSB.insert(i, ',');
+				cc++;
+			}
+			String scoreString = scoreSB.toString();
+			x = 0;
+			for (int i = 0; i < scoreString.length(); i++) {
+				char c = scoreString.charAt(i);
+				BufferedImage symbol;
+				if (c == ',')
+					symbol = ImageBank.comma;
+				else
+					symbol = ImageBank.digits[c - '0'];
+				g.drawImage(symbol, 215 + x, c == ',' ? 20 : 7, null);
+				x += symbol.getWidth() + 1;
+			}
+			g.drawImage(ImageBank.mistakes, 305, 5, null);
+			for (int i = 0; i < mistakeCap; i++)
+				g.drawImage(ImageBank.mistakeLives[mistakeCount < mistakeCap - i ? 0 : 1], 405 + i * 20, 5, null);
+			// undo earlier translate, (if top bar is sliding away)
+			g.translate(0, -offY);
+		}
+
 		// tool arrow
 		Composite oldComp = toolbar.setRenderComposite(g);
 		toolbar.setRenderClips(g);
@@ -582,53 +894,10 @@ public class PuzzleState extends State {
 			g.drawImage(ImageBank.toolarrows[!guessing ? 0 : 1], 3, toolArrowAnim.getIntValue(), null);
 		g.setClip(null);
 		((Graphics2D) g).setComposite(oldComp);
-		// top bar
-		g.drawImage(ImageBank.topbar[0], 0, 0, null);
-		int b;
-		for (b = 24; b < Engine.SCREEN_WIDTH - 24; b += 24)
-			g.drawImage(ImageBank.topbar[b % 48 > 0 ? 1 : 2], b, 0, null);
-		g.drawImage(ImageBank.topbar[3], b, 0, null);
-		g.drawImage(ImageBank.time, 15, 5, null);
-		int time = timeSecLimit - (int) clock.elapsedSec();
-		int min = time / 60;
-		int sec = time % 60;
-		String timeString = String.format("%02d:%02d", min, sec);
-		int x = 0;
-		for (int i = 0; i < timeString.length(); i++) {
-			char c = timeString.charAt(i);
-			BufferedImage symbol;
-			if (c == ':')
-				symbol = ImageBank.colon;
-			else
-				symbol = ImageBank.digits[c - '0'];
-			g.drawImage(symbol, 75 + x, c == ':' ? 12 : 7, null);
-			x += symbol.getWidth() + 1;
-		}
-		g.drawImage(ImageBank.score, 140, 5, null);
-		StringBuilder scoreSB = new StringBuilder(Integer.toString(score));
-		int cc = 0;
-		for (int i = scoreSB.length() - 1; i > 0; i--) {
-			if ((cc + 1) % 3 == 0)
-				scoreSB.insert(i, ',');
-			cc++;
-		}
-		String scoreString = scoreSB.toString();
-		x = 0;
-		for (int i = 0; i < scoreString.length(); i++) {
-			char c = scoreString.charAt(i);
-			BufferedImage symbol;
-			if (c == ',')
-				symbol = ImageBank.comma;
-			else
-				symbol = ImageBank.digits[c - '0'];
-			g.drawImage(symbol, 215 + x, c == ',' ? 20 : 7, null);
-			x += symbol.getWidth() + 1;
-		}
-		g.drawImage(ImageBank.mistakes, 305, 5, null);
-		for (int i = 0; i < mistakeCap; i++)
-			g.drawImage(ImageBank.mistakeLives[mistakeCount < mistakeCap - i ? 0 : 1], 405 + i * 20, 5, null);
+		
+		// streak viewer
 		int streak = field.getBlanket().getStreak();
-		if (streak > 0) {
+		if (streak > 0 && state == PICTURE_SOLVING) {
 			final int max = ImageBank.streakWords.length - 1;
 			int remTime = field.getBlanket().getStreakTimeRemaining();
 			int fadeTime = Math.max(0, remTime + Blanket.STREAK_GAP);
@@ -636,21 +905,22 @@ public class PuzzleState extends State {
 			Graphics2D gg = (Graphics2D) g;
 			gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
 			g.drawImage(ImageBank.streakWords[Math.min(streak - 1, max)], STREAK_X, STREAK_Y, null);
-			gg.setComposite(oldComp);
 			final int w = 75;
-			int barW = (int) ((w - 1) * Math.max(0, remTime) / (double) Blanket.STREAK_GAP);
+			int barW = (int) (w * Math.max(0, remTime) / (double) Blanket.STREAK_GAP);
 			int yup = 20;
 			g.setColor(Palette.BLACK);
 			g.drawRect(STREAK_X, STREAK_Y - yup, w, 10);
 			g.setColor(Palette.RED);
-			g.fillRect(STREAK_X + 1 + w - barW, STREAK_Y + 1 - yup, barW, 9);
+			g.fillRect(STREAK_X + w - barW, STREAK_Y + 1 - yup, barW, 9);
+			gg.setComposite(oldComp);
 		}
-		// draw big oh no text if you're a loser
-		if (losing) {
-			g.drawImage(ImageBank.ohno, 37, textDrop.getIntValue(), null);
+		// draw big text if during transition substates
+		int textY = textDrop.getIntValue();
+		if (state == LOSING) {
+			g.drawImage(ImageBank.ohno, 37, textY, null);
 		}
-		if (winning) {
-			g.drawImage(ImageBank.youwin, 37, textDrop.getIntValue(), null);
+		else if (state == PICTURE_WINNING) {
+			g.drawImage(ImageBank.youwin, 37, textY - 75, null);
 		}
 	}
 	

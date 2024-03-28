@@ -1,11 +1,13 @@
 package picnix.puzzle;
 
 import java.awt.AlphaComposite;
+import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
+import engine.Engine;
 import engine.Input;
 import resource.bank.ImageBank;
 import resource.bank.Palette;
@@ -47,7 +49,6 @@ public class Blanket extends Element {
 	// streak constants
 	public static final double[] MULTIPLIERS = {1, 1.2, 1.5, 2, 3, 5};
 	public static final int STREAK_GAP = 3500;
-	private static final int PLATE_SCORE = 1000;
 	
 	// for keeping track of what grids have ever been marked (for score)
 	private boolean[][] scoreChart;
@@ -68,11 +69,13 @@ public class Blanket extends Element {
 		fadeTimer = new Timer(false);
 		scoreChart = new boolean[puzState.getRows()][puzState.getColumns()];
 		streakTimer = new Timer(false);
+		foodMap = new FoodContainer[puzState.getActivePuzzle().getRows()][puzState.getActivePuzzle().getColumns()];
+		foodSparseMap = new FoodContainer[puzState.getActivePuzzle().getRows()][puzState.getActivePuzzle().getColumns()];
 	}
 	
 	private boolean inHintBounds() {
-		double dist = Math.sqrt(Math.pow(field.getCamCenterX() - field.getScrollX(), 2) + 
-								Math.pow(field.getCamCenterY() - field.getScrollY(), 2));
+		double dist = Math.sqrt(Math.pow(field.getCamCenterX(true) - field.getScrollX(), 2) + 
+								Math.pow(field.getCamCenterY(true) - field.getScrollY(), 2));
 		return dist < (puzState.getPuzzleDisplayWidth() / 2);
 	}
 	
@@ -85,16 +88,181 @@ public class Blanket extends Element {
 			return;
 		}
 		super.onClick(mbutton);
-		// mark on the board where the click occurred
+		// the location of the click
 		int rmx = getRelativeMouseX();
 		int rmy = getRelativeMouseY();
-		lastDrawX = rmx;
-		lastDrawY = rmy;
-		int oldMark = puzState.getActivePuzzle().getMark(getCellAtPoint(rmy), getCellAtPoint(rmx));
-		// the drawMode for the stroke to start
-		int mode = getDrawMode(mbutton, oldMark);
-		startDraw(mode);
+		// logic for drawing on picture
+		if (puzState.getState() == PuzzleState.PICTURE_SOLVING) {
+			// mark on the board where the click occurred
+			lastDrawX = rmx;
+			lastDrawY = rmy;
+			int oldMark = puzState.getActivePuzzle().getMark(getCellAtPoint(rmy), getCellAtPoint(rmx));
+			// the drawMode for the stroke to start
+			int mode = getDrawMode(mbutton, oldMark);
+			startDraw(mode);
+		}
+		// (new) logic for arranging food
+		else if (puzState.getState() == PuzzleState.FOOD_SOLVING) {
+			int prow = getCellAtPoint(rmy);
+			int pcol = getCellAtPoint(rmx);
+			// is there a food here? (get it)
+			FoodContainer fc = getFoodAt(prow, pcol);
+			// if there's food, pick up and drag
+			if (fc != null) {
+				// pickup and save orig location
+				pickupFood(fc, prow, pcol);
+				dragOrigRow = prow;
+				dragOrigCol = pcol;
+				startDrag(fc);
+			}
+		}
 	}
+	
+	/* ~~~~~~~~~~~~
+	 *  FOOD STUFF
+	 * ~~~~~~~~~~~~
+	 */
+
+	private FoodContainer[][] foodMap;
+	private FoodContainer[][] foodSparseMap;
+	private FoodContainer dragging;
+	private int dragOrigRow = -1, dragOrigCol = -1;
+	
+	private class FoodContainer {
+		int foodId;
+		FoodContainer(int foodId) {
+			this.foodId = foodId;
+		}
+	}
+	
+	private FoodContainer getFoodAt(int row, int col) {
+		// bounds checking
+		if (!isValidFoodSpot(row, col))
+			return null;
+		// return whatever food is in the map at that spot
+		else
+			return foodMap[row][col];
+	}
+	
+	private void pickupFood(FoodContainer fc, int row, int col) {
+		if (!isValidFoodSpot(row, col))
+			return;
+		if (foodMap[row][col] == fc) {
+			foodMap[row][col] = null;
+			// remove from sparse map (may not even be there)
+			foodSparseMap[row][col] = null;
+			// try picking up in the surrounding squares
+			for (int i = -1; i <= 1; i++)
+				for (int j = -1; j <= 1; j++)
+					pickupFood(fc, row + i, col + j);
+		}
+	}
+	
+	public void placeFood(FoodContainer fc, int row, int col) {
+		int[] food = PuzzleState.getFoodById(dragging.foodId);
+		int fwidth = food[PuzzleState.F_WIDTH];
+		int fheight = food[PuzzleState.F_HEIGHT];
+		// place fc in all squares it occupies
+		for (int i = 0; i < fheight; i++)
+			for (int j = 0; j < fwidth; j++)
+				foodMap[row + i][col + j] = fc;
+		// place at its origin
+		foodSparseMap[row][col] = fc;
+	}
+	
+	public void startDrag(int foodId) {
+		startDrag(new FoodContainer(foodId));
+	}
+	
+	private void startDrag(FoodContainer fc) {
+		dragging = fc;
+	}
+	
+	private void stopDrag() {
+		// TODO animation?
+		dragging = null;
+		dragOrigRow = dragOrigCol = -1;
+	}
+	
+	public void tryDrop() {
+		// not dragging anything?
+		if (dragging == null)
+			return;
+		// find out where to drop
+		int rmx = getRelativeMouseX();
+		int rmy = getRelativeMouseY();
+		int row = getCellAtPoint(rmy);
+		int col = getCellAtPoint(rmx);
+		// where it will go
+		int where[] = findValidInsertSpot(dragging.foodId, row, col);
+		// check if we found anywhere to place
+		if (where[0] == -1 || where[1] == -1) {
+			// failed to place - try to return to its original place
+			if (isValidFoodSpot(row, col) &&
+					dragOrigRow != -1 && dragOrigCol != -1) {
+				// figure out where the food was placed originally
+				int[] origWhere = findValidInsertSpot(dragging.foodId, dragOrigRow, dragOrigCol);
+				placeFood(dragging, origWhere[0], origWhere[1]);
+			}
+			// if no original spot recorded (or dragged off) return to food bar
+			else
+				puzState.returnFoodToWidget(dragging.foodId);
+		}
+		else {
+			// successfully place the food, stop dragging
+			placeFood(dragging, where[0], where[1]);
+		}
+		// in either case, stop dragging
+		stopDrag();
+	}
+	
+	private boolean canDrop(int[] food, int row, int col) {
+		boolean tainted = false;
+		int fwidth = food[PuzzleState.F_WIDTH];
+		int fheight = food[PuzzleState.F_HEIGHT];
+		// place fc in all squares it occupies
+		for (int i = 0; !tainted && i < fheight; i++)
+			for (int j = 0; !tainted && j < fwidth; j++)
+				// bounds checking + if food is already there
+				tainted = !isValidFoodSpot(row + i, col + j) ||
+						  foodMap[row + i][col + j] != null;
+		return !tainted;
+	}
+	
+	private int[] findValidInsertSpot(int foodId, int row, int col) {
+		// get the food data
+		int[] food = PuzzleState.getFoodById(dragging.foodId);
+		int fwidth = food[PuzzleState.F_WIDTH];
+		int fheight = food[PuzzleState.F_HEIGHT];
+		// where it will go
+		int whereR = -1, whereC = -1;
+		if (isValidFoodSpot(row, col)) { // (don't need to try this if not in bounds)
+			// try all the ways you could place this food here
+			for (int i = 0; i < fheight && whereR == -1; i++) {
+				for (int j = 0; j < fwidth && whereC == -1; j++) {
+					int startR = row - i;
+					int startC = col - j;
+					if (canDrop(food, startR, startC)) {
+						whereR = startR;
+						whereC = startC;
+					}
+				}
+			}
+		}
+		return new int[] {whereR, whereC};
+	}
+	
+	private boolean isValidFoodSpot(int row, int col) {
+		return row >= 0 && row < foodMap.length &&
+				col >= 0 && col < foodMap[row].length;
+	}
+	
+	public boolean isDraggingFood() {
+		return dragging != null;
+	}
+	
+	//--------------------//
+	
 	
 	private int getDrawMode(int mbutton, int oldMark) {
 		int tool = puzState.getCurrentTool();
@@ -108,7 +276,12 @@ public class Blanket extends Element {
 	@Override
 	public void onRelease(int mbutton) {
 		super.onRelease(mbutton);
-		stopDraw();
+		// logic for drawing on picture
+		if (puzState.getState() == PuzzleState.PICTURE_SOLVING)
+			stopDraw();
+		// logic for arranging food
+		else if (puzState.getState() == PuzzleState.FOOD_SOLVING)
+			tryDrop();
 	}
 	
 	@Override
@@ -121,14 +294,14 @@ public class Blanket extends Element {
 			lastDrawY = getRelativeMouseY();
 		}
 	}
-	
+
 	@Override
 	public void onLeave() {
 		super.onLeave();
 		// make sure mouse wont leave and return somewhere else,
 		// causing a janky blob size hint animation
 		blobSizeAnim[0].pause();
-		blobSizeAnim[1].pause();;
+		blobSizeAnim[1].pause();
 	}
 	
 	private void startDraw(int mode) {
@@ -144,6 +317,7 @@ public class Blanket extends Element {
 		if (!drawing)
 			return;
 		// add stroke
+		puzState.fadeSidebars(false);
 		puzState.pushStroke(drawStroke, drawMode);
 		drawing = false;
 		drawMode = -1;
@@ -154,7 +328,6 @@ public class Blanket extends Element {
 		lastCell[COL] = -1;
 		blobSizeAnim[0].pause();
 		blobSizeAnim[1].pause();
-		puzState.fadeSidebars(false);
 	}
 	
 	private int getCellAtPoint(int xory) {
@@ -177,35 +350,38 @@ public class Blanket extends Element {
 			lastCell[COL] = currCell[COL];
 			currCell[COL] = mcol;
 		}
-		if (drawMode == Puzzle.FILLED && puzzle.getRemainingFillCount() < 1) // no plates left
-			stopDraw();
-		if (drawing) {
-			// DO FADE TIMER IF ENOUGH TIME PASSED
-			if (fadeTimer.elapsed() >= FADE_TIME) {
-				puzState.fadeSidebars(true);
-				fadeTimer.reset(false);
-			}
-			// CHECK IF NEED MOUSE RAYTRACE
-			double dist = Math.sqrt(Math.pow(drawY - lastDrawY, 2) + Math.pow(drawX - lastDrawX, 2));
-			int cellSize = puzState.getPuzzleCellSize();
-			if (dist >= cellSize) {
-				// MOUSE RAYTRACING
-				//System.out.println("lastDrawX: " + lastDrawX + ", lastDrawY: " + lastDrawY + ", drawX: " + drawX + ", drawY: " + drawY);
-				double angle = Math.atan((drawY - lastDrawY) / (double) (drawX - lastDrawX));
-				if (drawX < lastDrawX)
-					angle = Math.PI + angle;
-				for (int r = 0; r < dist; r += cellSize) {
-					int rdrow = getCellAtPoint(lastDrawY + (int) Math.round(Math.sin(angle) * r));
-					int rdcol = getCellAtPoint(lastDrawX + (int) Math.round(Math.cos(angle) * r));
-					// MAKE RAY-TRACED MARK
-					tryDraw(puzzle, rdrow, rdcol);
+		// only need to do picture drawing stuff if solving picture puzzle
+		if (puzState.getState() == PuzzleState.PICTURE_SOLVING) {
+			if (drawMode == Puzzle.FILLED && puzzle.getRemainingFillCount() < 1) // no plates left
+				stopDraw();
+			else if (drawing) {
+				// DO FADE TIMER IF ENOUGH TIME PASSED
+				if (fadeTimer.elapsed() >= FADE_TIME) {
+					puzState.fadeSidebars(true);
+					fadeTimer.reset(false);
 				}
+				// CHECK IF NEED MOUSE RAYTRACE
+				double dist = Math.sqrt(Math.pow(drawY - lastDrawY, 2) + Math.pow(drawX - lastDrawX, 2));
+				int cellSize = puzState.getPuzzleCellSize();
+				if (dist >= cellSize) {
+					// MOUSE RAYTRACING
+					//System.out.println("lastDrawX: " + lastDrawX + ", lastDrawY: " + lastDrawY + ", drawX: " + drawX + ", drawY: " + drawY);
+					double angle = Math.atan((drawY - lastDrawY) / (double) (drawX - lastDrawX));
+					if (drawX < lastDrawX)
+						angle = Math.PI + angle;
+					for (int r = 0; r < dist; r += cellSize) {
+						int rdrow = getCellAtPoint(lastDrawY + (int) Math.round(Math.sin(angle) * r));
+						int rdcol = getCellAtPoint(lastDrawX + (int) Math.round(Math.cos(angle) * r));
+						// MAKE RAY-TRACED MARK
+						tryDraw(puzzle, rdrow, rdcol);
+					}
+				}
+				// MAKE FINAL MARK AT THE ACTUAL MOUSE POSITION
+				tryDraw(puzzle, mrow, mcol);
+				// UPDATE LAST DRAW X/Y
+				lastDrawX = drawX;
+				lastDrawY = drawY;
 			}
-			// MAKE FINAL MARK AT THE ACTUAL MOUSE POSITION
-			tryDraw(puzzle, mrow, mcol);
-			// UPDATE LAST DRAW X/Y
-			lastDrawX = drawX;
-			lastDrawY = drawY;
 		}
 	}
 	
@@ -226,7 +402,7 @@ public class Blanket extends Element {
 				else
 					streak = 1;
 				scoreChart[row][col] = true;
-				puzState.increaseScore(getPlateScoreBonus());
+				puzState.increasePlateScore(getPlateScoreBonus());
 				streakTimer.reset(true);
 			}
 		}
@@ -253,13 +429,15 @@ public class Blanket extends Element {
 			System.out.println("Fantastic!");*/
 		int size = Math.max(puzState.getRows(), puzState.getColumns());
 		double sizeMultiplier = 25.0 / (size * size);
-		return (int) (PLATE_SCORE * sizeMultiplier *
+		return (int) (PuzzleState.PLATE_SCORE * sizeMultiplier *
 				MULTIPLIERS[Math.min(streak, MULTIPLIERS.length - 1)]);
 	}
 
 	@Override
 	public void render(Graphics g) {
-		g.translate(getDisplayX(), getDisplayY());
+		int xp = getDisplayX();
+		int yp = getDisplayY();
+		g.translate(xp, yp);
 		Puzzle puzzle = puzState.getActivePuzzle();
 		int cellSize = puzState.getPuzzleCellSize();
 		int layid = puzState.getActiveLayerId();
@@ -284,7 +462,7 @@ public class Blanket extends Element {
 		// the highlighted row and column hints
 		int highRow = getCellAtPoint(getRelativeMouseY());
 		int highCol = getCellAtPoint(getRelativeMouseX());
-		boolean hov = puzzle.validSpot(highRow, highCol) && !puzState.isOver();
+		boolean hov = puzzle.validSpot(highRow, highCol) && !puzState.isPictureOver();
 		int mode = hov ? getDrawMode(Input.LEFT_CLICK, puzzle.getMark(highRow, highCol)) : 0;
 
 		Graphics2D gg = (Graphics2D) g;
@@ -369,40 +547,91 @@ public class Blanket extends Element {
 				}
 			}
 		}
-		// set opacity to hint fade anim
-		gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) hintFade.getValue()));
-		for (int r = 0; r < puzzle.getRows(); r++) {
-			int[] hints = puzzle.getClueRow(r);
-			int hh = r == highRow && hov ? 2 : 0;
-			for (int i = 0; i < hints.length; i++) {
-				int hintnum = hints[hints.length - 1 - i];
-				g.drawImage(scrHoriz[1 + hh], -hgridW * (i+1), r * cellSize, null);
-				g.drawImage(nums[Math.abs(hintnum)-1], -hgridW * (i+1) + rowXOff, r * cellSize + rowYOff, null);
-				if (hintnum < 0) {
-					g.setColor(Palette.RED);
-					g.drawLine(-hgridW * (i+1) + rowXOff, r * cellSize + rowYOff,
-							-hgridW * i - rowXOff, (r+1) * cellSize - rowYOff);
+		// if in the food solving stage, don't draw hints
+		if (puzState.getState() < PuzzleState.FOOD_SOLVING) {
+			// set opacity to hint fade anim
+			gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) hintFade.getValue()));
+			// if board is done, roll up hints - else 0, no roll up
+			double rollUp = Animation.bezier(1 - puzState.getSwitchHideProgress(), Animation.EASE_IN);
+			for (int r = 0; r < puzzle.getRows(); r++) {
+				int[] hints = puzzle.getClueRow(r);
+				int hh = r == highRow && hov ? 2 : 0;
+				// if the puzzle was solved, the hints roll up, so we need to clip the hint width/heights
+				int scrollW = hgridW * (hints.length);
+				int minX = (int) -(scrollW * rollUp);
+				g.setClip(minX, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
+				for (int i = 0; i < hints.length; i++) {
+					int hintnum = hints[hints.length - 1 - i];
+					g.drawImage(scrHoriz[1 + hh], -hgridW * (i+1), r * cellSize, null);
+					g.drawImage(nums[Math.abs(hintnum)-1], -hgridW * (i+1) + rowXOff, r * cellSize + rowYOff, null);
+					if (hintnum < 0) {
+						g.setColor(Palette.RED);
+						g.drawLine(-hgridW * (i+1) + rowXOff, r * cellSize + rowYOff,
+								-hgridW * i - rowXOff, (r+1) * cellSize - rowYOff);
+					}
 				}
+				// reset clip (if rolling)
+				g.setClip(null);
+				g.drawImage(scrHoriz[0 + hh], minX - hgridW, r * cellSize, null);
 			}
-			g.drawImage(scrHoriz[0 + hh], -hgridW * (hints.length+1), r * cellSize, null);
+			for (int c = 0; c < puzzle.getColumns(); c++) {
+				int[] hints = puzzle.getClueColumn(c);
+				int hh = c == highCol && hov ? 2 : 0;
+				// if the puzzle was solved, the hints roll up, so we need to clip the hint width/heights
+				int scrollH = hgridW * (hints.length);
+				int minY = (int) -(scrollH * rollUp);
+				g.setClip(0, minY, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
+				for (int i = 0; i < hints.length; i++) {
+					int hintnum = hints[hints.length - 1 - i];
+					g.drawImage(scrVert[1 + hh], c * cellSize, -hgridW * (i+1), null);
+					g.drawImage(nums[Math.abs(hintnum)-1], c * cellSize + colXOff, -hgridW * (i+1) + colYOff, null);
+					if (hintnum < 0) {
+						g.setColor(Palette.RED);
+						g.drawLine(c * cellSize + colXOff, -hgridW * (i+1) + colYOff,
+								(c+1) * cellSize - colXOff, -hgridW * i - colYOff);
+					}
+				}
+				// reset clip (if rolling)
+				g.setClip(null);
+				g.drawImage(scrVert[0 + hh], c * cellSize, minY - hgridW, null);
+			}
 		}
-		for (int c = 0; c < puzzle.getColumns(); c++) {
-			int[] hints = puzzle.getClueColumn(c);
-			int hh = c == highCol && hov ? 2 : 0;
-			for (int i = 0; i < hints.length; i++) {
-				int hintnum = hints[hints.length - 1 - i];
-				g.drawImage(scrVert[1 + hh], c * cellSize, -hgridW * (i+1), null);
-				g.drawImage(nums[Math.abs(hintnum)-1], c * cellSize + colXOff, -hgridW * (i+1) + colYOff, null);
-				if (hintnum < 0) {
-					g.setColor(Palette.RED);
-					g.drawLine(c * cellSize + colXOff, -hgridW * (i+1) + colYOff,
-							(c+1) * cellSize - colXOff, -hgridW * i - colYOff);
+		// if state has passed puzzle completion, draw food
+		else {
+			for (int r = 0; r < foodMap.length; r++) {
+				for (int c = 0; c < foodMap.length; c++) {
+					FoodContainer fc = foodSparseMap[r][c];
+					if (fc != null) {
+						int[] food = PuzzleState.getFoodById(fc.foodId);
+						g.setColor(Palette.CARAMEL);
+						g.fillRect(c * cellSize, r * cellSize, food[0] * cellSize, food[1] * cellSize);
+					}
 				}
 			}
-			g.drawImage(scrVert[0 + hh], c * cellSize, -hgridW * (hints.length+1), null);
+			// render drop hitbox
+			if (isDraggingFood() && isValidFoodSpot(highRow, highCol)) {
+				int[] food = PuzzleState.getFoodById(dragging.foodId);
+				// all of the food needs to be in bounds to render
+				if (isValidFoodSpot(highRow + food[1] - 1, highCol + food[0] - 1)) {
+					// half opacity for the color
+					gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+					int where[] = findValidInsertSpot(dragging.foodId, highRow, highCol);
+					// if there is a valid spot, draw it green
+					if (where[0] != -1 && where[1] != -1) {
+						g.setColor(Palette.PEAR);
+						g.fillRect(where[1] * cellSize, where[0] * cellSize, food[0] * cellSize, food[1] * cellSize);
+					}
+					// if no valid spot, draw red
+					else {
+						g.setColor(Palette.RED);
+						g.fillRect(highCol * cellSize, highRow * cellSize, food[0] * cellSize, food[1] * cellSize);
+					}
+					gg.setComposite(oldComp);
+				}
+			}
 		}
 		gg.setComposite(oldComp);
-		g.translate(-getDisplayX(), -getDisplayY());
+		g.translate(-xp, -yp);
 	}
 
 	private void setBlobSizeAnim(int x, int y) {

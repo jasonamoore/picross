@@ -120,7 +120,7 @@ public abstract class Element implements Comparable<Element> {
 		// only if state changed
 		if (state != newState) {
 			// remove from old state
-			if (state != null)
+			if (state != null && state.contains(this))
 				state.remove(this);
 			state = newState;
 			// add to new state

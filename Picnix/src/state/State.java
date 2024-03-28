@@ -38,13 +38,17 @@ public abstract class State {
 		Engine.getEngine().getStateManager().transitionExitState(Transition.FADE, 250, 0);
 	}
 	
+	public boolean contains(Element e) {
+		return elements.contains(e);
+	}
+	
 	public void add(Element e) {
-		if (!elements.contains(e))
+		if (!contains(e))
 			elements.add(e);
 		e.updateState(this);
 		sortChildren();
 	}
-	
+
 	public void remove(Element e) {
 		elements.remove(e);
 		e.updateState(null);
