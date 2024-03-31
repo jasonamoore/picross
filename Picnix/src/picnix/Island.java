@@ -27,7 +27,7 @@ public class Island {
 		}
 		// make objects
 		objs = new IslandObject[NUM_OBJS];
-		objs[0] = new IslandObject(ImageBank.parkobjsheet, 25, Math.PI / 5, 24, 17);
+		objs[0] = new IslandObject(ImageBank.parkobjsheet, 125, Math.PI / 2, 24, 17);
 	}
 	
 	public static void renderIsland(Graphics g, int skyHeight, int islandOffsetX, int islandOffsetY, double islandScale, double islandRotation) {
@@ -70,9 +70,10 @@ public class Island {
 			IslandObject obj = objs[i];
 			int offx = obj.width / 2;
 			int offy = obj.height;
-			int tx = (int) (-offx + islandOffsetX + Engine.SCREEN_WIDTH / 2 + Math.cos(-islandRotation + obj.rot) * obj.rad);
-			int ty = (int) (-offy + islandOffsetY + Engine.SCREEN_HEIGHT / 2 + Math.sin(-islandRotation + obj.rot) * obj.rad * HEIGHT_WIDTH_RATIO);
-			g.drawImage(obj.getSprite(islandRotation + obj.rot), tx, ty, null);
+			double srad = obj.rad * islandScale;
+			int tx = (int) (-offx + islandOffsetX + Engine.SCREEN_WIDTH / 2 + Math.cos(-islandRotation + obj.rot) * srad);
+			int ty = (int) (-offy + islandOffsetY + Engine.SCREEN_HEIGHT / 2 + Math.sin(-islandRotation + obj.rot) * srad * HEIGHT_WIDTH_RATIO);
+			g.drawImage(obj.getSprite(islandRotation), tx, ty, null);
 		}
 	}
 	
@@ -82,6 +83,7 @@ class IslandObject {
 	
 	BufferedImage[] sheet;
 	double rot, rad;
+	double faceRot;
 	int width, height;
 	
 	public IslandObject(BufferedImage[] sheet, double rad, double rot, int width, int height) {
@@ -93,14 +95,15 @@ class IslandObject {
 	}
 
 	public BufferedImage getSprite(double totalRot) {
+		totalRot += faceRot;
 		// bound totalRot between 0 and 2PI:
 		int circles = (int) (totalRot / (2 * Math.PI));
 		double adjRot = totalRot - (circles * 2 * Math.PI);
 		if (adjRot < 0)
 			adjRot += 2 * Math.PI;
-		double chunkSize = (2 * Math.PI) / sheet.length;
+		double rotProp = totalRot / (2 * Math.PI);
 		// index will be between 0 and sheet.length:
-		int index = (int) Math.floor(adjRot / chunkSize);
+		int index = (int) (rotProp * sheet.length);
 		return sheet[index];
 	}
 	

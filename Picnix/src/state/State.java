@@ -7,6 +7,7 @@ import java.util.Collections;
 import engine.Engine;
 import engine.Input;
 import engine.Transition;
+import state.element.Container;
 import state.element.Element;
 
 public abstract class State {
@@ -24,6 +25,8 @@ public abstract class State {
 	
 	// keeps track of which (1) element has focus for onHover/onClick events
 	private Element focusElement;
+	// keeps track of the last focusElement that was a Container type
+	private Container focusContainer;
 	// keeps track of which (1) element has pending negative events,
 	// i.e., an element that was clicked and not yet released.
 	// if non-null, this signals that another click event cannot occur
@@ -61,8 +64,11 @@ public abstract class State {
 	}
 
 	public void requestFocus(Element e) {
-		if (!frozen)
+		if (!frozen) {
 			focusElement = e;
+			if (focusElement instanceof Container)
+				focusContainer = (Container) e;
+		}
 	}
 	
 	public void activate(Element e) {
@@ -123,6 +129,10 @@ public abstract class State {
 					}
 				}
 			}
+			// let this container try to consume mouse wheel to scroll
+			if (focusContainer != null)
+				focusContainer.tryScroll();
+			input.consumeMouseWheelScroll();
 		}
 	}
 	

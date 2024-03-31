@@ -96,12 +96,12 @@ public class Container extends Element {
 	}
 	
 	/**
-	 * Disables both scrollers by making them
-	 * invisible and disabled.
+	 * Disables both scrollers by making them null.
 	 */
 	protected void disableScrollers() {
-		scrollHoriz.setExisting(false);
-		scrollVert.setExisting(false);
+		//scrollHoriz.setExisting(false);
+		//scrollVert.setExisting(false);
+		scrollHoriz = scrollVert = null;
 	}
 	
 	public int getInnerWidth() {
@@ -133,9 +133,7 @@ public class Container extends Element {
 	/**
 	 * Handles input for controlling the Scrollers.
 	 */
-	@Override
-	public void tick() {
-		super.tick();
+	public void tryScroll() {
 		if (isEnabled()) {
 			Input input = Input.getInstance();
 			double scroll = input.getUnconsumedScrollAmount();
@@ -150,10 +148,8 @@ public class Container extends Element {
 				else
 					targeted = scrollVert;
 			}
-			if (scroll != 0 && targeted != null) {
+			if (scroll != 0 && targeted != null)
 				targeted.nudgeSmooth((int) (scroll * Scroller.SCROLL_WHEEL_NUDGE_AMOUNT));
-				input.consumeMouseWheelScroll();
-			}
 		}
 	}
 	

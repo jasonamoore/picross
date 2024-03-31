@@ -60,7 +60,8 @@ public class PuzzleState extends State {
 	private static final String LOSE_MESSAGE_MISTAKE = "keep your plates in order";
 	// score messages and text fields
 	private static final int NUM_SCORE_LINES = 5;
-	private static final String[] SCORE_MESSAGES = {"time bonus", "accuracy bonus", "plate bonus", "critter bonus", "total score"};
+	private static final String[] SCORE_MESSAGES =
+		{"time bonus", "accuracy bonus", "plate bonus", "critter bonus", "total score"};
 	private TextField[] scoreLines;
 	
 	// render positioning constants;
@@ -85,7 +86,8 @@ public class PuzzleState extends State {
 	public static final int PLATE_SCORE = 1000;
 	public static final int MISTAKE_BONUS = 10_000;
 	private static final int MAX_TIME_BONUS = 100_000;
-	private static final double MS_PER_POINT = 0.9;
+	private static final double MS_PER_POINT = 0.85;
+	private static final double MAX_SCORE_ANIM_DURATION = 5000;
 	// score fields
 	private int plateScore;
 	private int critterScore;
@@ -179,7 +181,7 @@ public class PuzzleState extends State {
 				0, 0, false);
 		switchTimer = new Timer(false);
 		generateUI();
-		pictureWin();
+		//pictureWin();
 	}
 		
 	@Override
@@ -516,7 +518,7 @@ public class PuzzleState extends State {
 		int nnew = getScore();
 		scoreAnim.setFrom(orig);
 		scoreAnim.setTo(nnew);
-		scoreAnim.setDuration((int) (MS_PER_POINT * (nnew - orig)));
+		scoreAnim.setDuration((int) Math.min(MAX_SCORE_ANIM_DURATION, MS_PER_POINT * (nnew - orig)));
 		scoreAnim.reset(true);
 	}
 	
