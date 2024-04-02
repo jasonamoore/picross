@@ -14,9 +14,9 @@ public class Transition {
 	public static final int NONE = 0;
 	public static final int FADE = 1;
 	public static final int CURTAIN = 2;
+	public static final int SLIDE_TOP = 3;
 
-	private State toState;
-	private State oldState;
+	private State fromState, toState;
 	private int type;
 	private int durA, durB;
 	
@@ -31,81 +31,105 @@ public class Transition {
 	 * @param durA
 	 * @param durB
 	 */
-	Transition(State toState, State oldState, int type, int durA, int durB) {
+	Transition(boolean exiting, State toState, State oldState, int type, int durA, int durB) {
+		this.exiting = exiting;
 		this.toState = toState;
-		this.oldState = oldState;
-		exiting = toState == null;
+		this.fromState = oldState;
 		this.type = type;
 		this.durA = durA;
 		this.durB = durB;
 		timer = new Timer(true);
 	}
 
-	public State getOldState() {
-		return oldState;
+	State getFromState() {
+		return fromState;
 	}
 	
-	public boolean isExitTransition() {
+	boolean isExitTransition() {
 		return exiting;
 	}
 	
-	public State getToState() {
+	State getToState() {
 		return toState;
 	}
 	
-	public int getType() {
-		return type;
-	}
-	
-	public boolean inPartA() {
+	private boolean inPartA() {
 		return !checked;
 	}
 	
-	public double getAProgress() {
+	private double getAProgress() {
 		if (durA == 0)
 			return 1;
 		return Math.max(0, Math.min(1, timer.elapsed() / (double) durA));
 	}
 	
-	public double getBProgress() {
+	private double getBProgress() {
 		if (durB == 0)
 			return inPartA() ? 0 : 1;
 		return Math.max(0, Math.min(1, (timer.elapsed() - durA) / (double) durB));
 	}
 	
-	public boolean needsStateSwitch() {
+	private State getActiveState() {
+		return inPartA() ? fromState : toState;
+	}
+	
+	boolean needsStateSwitch() {
 		if (timer.elapsed() > durA && !checked)
 			return (checked = true);
 		else
 			return false;
 	}
 	
-	public boolean isFinished() {
+	boolean isFinished() {
 		return checked && timer.elapsed() > durA + durB;
 	}
 	
-	public void render(Graphics g) {
+	void render(Graphics g) {
+		State active = getActiveState();
 		if (type == Transition.NONE)
-			; // render nothing
-		else if (type == Transition.FADE) {
-			float opacity = (float) (inPartA() ? getAProgress() : 1.0 - getBProgress());
-			Graphics2D gg = (Graphics2D) g;
-			Composite oldComp = gg.getComposite();
-			gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-			gg.setColor(Palette.BLACK);
-			gg.fillRect(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
-			gg.setComposite(oldComp);
-		}
-		else if (type == Transition.CURTAIN) {
-			int half = Engine.SCREEN_WIDTH / 2;
-			double progress = inPartA() ? getAProgress() : 1 - getBProgress();
-			// curtain should hold closed for a while - adjust progress
-			progress = 1 - Math.min(1, progress / 0.5);
-			double x1 = -half * progress;
-			double x2 = half + half * progress;
-			g.setColor(Palette.RED);
-			g.fillRect((int) x1, 0, half, Engine.SCREEN_HEIGHT);
-			g.fillRect((int) x2, 0, half, Engine.SCREEN_HEIGHT);
+			active.render(g); // render just the active state
+		else {
+			boolean inA = inPartA();
+			double aprog = getAProgress();
+			double bprog = getBProgress();
+			if (type == Transition.FADE) {
+				// render active state underneath
+				active.render(g);
+				float opacity = (float) (inA ? aprog : 1.0 - bprog);
+				Graphics2D gg = (Graphics2D) g;
+				Composite oldComp = gg.getComposite();
+				gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
+				gg.setColor(Palette.BLACK);
+				gg.fillRect(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
+				gg.setComposite(oldComp);
+			}
+			else if (type == Transition.CURTAIN) {
+				// render active state underneath
+				active.render(g);
+				int half = Engine.SCREEN_WIDTH / 2;
+				double progress = inA ? aprog : 1 - bprog;
+				// curtain should hold closed for a while - adjust progress
+				progress = 1 - Math.min(1, progress / 0.5);
+				double x1 = -half * progress;
+				double x2 = half + half * progress;
+				g.setColor(Palette.RED);
+				g.fillRect((int) x1, 0, half, Engine.SCREEN_HEIGHT);
+				g.fillRect((int) x2, 0, half, Engine.SCREEN_HEIGHT);
+			}
+			else if (type == Transition.SLIDE_TOP) {
+				if (inA) {
+					// always render fromState underneath
+					fromState.render(g);
+					// find what position toState should be rendered at
+					int y = (int) ((1 - aprog) * -Engine.SCREEN_HEIGHT);
+					// translate graphics and render
+					g.translate(0, y);
+					toState.render(g);
+					g.translate(0, -y); // reset
+				}
+				else // just render the toState
+					active.render(g);
+			}
 		}
 	}
 

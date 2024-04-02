@@ -40,6 +40,14 @@ public class StateManager {
 	public State getTopState() {
 		return stateStack.peek();
 	}
+	
+	/**
+	 * Returns the second topmost state from the stack.
+	 * @return The element returned by calling @code{elementAt(size-2)}.
+	 */
+	public State getSecondmostState() {
+		return stateStack.elementAt(stateStack.size() - 2);
+	}
 
 	/**
 	 * Returns the second topmost state from the stack.
@@ -60,14 +68,17 @@ public class StateManager {
 	}
 	
 	public void transitionToState(State toState, int type, int a, int b) {
-		State oldState = getTopState();
-		transition = new Transition(toState, oldState, type, a, b);
+		State fromState = getTopState();
+		transition = new Transition(false, toState, fromState, type, a, b);
 		transitioning = true;
-		oldState.freezeInput(true);
+		fromState.freezeInput(true);
 	}
 	
 	public void transitionExitState(int type, int a, int b) {
-		transitionToState(null, type, a, b);
+		State fromState = getTopState();
+		transition = new Transition(true, getSecondmostState(), fromState, type, a, b);
+		transitioning = true;
+		fromState.freezeInput(true);
 	}
 	
 	/**
@@ -97,7 +108,7 @@ public class StateManager {
 			// if we passed part a, open the new state
 			if (transition.needsStateSwitch()) {
 				if (!transition.isExitTransition()) {
-					transition.getOldState().freezeInput(false); // unfreeze previous state
+					transition.getFromState().freezeInput(false); // unfreeze previous state
 					transition.getToState().freezeInput(true); // freeze new state's input
 					openState(transition.getToState());
 				}
@@ -114,13 +125,14 @@ public class StateManager {
 	}
 	
 	public void render(Graphics g) {
-		// render active state
-		getTopState().render(g);
-		// render particles
-		Particle.renderParticles(g);
-		// render transition effect
+		// render transition (which handles state rendering)
 		if (transitioning && !transition.isFinished())
 			transition.render(g);
+		else // render active state
+			getTopState().render(g);
+		
+		// render particles
+		Particle.renderParticles(g);
 	}
 	
 }

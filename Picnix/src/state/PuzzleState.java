@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Shape;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
@@ -16,8 +17,6 @@ import picnix.World;
 import picnix.data.UserData;
 import picnix.puzzle.Blanket;
 import picnix.puzzle.Field;
-import picnix.puzzle.FoodBar;
-import picnix.puzzle.FoodWidget;
 import picnix.puzzle.Puzzle;
 import picnix.puzzle.Stroke;
 import resource.bank.FontBank;
@@ -25,6 +24,9 @@ import resource.bank.ImageBank;
 import resource.bank.Palette;
 import state.element.Icon;
 import state.element.TextField;
+import state.element.TiledButton;
+import state.element.puzzle.FoodBar;
+import state.element.puzzle.FoodWidget;
 import state.element.puzzle.LayerButton;
 import state.element.puzzle.LayerProgress;
 import state.element.puzzle.Sidebar;
@@ -66,6 +68,9 @@ public class PuzzleState extends State {
 	
 	// render positioning constants;
 	private static final int TOPBAR_HEIGHT = 32;
+	private static final int TIME_X = 6;
+	private static final int SCORE_X = 130;
+	private static final int MISTAKES_X = 290;
 	private static final int STREAK_X = 380;
 	private static final int STREAK_Y = 300;
 	
@@ -86,7 +91,7 @@ public class PuzzleState extends State {
 	public static final int PLATE_SCORE = 1000;
 	public static final int MISTAKE_BONUS = 10_000;
 	private static final int MAX_TIME_BONUS = 100_000;
-	private static final double MS_PER_POINT = 0.85;
+	private static final double MS_PER_POINT = 0.9;
 	private static final double MAX_SCORE_ANIM_DURATION = 5000;
 	// score fields
 	private int plateScore;
@@ -99,6 +104,8 @@ public class PuzzleState extends State {
 	// stores field data, like the picnic blanket and critters
 	private Field field;
 	
+	// pause button
+	private TiledButton pause;
 	// tool and layer sidebars
 	private Sidebar toolbar;
 	private Sidebar layerbar;
@@ -181,7 +188,6 @@ public class PuzzleState extends State {
 				0, 0, false);
 		switchTimer = new Timer(false);
 		generateUI();
-		//pictureWin();
 	}
 		
 	@Override
@@ -196,6 +202,16 @@ public class PuzzleState extends State {
 	 * of the undo/redo, clear, and center buttons.
 	 */
 	private void generateUI() {
+		pause = new TiledButton(Engine.SCREEN_WIDTH - 24, 0, 24, 32) {
+			@Override
+			public void onRelease(int mbutton) {
+				super.onRelease(mbutton);
+				pause();
+			}
+		};
+		pause.setAllTileMaps(ImageBank.bluebutton, ImageBank.bluebuttonclick, ImageBank.buttondisabled);
+		pause.setLabel(ImageBank.pause);
+		add(pause);
 		toolbar = new Sidebar(Sidebar.TOOLBAR_X);
 		toolbar.setBackground(ImageBank.toolbar);
 		add(toolbar);
@@ -268,14 +284,14 @@ public class PuzzleState extends State {
 		int hintMax = activePuzzle.getLongestRowClueList();
 		for (int i = 0; i < puzzleLayers.length; i++)
 			hintMax = Math.max(hintMax, puzzleLayers[i].getLongestRowClueList());
-		return Blanket.getHintScrollWidth(cellSize) * hintMax;
+		return Blanket.getHintScrollWidth(cellSize) * hintMax + Sidebar.SIDEBAR_W;
 	}
 	
 	public int getPuzzleTopPadding() {
 		int hintMax = activePuzzle.getLongestColumnClueList();
 		for (int i = 0; i < puzzleLayers.length; i++)
 			hintMax = Math.max(hintMax, puzzleLayers[i].getLongestColumnClueList());
-		return Blanket.getHintScrollWidth(cellSize) * hintMax;
+		return Blanket.getHintScrollWidth(cellSize) * hintMax + TOPBAR_HEIGHT;
 	}
 	
 	/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -619,6 +635,11 @@ public class PuzzleState extends State {
 		}
 	}
 	
+	private void pause() {
+		PauseState ps = new PauseState();
+		Engine.getEngine().getStateManager().transitionToState(ps, Transition.SLIDE_TOP, 250, 0);
+	}
+	
 	private void pictureWin() {
 		state = PICTURE_WINNING;
 		scoreLines = new TextField[NUM_SCORE_LINES];
@@ -644,6 +665,7 @@ public class PuzzleState extends State {
 	}
 	
 	private void finish() {
+		pause.setVisible(false);
 		freezeInput(true);
 		textDrop.resume();
 		switchTimer.resume();
@@ -693,6 +715,7 @@ public class PuzzleState extends State {
 	}
 	
 	public void switchToFoodSolving() {
+		pause.setVisible(true);
 		state = FOOD_SOLVING;
 		// hide score lines
 		for (int i = 0; i < scoreLines.length; i++)
@@ -731,12 +754,17 @@ public class PuzzleState extends State {
 			if (valid[i])
 				validCount++;
 		}
-		// generate a random number up to validCount
-		int validNum = (int) (Math.random() * validCount);
+		// if there is only one option to generate, it is the 1x1
+		if (validCount == 1)
+			return 0;
+		// otherwise... don't choose 1x1 piece
+		// generate a random number up to validCount-1 (exclude 1x1)
+		int validNum = (int) (Math.random() * (validCount - 1));
 		// find which food id that is
 		int seen = 0;
 		int foodType = -1;
-		for (int i = 0; foodType < 0 && i < valid.length; i++) {
+		// start at id 1 to skip 1x1 piece
+		for (int i = 1; foodType < 0 && i < valid.length; i++) {
 			if (valid[i])
 				seen++;
 			if (seen > validNum)
@@ -842,15 +870,15 @@ public class PuzzleState extends State {
 			g.translate(0, offY);
 			g.drawImage(ImageBank.topbar[0], 0, 0, null);
 			int b;
-			for (b = 24; b < Engine.SCREEN_WIDTH - 24; b += 24)
+			for (b = 24; b < Engine.SCREEN_WIDTH - 24 * 2; b += 24)
 				g.drawImage(ImageBank.topbar[b % 48 > 0 ? 1 : 2], b, 0, null);
 			g.drawImage(ImageBank.topbar[3], b, 0, null);
-			g.drawImage(ImageBank.time, 15, 5, null);
+			g.drawImage(ImageBank.time, TIME_X, 5, null);
 			int time = getRemainingTime();
 			int min = time / 60;
 			int sec = time % 60;
 			String timeString = String.format("%02d:%02d", min, sec);
-			int x = 0;
+			int x = 3 + TIME_X + ImageBank.time.getWidth();
 			for (int i = 0; i < timeString.length(); i++) {
 				char c = timeString.charAt(i);
 				BufferedImage symbol;
@@ -858,10 +886,10 @@ public class PuzzleState extends State {
 					symbol = ImageBank.colon;
 				else
 					symbol = ImageBank.digits[c - '0'];
-				g.drawImage(symbol, 75 + x, c == ':' ? 12 : 7, null);
+				g.drawImage(symbol, x, c == ':' ? 12 : 7, null);
 				x += symbol.getWidth() + 1;
 			}
-			g.drawImage(ImageBank.score, 140, 5, null);
+			g.drawImage(ImageBank.score, SCORE_X, 5, null);
 			int rendScore = scoreAnim.getIntValue();
 			StringBuilder scoreSB = new StringBuilder(Integer.toString(rendScore));
 			int cc = 0;
@@ -871,7 +899,7 @@ public class PuzzleState extends State {
 				cc++;
 			}
 			String scoreString = scoreSB.toString();
-			x = 0;
+			x = 3 + SCORE_X + ImageBank.score.getWidth();
 			for (int i = 0; i < scoreString.length(); i++) {
 				char c = scoreString.charAt(i);
 				BufferedImage symbol;
@@ -879,12 +907,14 @@ public class PuzzleState extends State {
 					symbol = ImageBank.comma;
 				else
 					symbol = ImageBank.digits[c - '0'];
-				g.drawImage(symbol, 215 + x, c == ',' ? 20 : 7, null);
+				g.drawImage(symbol, x, c == ',' ? 20 : 7, null);
 				x += symbol.getWidth() + 1;
 			}
-			g.drawImage(ImageBank.mistakes, 305, 5, null);
+			g.drawImage(ImageBank.mistakes, MISTAKES_X, 5, null);
+			final int mistakeOffX = 3 + MISTAKES_X + ImageBank.mistakes.getWidth();
 			for (int i = 0; i < mistakeCap; i++)
-				g.drawImage(ImageBank.mistakeLives[mistakeCount < mistakeCap - i ? 0 : 1], 405 + i * 20, 5, null);
+				g.drawImage(ImageBank.mistakeLives[mistakeCount < mistakeCap - i ? 0 : 1],
+						mistakeOffX + i * 20, 5, null);
 			// undo earlier translate, (if top bar is sliding away)
 			g.translate(0, -offY);
 		}

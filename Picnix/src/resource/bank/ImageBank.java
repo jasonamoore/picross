@@ -24,6 +24,7 @@ public class ImageBank {
 	public static BufferedImage tree;
 	public static BufferedImage ohno;
 	public static BufferedImage youwin;
+	public static BufferedImage paused;
 	//
 	public static BufferedImage[] bluebutton;
 	public static BufferedImage[] pinkbutton;
@@ -64,6 +65,7 @@ public class ImageBank {
 	public static BufferedImage newlevelalert;
 	public static BufferedImage hiddenpreview;
 	// --
+	public static BufferedImage pause;
 	public static BufferedImage[] topbar;
 	public static BufferedImage time;
 	public static BufferedImage score;
@@ -132,6 +134,7 @@ public class ImageBank {
 		island = loadSheet("island.png");
 		ohno = loadSheet("ohno.png");
 		youwin = loadSheet("youwin.png");
+		paused = loadSheet("paused.png");
 		// title sprite sheet
 		BufferedImage titleSheet = loadSheet("title.png");
 		title = loadOne(titleSheet, 0, 0, 346, 125);
@@ -180,6 +183,7 @@ public class ImageBank {
 		newlevelalert = loadOne(uiSheet, 363, 169, 39, 39);
 		hiddenpreview = loadOne(uiSheet, 363, 208, 39, 31);
 		//
+		pause = loadOne(uiSheet, 346, 265, 12, 14);
 		topbar = loadMany(uiSheet, 0, 0, 24, 32, 4, 1);
 		time = loadOne(uiSheet, 267, 94, 55, 19);
 		score = loadOne(uiSheet, 267, 113, 71, 19);
