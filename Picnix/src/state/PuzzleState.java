@@ -5,7 +5,6 @@ import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Shape;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
@@ -438,7 +437,7 @@ public class PuzzleState extends State {
 		boolean bwon = true;
 		// check all puzzles are solved
 		for (int i = 0; i < puzzleLayers.length; i++)
-			bwon = bwon && puzzleLayers[i].isSolved();
+			bwon &= puzzleLayers[i].isSolved();
 		if (bwon)
 			pictureWin();
 	}
@@ -731,7 +730,7 @@ public class PuzzleState extends State {
 		for (int r = 0; r < p.getRows(); r++)
 			for (int c = 0; c < p.getColumns(); c++)
 				foodMap[r][c] = !p.isFilledInSolution(r, c);
-		// TODO to (maybe) make this better, choose grids randomly
+		// to (maybe) make this better, choose grids randomly
 		for (int r = 0; r < p.getRows(); r++) {
 			for (int c = 0; c < p.getColumns(); c++) {
 				// no food occupying this space - try placing
@@ -808,6 +807,10 @@ public class PuzzleState extends State {
 	public void returnFoodToWidget(int foodId) {
 		// increment that food type
 		foodbar.incrementWidget(foodId);
+	}
+	
+	public void solvedFood() {
+		foodWin();
 	}
 	
 	// ~~~~~~~~~~ TICK

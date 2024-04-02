@@ -158,7 +158,7 @@ public class Blanket extends Element {
 		}
 	}
 	
-	public void placeFood(FoodContainer fc, int row, int col) {
+	private void placeFood(FoodContainer fc, int row, int col) {
 		int[] food = PuzzleState.getFoodById(dragging.foodId);
 		int fwidth = food[PuzzleState.F_WIDTH];
 		int fheight = food[PuzzleState.F_HEIGHT];
@@ -168,6 +168,14 @@ public class Blanket extends Element {
 				foodMap[row + i][col + j] = fc;
 		// place at its origin
 		foodSparseMap[row][col] = fc;
+		// CHECK IF PLACING FOOD HERE SOLVED THE PUZZLE
+		Puzzle puzzle = puzState.getActivePuzzle();
+		boolean valid = true;
+		for (int r = 0; valid && r < puzzle.getRows(); r++)
+			for (int c = 0; valid && c < puzzle.getColumns(); c++)
+				valid &= !puzzle.isFilledInSolution(r, c) || foodMap[r][c] != null;
+		if (valid) // solved
+			puzState.solvedFood();
 	}
 	
 	public void startDrag(int foodId) {

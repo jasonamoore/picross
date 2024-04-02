@@ -101,7 +101,7 @@ class IslandObject {
 		double adjRot = totalRot - (circles * 2 * Math.PI);
 		if (adjRot < 0)
 			adjRot += 2 * Math.PI;
-		double rotProp = totalRot / (2 * Math.PI);
+		double rotProp = adjRot / (2 * Math.PI);
 		// index will be between 0 and sheet.length:
 		int index = (int) (rotProp * sheet.length);
 		return sheet[index];

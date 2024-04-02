@@ -62,7 +62,7 @@ public class Gallery extends Container {
 	@Override
 	public void setEnabled(boolean enabled) {
 		super.setEnabled(enabled);
-		disableScrollers();
+		setScrollersEnabled(enabled);
 	}
 	
 	public float getRevealOpacity() {

@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 
 import resource.bank.Palette;
 import state.State;
+import util.Animation;
 import util.Timer;
 
 public class Transition {
@@ -15,6 +16,7 @@ public class Transition {
 	public static final int FADE = 1;
 	public static final int CURTAIN = 2;
 	public static final int SLIDE_TOP = 3;
+	public static final int SLIDE_BOTTOM = 4;
 
 	private State fromState, toState;
 	private int type;
@@ -116,15 +118,24 @@ public class Transition {
 				g.fillRect((int) x1, 0, half, Engine.SCREEN_HEIGHT);
 				g.fillRect((int) x2, 0, half, Engine.SCREEN_HEIGHT);
 			}
-			else if (type == Transition.SLIDE_TOP) {
+			else if (type == Transition.SLIDE_TOP || type == Transition.SLIDE_BOTTOM) {
 				if (inA) {
-					// always render fromState underneath
-					fromState.render(g);
+					int sign = type == Transition.SLIDE_TOP ? -1 : 1;
+					// always render one state underneath
+					if (!exiting)
+						fromState.render(g);
+					else
+						toState.render(g);
 					// find what position toState should be rendered at
-					int y = (int) ((1 - aprog) * -Engine.SCREEN_HEIGHT);
+					double cubprog = Animation.bezier(aprog, !exiting ? Animation.EASE_OUT : Animation.EASE_IN);
+					double prog = !exiting ? 1 - cubprog : cubprog; // reverse if exiting
+					int y = (int) (prog * Engine.SCREEN_HEIGHT * sign);
 					// translate graphics and render
 					g.translate(0, y);
-					toState.render(g);
+					if (!exiting)
+						toState.render(g);
+					else
+						fromState.render(g);
 					g.translate(0, -y); // reset
 				}
 				else // just render the toState

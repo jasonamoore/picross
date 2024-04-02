@@ -65,8 +65,12 @@ public abstract class LoadState extends State {
 	
 	@Override
 	public void tick() {
-		if (done && timer.elapsed() >= minWait)
-			Engine.getEngine().getStateManager().transitionToState(nextState, transType, 0, transDur);
+		if (done && timer.elapsed() >= minWait) {
+			if (nextState != null)
+				Engine.getEngine().getStateManager().transitionToState(nextState, transType, 0, transDur);
+			else
+				Engine.getEngine().getStateManager().transitionExitState(transType, 0, transDur);
+		}
 	}
 
 	@Override

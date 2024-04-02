@@ -96,12 +96,16 @@ public class Container extends Element {
 	}
 	
 	/**
-	 * Disables both scrollers by making them null.
+	 * Enables or disables the scrollers (if any)
+	 * by changing their visibility and enabled status.
+	 * @param enabled If true, enables the scrollers.
 	 */
-	protected void disableScrollers() {
-		//scrollHoriz.setExisting(false);
-		//scrollVert.setExisting(false);
-		scrollHoriz = scrollVert = null;
+	protected void setScrollersEnabled(boolean enabled) {
+		if (scrollHoriz != null)
+			scrollHoriz.setExisting(enabled);
+		if (scrollVert != null)
+			scrollVert.setExisting(enabled);
+		//scrollHoriz = scrollVert = null;
 	}
 	
 	public int getInnerWidth() {

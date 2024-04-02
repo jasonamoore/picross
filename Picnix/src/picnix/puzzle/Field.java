@@ -42,7 +42,7 @@ public class Field extends Container {
 	public Field(PuzzleState puzState, int worldId) {
 		super(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT, FIELD_WIDTH, FIELD_HEIGHT);
 		this.puzState = puzState;
-		disableScrollers();
+		setScrollersEnabled(false);
 		setZ(-100);
 		fieldBackground = ImageBank.tiledBackgrounds[worldId];
 		blanket = new Blanket(this);

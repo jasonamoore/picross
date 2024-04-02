@@ -43,7 +43,7 @@ public class StateManager {
 	
 	/**
 	 * Returns the second topmost state from the stack.
-	 * @return The element returned by calling @code{elementAt(size-2)}.
+	 * @return The element returned by calling {@code elementAt(size-2)}.
 	 */
 	public State getSecondmostState() {
 		return stateStack.elementAt(stateStack.size() - 2);

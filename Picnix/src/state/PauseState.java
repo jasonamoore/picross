@@ -3,6 +3,7 @@ package state;
 import java.awt.image.BufferedImage;
 
 import engine.Engine;
+import engine.Transition;
 import resource.bank.ImageBank;
 import state.element.Icon;
 import state.element.TiledButton;
@@ -46,7 +47,7 @@ public class PauseState extends State {
 	}
 	
 	public void resume() {
-		Engine.getEngine().getStateManager().exitTopState(false);
+		Engine.getEngine().getStateManager().transitionExitState(Transition.SLIDE_BOTTOM, 250, 0);
 	}
 	
 	public void quit() {
