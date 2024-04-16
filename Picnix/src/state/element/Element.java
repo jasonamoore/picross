@@ -346,11 +346,9 @@ public abstract class Element implements Comparable<Element> {
 	 * @param posY The y position of the point to test.
 	 * @return True if the point is within this Element's bounds.
 	 */
-	public boolean inRealBounds(int posX, int posY) {
-		// check if in parent bounds
-		boolean parentPass = parent == null || parent.inRealBounds(posX, posY);
-		return parentPass && (posX >= x && posX < x + getWidth()
-							&& posY >= y && posY < y + getHeight());
+	public boolean inAbsoluteBounds(int posX, int posY) {
+		return (posX >= x && posX < x + width
+				&& posY >= y && posY < y + height);
 	}
 	
 	/**

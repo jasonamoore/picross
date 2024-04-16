@@ -189,13 +189,14 @@ public class PuzzleState extends State {
 		switchTimer = new Timer(false);
 		generateUI();
 		// make some random shrooms
-		for (int i = 0; i < 25; i++) {
+		for (int i = 0; i < 30; i++) {
 			Mushroom m = new Mushroom();
 			int rx, ry;
 			do {
 				rx = (int) (Math.random() * Field.FIELD_WIDTH);
 				ry = (int) (Math.random() * Field.FIELD_HEIGHT);
-			} while (field.getBlanket().inRealBounds(rx, ry));
+			} while (field.getBlanket().inAbsoluteBounds(rx, ry) ||
+					field.getBlanket().inAbsoluteBounds(rx + 20, ry + 20));
 			m.setBounds(rx, ry, 20, 20);
 			field.add(m);
 		}
@@ -861,7 +862,7 @@ public class PuzzleState extends State {
 					final int strLength = 30;
 					int numSpaces = strLength - SCORE_MESSAGES[i].length() - scoreStr.length();
 					String message = SCORE_MESSAGES[i] + " ".repeat(numSpaces) + scoreStr;
-					TextField tf = new TextField(message, FontBank.test, 0, 250 + i * 20, Engine.SCREEN_WIDTH);
+					TextField tf = new TextField(message, FontBank.defout, 0, 250 + i * 20, Engine.SCREEN_WIDTH);
 					tf.setAlignment(TextField.ALIGN_CENTER);
 					scoreLines[i] = tf;
 					add(tf);

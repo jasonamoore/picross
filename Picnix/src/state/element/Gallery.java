@@ -15,7 +15,7 @@ public class Gallery extends Container {
 
 	public static final int ITEM_SIZE = 45;
 	private static final int TOP_MARGIN = 70;
-	private static final int ITEM_MARGIN_X = 12;
+	private static final int ITEM_MARGIN_X = 20;
 	private static final int ITEM_MARGIN_Y = 25;
 	
 	private GalleryItem[] items;
@@ -116,8 +116,8 @@ public class Gallery extends Container {
 
 class GalleryItem extends Element {
 
-	private static final int FRAME_WIDTH = 3;
-	private static final int FRAME_HEIGHT = 10;
+	private static final int FRAME_WIDTH = 4;
+	private static final int FRAME_HEIGHT = 11;
 	
 	private Gallery gallery;
 	private int worldId, levelId;
@@ -150,7 +150,7 @@ class GalleryItem extends Element {
 	@Override
 	public void render(Graphics g) {
 		Composite oldComp = setRenderComposite(g);
-		//setRenderClips(g);
+		parent.setRenderClips(g);
 		int xp = getDisplayX();
 		int yp = getDisplayY();
 		if (!isHidden) {
@@ -160,7 +160,7 @@ class GalleryItem extends Element {
 			if (isNew);
 		}
 		else {
-			g.drawImage(ImageBank.missingpictureframe, xp, yp, null);
+			g.drawImage(ImageBank.missingpictureframe, xp + 3, yp + 4, null);
 		}
 		((Graphics2D) g).setComposite(oldComp);
 		g.setClip(null);

@@ -280,8 +280,8 @@ public class ImageBank {
 		}
 		// always loaded gallery resources
 		BufferedImage gallerySheet = loadSheet("gal.png");
-		pictureframe = loadOne(gallerySheet, 0, 0, 51, 58);
-		missingpictureframe = loadOne(gallerySheet, 0, 58, 45, 45);
+		pictureframe = loadOne(gallerySheet, 0, 0, 53, 60);
+		missingpictureframe = loadOne(gallerySheet, 0, 60, 38, 36);
 	}
 	
 	public static void loadWorldResources(int worldId) throws IOException {

@@ -1,6 +1,7 @@
 package state;
 
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -33,6 +34,8 @@ public abstract class State {
 	private Element activeElement;
 	// whether handling input events for elements
 	private boolean frozen;
+	// used for input clipping - only this area of the screen is focusable
+	private Rectangle focusClip;
 	
 	public abstract void focus(int status);
 
@@ -53,9 +56,11 @@ public abstract class State {
 	}
 
 	public void remove(Element e) {
-		elements.remove(e);
-		e.updateState(null);
-		sortChildren();
+		boolean had = elements.remove(e);
+		if (had) {
+			e.updateState(null);
+			sortChildren();
+		}
 	}
 
 	public void sortChildren() {
@@ -69,6 +74,14 @@ public abstract class State {
 			if (focusElement instanceof Container)
 				focusContainer = (Container) e;
 		}
+	}
+	
+	public void setFocusClip(int x, int y, int w, int h) {
+		focusClip.setBounds(x, y, w, h);
+	}
+	
+	public void clearFocusClip() {
+		focusClip = null;
 	}
 	
 	public void activate(Element e) {
@@ -99,13 +112,14 @@ public abstract class State {
 			if (e.isVisible())
 				e.tick();
 		}
-		if (frozen) {
+		Input input = Input.getInstance();
+		boolean inFocusClip = focusClip == null || focusClip.contains(input.getMouseX(), input.getMouseY());
+		if (frozen || !inFocusClip) {
 			// leave hover element and don't need to check anything else
 			if (lastFocus != null)
 				lastFocus.onLeave();
 			return;
 		}
-		Input input = Input.getInstance();
 		// call events (only if focused element has not had the event called yet)
 		if (focusElement != null) {
 			// mouse is over it: call hover

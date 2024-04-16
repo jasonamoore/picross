@@ -6,6 +6,8 @@ import engine.Input;
 
 public class Worm extends Organism {
 
+	public static final int PULL_DIST = 20;
+	
 	private boolean pulling;
 	
 	private void startPull() {
@@ -36,10 +38,16 @@ public class Worm extends Organism {
 	@Override
 	public void tick() {
 		super.tick();
-		//if (pulling && distanceIsBig)
-		//	onReward();
+		if (pulling && mouseDistance() > PULL_DIST)
+			onReward();
 	}
 	
+	private double mouseDistance() {
+		Input input = Input.getInstance();
+		return Math.sqrt(Math.pow(input.getMouseX() - getDisplayX(), 2) +
+				Math.pow(input.getMouseY() - getDisplayY(), 2));
+	}
+
 	@Override
 	public void render(Graphics g) {
 		

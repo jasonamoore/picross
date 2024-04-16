@@ -33,9 +33,6 @@ public class Field extends Container {
 	// anims for smoothing camera x/y movement
 	private Animation camXAnim, camYAnim;
 	
-	// position & size of blanket within the field
-	private int bx, by, bw, bh;
-	
 	// the background field image
 	private BufferedImage[] fieldBackground;
 	
@@ -46,10 +43,10 @@ public class Field extends Container {
 		setZ(-100);
 		fieldBackground = ImageBank.tiledBackgrounds[worldId];
 		blanket = new Blanket(this);
-		bw = puzState.getPuzzleDisplayWidth();
-		bh = puzState.getPuzzleDisplayHeight();
-		bx = (FIELD_WIDTH - bw) / 2;
-		by = (FIELD_HEIGHT - bh) / 2;
+		int bw = puzState.getPuzzleDisplayWidth();
+		int bh = puzState.getPuzzleDisplayHeight();
+		int bx = (FIELD_WIDTH - bw) / 2;
+		int by = (FIELD_HEIGHT - bh) / 2;
 		blanket.setBounds(bx, by, bw, bh);
 		add(blanket);
 		// set to padded center camera

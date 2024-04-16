@@ -17,14 +17,16 @@ public class TextField extends Element {
 	private Font font;
 	private int alignment;
 	
+	private int charLimit;
+	
 	public TextField(Font font, int x, int y, int w, int h) {
 		this("", font, x, y, w, h);
 	}
 	
 	public TextField(String text, Font font, int x, int y, int w, int h) {
 		super(x, y, w, h);
-		this.text = text;
 		this.font = font;
+		setText(text);
 	}
 
 	public TextField(Font font, int x, int y, int w) {
@@ -37,6 +39,11 @@ public class TextField extends Element {
 
 	public void setText(String text) {
 		this.text = text;
+		setCharacterLimit(text.length());
+	}
+	
+	public void setCharacterLimit(int limit) {
+		charLimit = limit;
 	}
 	
 	public void setAlignment(int alignment) {
@@ -55,7 +62,8 @@ public class TextField extends Element {
 		// text rendering
 		int cy = 0;
 		int i = 0;
-		while (i < text.length()) {
+		int txtLen = Math.min(charLimit, text.length());
+		while (i < txtLen) {
 			// ~ first, calculate line width
 			int j = i;
 			// track how much whitespace this line has
@@ -75,7 +83,7 @@ public class TextField extends Element {
 					cw += font.getGlyph(jth).getWidth() + font.getCharPadding();
 				j++;
 			}
-			while (j < text.length() && cw < dw);
+			while (j < txtLen && cw < dw);
 			j--; // the actual last fitting character
 			
 			// if we ended off mid-word, rollback to last whitespace char

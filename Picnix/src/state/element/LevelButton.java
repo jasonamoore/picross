@@ -68,8 +68,8 @@ public class LevelButton extends TiledButton {
 		super.render(g);
 		int xp = getDisplayX();
 		int yp = getDisplayY();
-		int w = getWidth();
-		int h = getHeight();
+		//int w = getWidth();
+		//int h = getHeight();
 		// draw info
 		World world = levState.getWorld();
 		//boolean cleared = UserData.isPuzzleCleared(world.getId(), levelId);

@@ -9,6 +9,7 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
+import resource.Song;
 import resource.SoundEffect;
 
 public class AudioBank {
@@ -29,6 +30,22 @@ public class AudioBank {
 				belt[i].open(stream);
 			}
 			return new SoundEffect(belt);
+		} catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public static Song loadSong(String... trackSrcs) {
+		try {
+			Clip[] tracks = new Clip[trackSrcs.length];
+			for (int i = 0; i < trackSrcs.length; i++) {
+				URL srcURL = AudioBank.class.getClassLoader().getResource(trackSrcs[i]);
+				AudioInputStream stream = AudioSystem.getAudioInputStream(srcURL);
+				tracks[i] = AudioSystem.getClip();
+				tracks[i].open(stream);
+			}
+			return new Song(tracks);
 		} catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
 			e.printStackTrace();
 			return null;

@@ -7,7 +7,9 @@ import java.awt.geom.AffineTransform;
 import engine.Engine;
 import engine.Transition;
 import picnix.Island;
+import resource.bank.FontBank;
 import resource.bank.ImageBank;
+import state.element.Dialogue;
 import state.element.Icon;
 import state.element.TiledButton;
 import state.load.LoadGalleryState;
@@ -56,6 +58,7 @@ public class TitleState extends State {
 		add(titleIcon);
 		add(play);
 		add(gallery);
+		add(new Dialogue(FontBank.defout, "hi", "this is a test dialogue", "you should be able to click through these", "and see all the text/", "bye for now"));
 	}
 
 	@Override

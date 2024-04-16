@@ -8,7 +8,6 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Collections;
 
 import engine.Engine;
 import engine.Input;
@@ -108,7 +107,7 @@ public class WinState extends State {
 		smoothRot = new Animation(0, 2 * Math.PI, SIMULATION_DURATION, Animation.EASE_OUT, Animation.NO_LOOP, true);
 		galleryAnim =  new Animation(0, 1, 250, Animation.EASE_IN, Animation.NO_LOOP, false);
 		galleryTimer = new Timer(false);
-		contText = new TextField(GALLERY_STRING, FontBank.test, 0, 345, Engine.SCREEN_WIDTH);
+		contText = new TextField(GALLERY_STRING, FontBank.defout, 0, 345, Engine.SCREEN_WIDTH);
 		contText.setVisible(false);
 		contText.setAlignment(TextField.ALIGN_CENTER);
 		add(contText);
@@ -195,10 +194,10 @@ public class WinState extends State {
 		startSimulation();
 	}
 	
-	private void startFreefall() {
+	/*private void startFreefall() {
 		state = FREEFALL;
 		sceneTimer.resume();
-	}
+	}*/
 	
 	private void startSimulation() {
 		state = SIMULATING;
@@ -410,7 +409,7 @@ public class WinState extends State {
 				g.drawImage(plateimg, (int) tx, (int) ty, (int) pw, (int) ph, null);
 			}
 			// sort so they render in the right order
-			Collections.sort(food);
+			/*Collections.sort(food);
 			for (int i = 0; i < food.size(); i++) {
 				// the food to render:
 				Food f = food.get(i);
@@ -428,7 +427,7 @@ public class WinState extends State {
 				double foodProgress = Math.min(1, elapsed / (double) FOOD_DROP_DELAY);
 				double dropy = ty - (Engine.SCREEN_HEIGHT + f.dropOffset) * (1 - foodProgress);
 				g.drawImage(foodImage, (int) tx, (int) dropy, (int) fw, (int) fh, null);
-			}
+			}*/
 			// revert to regular composite
 			gg.setComposite(oldComp);
 			for (int i = 0; i < ants.length; i++) {

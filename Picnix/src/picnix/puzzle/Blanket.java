@@ -397,7 +397,7 @@ public class Blanket extends Element {
 		if (!drawing || !puzzle.validSpot(row, col))
 			return;
 		int oldMark = puzzle.getMark(row, col);
-		if (oldMark != drawMode) {
+		if (oldMark != drawMode && !(drawMode == Puzzle.FILLED && oldMark == Puzzle.FLAGGED)) {
 			boolean mistake = puzzle.markSpot(row, col, drawMode);   
 			drawStroke.addChange(row, col, oldMark, mistake);
 			if (mistake)
