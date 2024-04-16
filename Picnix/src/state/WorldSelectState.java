@@ -42,10 +42,8 @@ public class WorldSelectState extends State {
 		locationBox = new LocationBox(this);
 		left = new TiledButton(15, 350, 48, 48) {
 			@Override
-			public void onRelease(int mbutton) {
-				super.onRelease(mbutton);
-				if (mbutton == Input.LEFT_CLICK && beingHovered())
-					switchLocation(-1);
+			public void onButtonUp() {
+				switchLocation(-1);
 			}
 			@Override
 			public float getOpacity() {
@@ -54,10 +52,8 @@ public class WorldSelectState extends State {
 		};
 		right = new TiledButton(240, 350, 48, 48) {
 			@Override
-			public void onRelease(int mbutton) {
-				super.onRelease(mbutton);
-				if (mbutton == Input.LEFT_CLICK && beingHovered())
-					switchLocation(1);
+			public void onButtonUp() {
+				switchLocation(1);
 			}
 			@Override
 			public float getOpacity() {

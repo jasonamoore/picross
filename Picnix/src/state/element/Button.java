@@ -89,6 +89,16 @@ public class Button extends Element {
 		g.clipRect(getDisplayX() - 1, getDisplayY() - 1, getWidth() + 2, getHeight() + 2);
 	}
 	
+	@Override
+	public void onRelease(int mbutton) {
+		super.onRelease(mbutton);
+		if (mbutton == Input.LEFT_CLICK
+				&& beingHovered())
+			onButtonUp();
+	}
+	
+	protected void onButtonUp() {}
+	
 	/**
 	 * Renders the button, using whichever of its backgrounds
 	 * is applicable to its current state and exists.

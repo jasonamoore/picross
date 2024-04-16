@@ -10,6 +10,8 @@ import engine.Input;
 
 public class TiledButton extends Button {
 
+	private static final int CLICK_OFFSET = 1;
+	
 	private int tileW, tileH;
 	
 	private BufferedImage[] tiles;
@@ -120,7 +122,7 @@ public class TiledButton extends Button {
 		// now draw label over the button
 		if (label != null) {
 			// find center position
-			int bias = clicking ? 1 : 0;
+			int bias = clicking ? CLICK_OFFSET : 0;
 			int lx = xp + (dw - label.getWidth()) / 2 + bias;
 			int ly = yp + (dh - label.getHeight()) / 2 + bias;
 			g.drawImage(label, lx, ly, null);

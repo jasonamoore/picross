@@ -62,18 +62,14 @@ public class LevelSelectState extends ScrollableState {
 		// navigation buttons
 		prev = new TiledButton(15, 330, 48, 48) {
 			@Override
-			public void onRelease(int mbutton) {
-				super.onRelease(mbutton);
-				if (beingHovered())
-					slidePrevious();
+			public void onButtonUp() {
+				slidePrevious();
 			}
 		};
 		next = new TiledButton(417, 330, 48, 48) {
 			@Override
-			public void onRelease(int mbutton) {
-				super.onRelease(mbutton);
-				if (beingHovered())
-					slideNext();
+			public void onButtonUp() {
+				slideNext();
 			}
 		};
 		prev.setAllTileMaps(ImageBank.goldbutton, ImageBank.goldbuttonclick, ImageBank.buttondisabled);

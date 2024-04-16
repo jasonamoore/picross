@@ -1,7 +1,6 @@
 package picnix.puzzle;
 
 import java.awt.AlphaComposite;
-import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -468,8 +467,10 @@ public class Blanket extends Element {
 		int forkYLeeway = cellSize - forks[0].getHeight();
 
 		// the highlighted row and column hints
-		int highRow = getCellAtPoint(getRelativeMouseY());
-		int highCol = getCellAtPoint(getRelativeMouseX());
+		int rmx = getRelativeMouseX();
+		int rmy = getRelativeMouseY();
+		int highRow = getCellAtPoint(rmy);
+		int highCol = getCellAtPoint(rmx);
 		boolean hov = puzzle.validSpot(highRow, highCol) && !puzState.isPictureOver();
 		int mode = hov ? getDrawMode(Input.LEFT_CLICK, puzzle.getMark(highRow, highCol)) : 0;
 
@@ -606,14 +607,12 @@ public class Blanket extends Element {
 		}
 		// if state has passed puzzle completion, draw food
 		else {
+			BufferedImage[] foods = getFoodSheet(cellSize);
 			for (int r = 0; r < foodMap.length; r++) {
 				for (int c = 0; c < foodMap.length; c++) {
 					FoodContainer fc = foodSparseMap[r][c];
-					if (fc != null) {
-						int[] food = PuzzleState.getFoodById(fc.foodId);
-						g.setColor(Palette.CARAMEL);
-						g.fillRect(c * cellSize, r * cellSize, food[0] * cellSize, food[1] * cellSize);
-					}
+					if (fc != null)
+						g.drawImage(foods[fc.foodId], c * cellSize, r * cellSize, null);
 				}
 			}
 			// render drop hitbox
@@ -636,6 +635,7 @@ public class Blanket extends Element {
 					}
 					gg.setComposite(oldComp);
 				}
+				g.drawImage(foods[dragging.foodId], rmx, rmy, null);
 			}
 		}
 		gg.setComposite(oldComp);
@@ -743,6 +743,20 @@ public class Blanket extends Element {
 		case PuzzleState.CELL_SIZE_15x15:
 		case PuzzleState.CELL_SIZE_20x20:
 			return ImageBank.numstiny;
+		}
+		return null;
+	}
+	
+	public static BufferedImage[] getFoodSheet(int cellSize) {
+		switch (cellSize) {
+		case PuzzleState.CELL_SIZE_5x5:
+			return ImageBank.foods35;
+		case PuzzleState.CELL_SIZE_10x10:
+			return ImageBank.foods20;
+		case PuzzleState.CELL_SIZE_15x15:
+			return ImageBank.foods15;
+		case PuzzleState.CELL_SIZE_20x20:
+			return ImageBank.foods10;
 		}
 		return null;
 	}

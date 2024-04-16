@@ -6,16 +6,22 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import picnix.World;
+import state.PuzzleState;
 import state.element.Gallery;
 
 public class ImageBank {
 
+	private static final int[] SCALES = {35, 20, 15, 10};
+	
 	public static BufferedImage[] backgrounds = new BufferedImage[World.NUM_WORLDS];
 	public static BufferedImage[][] tiledBackgrounds = new BufferedImage[World.NUM_WORLDS][];
+	public static BufferedImage gallerybackground;
 	public static BufferedImage paratest1;
 	public static BufferedImage paratest2;
 	public static BufferedImage paratest3;
 	public static BufferedImage[] parkobjsheet;
+	public static BufferedImage[] treeobjsheet;
+	public static BufferedImage mushroom;
 	//
 	public static BufferedImage title;
 	public static BufferedImage playlabel;
@@ -120,21 +126,35 @@ public class ImageBank {
 	public static BufferedImage[] streakWords;
 	public static BufferedImage isoplate;
 	
+	// food
+	public static BufferedImage[] foods35;
+	public static BufferedImage[] foods20;
+	public static BufferedImage[] foods15;
+	public static BufferedImage[] foods10;
+	// ..
+	
 	// gallery images
 	public static BufferedImage[][] gallery;
+	public static BufferedImage pictureframe;
+	public static BufferedImage missingpictureframe;
 	
 	public static void loadGlobalResources() throws IOException {
 		// tests
 		paratest1 = loadSheet("testpara1.png");
 		paratest2 = loadSheet("testpara2.png");
 		paratest3 = loadSheet("testpara3.png");
+		mushroom = loadSheet("mushroom.png");
+		// island objs
 		BufferedImage parkobj = loadSheet("parkobj.png");
 		parkobjsheet = loadMany(parkobj, 0, 0, 24, 17, 1, 10);
+		BufferedImage treeobj = loadSheet("treeobj.png");
+		treeobjsheet = loadMany(treeobj, 0, 0, 14, 16, 1, 10);
 		// singles
 		island = loadSheet("island.png");
 		ohno = loadSheet("ohno.png");
 		youwin = loadSheet("youwin.png");
 		paused = loadSheet("paused.png");
+		gallerybackground = loadSheet("galleryback.png");
 		// title sprite sheet
 		BufferedImage titleSheet = loadSheet("title.png");
 		title = loadOne(titleSheet, 0, 0, 346, 125);
@@ -236,6 +256,32 @@ public class ImageBank {
 		numstiny = loadMany(blanketSheet, 161, 75, 6, 7, 5, 4);
 		isoplate = loadOne(blanketSheet, 141, 218, 33, 16);
 		streakWords = loadMany(blanketSheet, 126, 110, 75, 17, 1, 5);
+		// foods (placeholder)
+		BufferedImage foodSheet = loadSheet("food.png");
+		foods35 = new BufferedImage[PuzzleState.NUM_FOOD_TYPES];
+		foods20 = new BufferedImage[PuzzleState.NUM_FOOD_TYPES];
+		foods15 = new BufferedImage[PuzzleState.NUM_FOOD_TYPES];
+		foods10 = new BufferedImage[PuzzleState.NUM_FOOD_TYPES];
+		BufferedImage[][] foodArrays = {foods35, foods20, foods15, foods10};
+		int y = 0;
+		for (int j = 0; j < SCALES.length; j++) {
+			int s = SCALES[j];
+			int x = 0;
+			int maxY = 0;
+			for (int i = 0; i < PuzzleState.NUM_FOOD_TYPES; i++) {
+				int[] food = PuzzleState.getFoodById(i);
+				int width = food[PuzzleState.F_WIDTH];
+				int height = food[PuzzleState.F_HEIGHT];
+				foodArrays[j][i] = loadOne(foodSheet, x, y, width * s, height * s);
+				x += width * s;
+				maxY = Math.max(maxY, height);
+			}
+			y += maxY * s;
+		}
+		// always loaded gallery resources
+		BufferedImage gallerySheet = loadSheet("gal.png");
+		pictureframe = loadOne(gallerySheet, 0, 0, 51, 58);
+		missingpictureframe = loadOne(gallerySheet, 0, 58, 45, 45);
 	}
 	
 	public static void loadWorldResources(int worldId) throws IOException {

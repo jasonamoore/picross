@@ -12,11 +12,13 @@ public class FontBank {
 	public static final char START_OFFSET = ' ';
 	public static final int NUM_GLYPHS = 94;
 	public static final int DELIMITER_COLOR = 0xFFFF00FF;
-	
+
 	public static Font test;
+	public static Font defout;
 	
 	public static void loadGlobalResources() throws IOException {
 		test = loadFont("testFont.png", " abcdefghijklmnopqrstuvwxyz0123456789/");
+		defout = loadFont("defout.png", " abcdefghijklmnopqrstuvwxyz0123456789/");
 	}
 	
 	private static Font loadFont(String src, String map) throws IOException {

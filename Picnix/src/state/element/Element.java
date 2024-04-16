@@ -340,6 +340,20 @@ public abstract class Element implements Comparable<Element> {
 	}
 	
 	/**
+	 * Checks if a given point falls within
+	 * the real bounds (not display bounds) of this Element.
+	 * @param posX The x position of the point to test.
+	 * @param posY The y position of the point to test.
+	 * @return True if the point is within this Element's bounds.
+	 */
+	public boolean inRealBounds(int posX, int posY) {
+		// check if in parent bounds
+		boolean parentPass = parent == null || parent.inRealBounds(posX, posY);
+		return parentPass && (posX >= x && posX < x + getWidth()
+							&& posY >= y && posY < y + getHeight());
+	}
+	
+	/**
 	 * A convenience method to get the current mouse
 	 * x position relative to this Element's display position.
 	 * @return {@code mouseX - this.displayX}

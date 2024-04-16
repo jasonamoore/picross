@@ -14,6 +14,7 @@ import engine.Transition;
 import picnix.Level;
 import picnix.World;
 import picnix.data.UserData;
+import picnix.interactable.Mushroom;
 import picnix.puzzle.Blanket;
 import picnix.puzzle.Field;
 import picnix.puzzle.Puzzle;
@@ -187,8 +188,19 @@ public class PuzzleState extends State {
 				0, 0, false);
 		switchTimer = new Timer(false);
 		generateUI();
+		// make some random shrooms
+		for (int i = 0; i < 25; i++) {
+			Mushroom m = new Mushroom();
+			int rx, ry;
+			do {
+				rx = (int) (Math.random() * Field.FIELD_WIDTH);
+				ry = (int) (Math.random() * Field.FIELD_HEIGHT);
+			} while (field.getBlanket().inRealBounds(rx, ry));
+			m.setBounds(rx, ry, 20, 20);
+			field.add(m);
+		}
 	}
-		
+	
 	@Override
 	public void focus(int status) {
 		if (status == NEWLY_OPENED)
@@ -203,8 +215,7 @@ public class PuzzleState extends State {
 	private void generateUI() {
 		pause = new TiledButton(Engine.SCREEN_WIDTH - 24, 0, 24, 32) {
 			@Override
-			public void onRelease(int mbutton) {
-				super.onRelease(mbutton);
+			public void onButtonUp() {
 				pause();
 			}
 		};
@@ -658,7 +669,7 @@ public class PuzzleState extends State {
 		clearMarks();
 		// add lose text
 		boolean lostByMistakes = mistakeCount == mistakeCap;
-		TextField loss = new TextField(lostByMistakes ? LOSE_MESSAGE_MISTAKE : LOSE_MESSAGE_TIME, FontBank.test, 0, 300, Engine.SCREEN_WIDTH);
+		TextField loss = new TextField(lostByMistakes ? LOSE_MESSAGE_MISTAKE : LOSE_MESSAGE_TIME, FontBank.defout, 0, 300, Engine.SCREEN_WIDTH);
 		loss.setAlignment(TextField.ALIGN_CENTER);
 		add(loss);
 	}
@@ -702,7 +713,7 @@ public class PuzzleState extends State {
 	 */
 
 	private static int[][] FOOD_TYPES = {
-			{1, 1}, {1, 2}, {2, 1}, {2, 2}, {1, 3}, {3, 1}, {2, 3}, {3, 2}, {3, 3}
+			{1, 1}, {2, 1}, {3, 1}, {1, 2}, {2, 2}, {3, 2}, {1, 3}, {2, 3}, {3, 3}
 	};
 	public static final int F_WIDTH = 0, F_HEIGHT = 1;
 	public static final int NUM_FOOD_TYPES = FOOD_TYPES.length;
@@ -771,8 +782,8 @@ public class PuzzleState extends State {
 		}
 		// place the chosen food item
 		int[] cfood = FOOD_TYPES[foodType];
-		for (int or = 0; or < cfood[F_WIDTH]; or++)
-			for (int oc = 0; oc < cfood[F_HEIGHT]; oc++)
+		for (int or = 0; or < cfood[F_HEIGHT]; or++)
+			for (int oc = 0; oc < cfood[F_WIDTH]; oc++)
 				foodMap[r + or][c + oc] = true;
 		// return what id of food placed
 		return foodType;
@@ -782,8 +793,8 @@ public class PuzzleState extends State {
 		boolean can = true;
 		// loop through all spaces this food would occupy
 		// return true if all spaces are available (and exist)
-		for (int or = 0; can && or < food[F_WIDTH]; or++) {
-			for (int oc = 0; can && oc < food[F_HEIGHT]; oc++) {
+		for (int or = 0; can && or < food[F_HEIGHT]; or++) {
+			for (int oc = 0; can && oc < food[F_WIDTH]; oc++) {
 					// check for out of bounds
 				if (r + or >= foodMap.length ||
 					c + oc >= foodMap[r].length ||

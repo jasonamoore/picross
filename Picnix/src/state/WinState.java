@@ -191,8 +191,8 @@ public class WinState extends State {
 
 	@Override
 	public void focus(int status) {
-		startFreefall();
-		//startSimulation();
+		//startFreefall();
+		startSimulation();
 	}
 	
 	private void startFreefall() {

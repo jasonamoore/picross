@@ -8,7 +8,6 @@ import engine.Engine;
 import engine.Transition;
 import picnix.Island;
 import resource.bank.ImageBank;
-import state.element.Container;
 import state.element.Icon;
 import state.element.TiledButton;
 import state.load.LoadGalleryState;
@@ -32,37 +31,31 @@ public class TitleState extends State {
 	
 	private int zoomState;
 	
-	private Container panel;
-	
 	public TitleState() {
 		zoomState = SPINNING;
 		smoothRot = new Animation(0, 2 * Math.PI, 10000, Animation.LINEAR, Animation.CONTINUE, true);
 		zoomRot = new Animation(ZOOM_TIME, Animation.EASE_OUT, Animation.NO_LOOP);
 		zoomToIsland = new Animation(0, 1, 1000, Animation.EASE_OUT, Animation.NO_LOOP, false);
-		panel = new Container(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
 		Icon titleIcon = new Icon(ImageBank.title, Engine.getScreenCenterX(350), 50);
 		TiledButton play = new TiledButton(Engine.getScreenCenterX(200), 175, 200, 70) {
-			public void onRelease(int mbutton) {
-				super.onRelease(mbutton);
-				if (beingHovered())
-					playButtonClicked();
+			@Override
+			public void onButtonUp() {
+				playButtonClicked();
 			}
 		};
 		play.setAllTileMaps(ImageBank.bluebutton, ImageBank.bluebuttonclick, ImageBank.buttondisabled);
 		play.setLabel(ImageBank.playlabel);
 		TiledButton gallery = new TiledButton(Engine.getScreenCenterX(200), 255, 200, 50) {
-			public void onRelease(int mbutton) {
-				super.onRelease(mbutton);
-				if (beingHovered())
-					galleryButtonClicked();
+			@Override
+			public void onButtonUp() {
+				galleryButtonClicked();
 			}
 		};
 		gallery.setAllTileMaps(ImageBank.greenbutton, ImageBank.greenbuttonclick, ImageBank.buttondisabled);
 		gallery.setLabel(ImageBank.gallerylabel);
-		panel.add(titleIcon);
-		panel.add(play);
-		panel.add(gallery);
-		add(panel);
+		add(titleIcon);
+		add(play);
+		add(gallery);
 	}
 
 	@Override

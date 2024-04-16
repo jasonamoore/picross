@@ -21,16 +21,14 @@ public class PauseState extends State {
 		TiledButton resume = new TiledButton(Engine.getScreenCenterX(OPT_WIDTH), 260,
 				OPT_WIDTH, OPT_HEIGHT) {
 			@Override
-			public void onRelease(int mbutton) {
-				super.onRelease(mbutton);
+			public void onButtonUp() {
 				resume();
 			}
 		};
 		TiledButton quit = new TiledButton(Engine.getScreenCenterX(OPT_WIDTH), 320,
 				OPT_WIDTH, OPT_HEIGHT) {
 			@Override
-			public void onRelease(int mbutton) {
-				super.onRelease(mbutton);
+			public void onButtonUp() {
 				quit();
 			}
 		};

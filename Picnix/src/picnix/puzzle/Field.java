@@ -13,8 +13,8 @@ import util.Animation;
 
 public class Field extends Container {
 
-	private static final int FIELD_WIDTH = 1000;
-	private static final int FIELD_HEIGHT = 675;
+	public static final int FIELD_WIDTH = 1000;
+	public static final int FIELD_HEIGHT = 675;
 	
 	private static final int EDGE_SCROLL_THRESHOLD = 20;
 	private static final int EDGE_SCROLL_AMOUNT = 3;

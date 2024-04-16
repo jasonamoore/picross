@@ -1,18 +1,22 @@
 package state.element;
 
-import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 
 import engine.Engine;
 import picnix.World;
+import picnix.data.UserData;
 import resource.bank.ImageBank;
 import util.Animation;
 
 public class Gallery extends Container {
 
 	public static final int ITEM_SIZE = 45;
-	private static final int TOP_MARGIN = 50;
-	private static final int ITEM_MARGIN = 12;
+	private static final int TOP_MARGIN = 70;
+	private static final int ITEM_MARGIN_X = 12;
+	private static final int ITEM_MARGIN_Y = 25;
 	
 	private GalleryItem[] items;
 	
@@ -72,22 +76,22 @@ public class Gallery extends Container {
 	
 	private static int getItemX(int n) {
 		int col = n % itemsPerRow();
-		return ITEM_MARGIN + col * (ITEM_MARGIN + ITEM_SIZE);
+		return ITEM_MARGIN_X + col * (ITEM_MARGIN_X + ITEM_SIZE);
 	}
 	
 	private static int getItemY(int n) {
 		int row = n / itemsPerRow();
-		return TOP_MARGIN + row * (ITEM_MARGIN + ITEM_SIZE);
+		return TOP_MARGIN + row * (ITEM_MARGIN_Y + ITEM_SIZE);
 	}
 	
 	private static int getGalleryHeight() {
 		int h = TOP_MARGIN;
-		h += (ITEM_SIZE + ITEM_MARGIN) * Math.ceil(totalItems() / (double) itemsPerRow());
+		h += (ITEM_SIZE + ITEM_MARGIN_Y) * Math.ceil(totalItems() / (double) itemsPerRow());
 		return h;
 	}
 
 	private static int itemsPerRow() {
-		return (Engine.SCREEN_WIDTH - ITEM_MARGIN) / (ITEM_SIZE + ITEM_MARGIN);
+		return (Engine.SCREEN_WIDTH - ITEM_MARGIN_X) / (ITEM_SIZE + ITEM_MARGIN_X);
 	}
 	
 	private static int totalItems() {
@@ -99,46 +103,34 @@ public class Gallery extends Container {
 	
 	@Override
 	public void render(Graphics g) {
-		g.setColor(Color.PINK);
-		g.fillRect(getDisplayX(), getDisplayY(), getWidth(), getHeight());
+		setRenderClips(g);
+		int scrolly = getScrollY();
+		BufferedImage bg = ImageBank.gallerybackground;
+		for (int y = -scrolly; y < Engine.SCREEN_HEIGHT; y += bg.getHeight())
+			g.drawImage(bg, 0, y, null);
+		g.setClip(null);
 		super.render(g);
 	}
 	
 }
 
 class GalleryItem extends Element {
+
+	private static final int FRAME_WIDTH = 3;
+	private static final int FRAME_HEIGHT = 10;
 	
 	private Gallery gallery;
 	private int worldId, levelId;
-	private boolean isNew;
+	private boolean isHidden, isNew;
 	
 	public GalleryItem(Gallery gallery, int wid, int lid) {
 		this.gallery = gallery;
 		worldId = wid;
 		levelId = lid;
 		setBackground(ImageBank.gallery[worldId][levelId]);
+		isHidden = !UserData.isPuzzleCleared(wid, lid);
 		//isNew = UserData.isGalleryItemNew(wid, lid);
 	}
-	/*
-	@Override
-	public int getDisplayX() {
-		
-	}
-	
-	@Override
-	public int getDisplayY() {
-		
-	}
-	
-	@Override
-	public int getWidth() {
-		
-	}
-	
-	@Override
-	public int getHeight() {
-		
-	}*/
 	
 	@Override
 	public float getOpacity() {
@@ -157,9 +149,21 @@ class GalleryItem extends Element {
 	
 	@Override
 	public void render(Graphics g) {
-		super.render(g);
-		// draw "new"
-		if (isNew);
+		Composite oldComp = setRenderComposite(g);
+		//setRenderClips(g);
+		int xp = getDisplayX();
+		int yp = getDisplayY();
+		if (!isHidden) {
+			g.drawImage(ImageBank.pictureframe, xp - FRAME_WIDTH, yp - FRAME_HEIGHT, null);
+			g.drawImage(background, xp, yp, null);
+			// draw "new"
+			if (isNew);
+		}
+		else {
+			g.drawImage(ImageBank.missingpictureframe, xp, yp, null);
+		}
+		((Graphics2D) g).setComposite(oldComp);
+		g.setClip(null);
 	}
 	
 }

@@ -1,13 +1,15 @@
 package state.element;
 
-import java.awt.Color;
 import java.awt.Graphics;
 
 import engine.Engine;
-import engine.Input;
+import picnix.World;
+import picnix.data.UserData;
+import resource.bank.ImageBank;
+import resource.bank.Palette;
 import state.LevelSelectState;
 
-public class LevelButton extends Button {
+public class LevelButton extends TiledButton {
 
 	public static final int WIDTH = 200;
 	public static final int HEIGHT = 200;
@@ -21,6 +23,7 @@ public class LevelButton extends Button {
 		super(LevelSelectState.getButtonX(levelId), Engine.SCREEN_HEIGHT / 2, WIDTH, HEIGHT);
 		this.levState = levState;
 		this.levelId = levelId;
+		setAllTileMaps(ImageBank.bluebutton, ImageBank.bluebuttonclick, ImageBank.buttondisabled);
 	}
 	
 	@Override
@@ -56,25 +59,25 @@ public class LevelButton extends Button {
 	}
 	
 	@Override
-	public void onRelease(int mbutton) {
-		super.onRelease(mbutton);
-		if (mbutton == Input.LEFT_CLICK && beingHovered())
-			levState.levelClicked(levelId);
+	public void onButtonUp() {
+		levState.levelClicked(levelId);
 	}
 	
 	@Override
 	public void render(Graphics g) {
+		super.render(g);
 		int xp = getDisplayX();
 		int yp = getDisplayY();
 		int w = getWidth();
 		int h = getHeight();
-		g.setColor(Color.ORANGE);
-		g.fillRect(xp, yp, w, h);
 		// draw info
-		//World world = levState.getWorld();
-		//boolean layered = world.getLevels()[levelId];
+		World world = levState.getWorld();
 		//boolean cleared = UserData.isPuzzleCleared(world.getId(), levelId);
-		//int hiscore = UserData.getPuzzleScore(world.getId(), levelId);
+		int hiscore = UserData.getPuzzleScore(world.getId(), levelId);
+		g.setColor(Palette.WHITE);
+		g.drawString("Picnic #" + levelId, xp + 10, yp + 10);
+		if (hiscore > 0)
+			g.drawString("Hiscore: " + hiscore, xp + 10, yp + 50);
 	}
 	
 }

@@ -4,6 +4,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import engine.Engine;
 import resource.bank.ImageBank;
@@ -13,22 +15,19 @@ public class Island {
 
 	private static final double HEIGHT_WIDTH_RATIO = 0.5;
 	
-	private static final int NUM_OBJS = 1;
-	
-	private static double[][] trees;
-	private static IslandObject[] objs;
+	private static ArrayList<IslandObject> objs;
 	
 	static {
-		// make 25 random trees
-		trees = new double[25][2];
-		for (int i = 0; i < trees.length; i++) {
-			trees[i][0] = Math.random() * 175;
-			trees[i][1] = Math.random() * 2 * Math.PI;
-		}
 		// make objects
-		objs = new IslandObject[NUM_OBJS];
-		objs[0] = new IslandObject(ImageBank.parkobjsheet, 125, Math.PI / 2, 24, 17);
+		objs = new  ArrayList<IslandObject>();
+		// make 25 random trees
+		for (int i = 0; i < 25; i++)
+			objs.add(new IslandObject(ImageBank.treeobjsheet, Math.random() * 175, Math.random() * 2 * Math.PI, 14, 16));
+		// park building
+		objs.add(new IslandObject(ImageBank.parkobjsheet, 125, Math.PI / 2, 24, 17));
 	}
+	
+	public static double currRenderRot;
 	
 	public static void renderIsland(Graphics g, int skyHeight, int islandOffsetX, int islandOffsetY, double islandScale, double islandRotation) {
 		// draw sky
@@ -55,19 +54,20 @@ public class Island {
 		// revert graphics state
 		gg.setClip(null);
 		gg.setTransform(oldTrans);
-		// draw island entities
-		for (int i = 0; i < trees.length; i++) {
-			double rad = trees[i][0] * islandScale;
-			double rot = trees[i][1];
-			int offx = ImageBank.tree.getWidth() / 2;
-			int offy = ImageBank.tree.getHeight();
-			int tx = (int) (-offx + islandOffsetX + Engine.SCREEN_WIDTH / 2 + Math.cos(-islandRotation + rot) * rad);
-			int ty = (int) (-offy + islandOffsetY + Engine.SCREEN_HEIGHT / 2 + Math.sin(-islandRotation + rot) * rad * HEIGHT_WIDTH_RATIO);
-			g.drawImage(ImageBank.tree, tx, ty, null);
-		}
+		/*
+		 * for (int i = 0; i < trees.length; i++) { double rad =
+		 * trees[i][0] * islandScale; double rot = trees[i][1]; int offx =
+		 * ImageBank.tree.getWidth() / 2; int offy = ImageBank.tree.getHeight(); int tx
+		 * = (int) (-offx + islandOffsetX + Engine.SCREEN_WIDTH / 2 +
+		 * Math.cos(-islandRotation + rot) * rad); int ty = (int) (-offy + islandOffsetY
+		 * + Engine.SCREEN_HEIGHT / 2 + Math.sin(-islandRotation + rot) * rad *
+		 * HEIGHT_WIDTH_RATIO); g.drawImage(ImageBank.tree, tx, ty, null); }
+		 */
 		// draw island objects
-		for (int i = 0; i < objs.length; i++) {
-			IslandObject obj = objs[i];
+		currRenderRot = islandRotation;
+		Collections.sort(objs);
+		for (int i = 0; i < objs.size(); i++) {
+			IslandObject obj = objs.get(i);
 			int offx = obj.width / 2;
 			int offy = obj.height;
 			double srad = obj.rad * islandScale;
@@ -79,7 +79,7 @@ public class Island {
 	
 }
 
-class IslandObject {
+class IslandObject implements Comparable<IslandObject> {
 	
 	BufferedImage[] sheet;
 	double rot, rad;
@@ -105,6 +105,13 @@ class IslandObject {
 		// index will be between 0 and sheet.length:
 		int index = (int) (rotProp * sheet.length);
 		return sheet[index];
+	}
+
+	@Override
+	public int compareTo(IslandObject other) {
+		double thisY = Math.sin(rot - Island.currRenderRot) * rad;
+		double otherY = Math.sin(other.rot - Island.currRenderRot) * other.rad;
+		return (int) (thisY - otherY);
 	}
 	
 }
