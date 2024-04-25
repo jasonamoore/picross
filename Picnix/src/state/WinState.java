@@ -13,6 +13,7 @@ import engine.Engine;
 import engine.Input;
 import engine.Transition;
 import picnix.Level;
+import picnix.Parallax;
 import picnix.World;
 import picnix.puzzle.Puzzle;
 import resource.bank.FontBank;
@@ -93,6 +94,8 @@ public class WinState extends State {
 	private Level level;
 	private Puzzle[] puzzles;
 	
+	private Parallax background;
+	
 	public WinState(World world, Level level) {
 		this.world = world;
 		this.level = level;
@@ -164,6 +167,12 @@ public class WinState extends State {
 		for (int r = 0; r < rows; r++)
 			for (int c = 0; c < cols; c++)
 					tryCreateFood(visited, r, c);
+		// parallax
+		background = new Parallax(true, true);
+		background.addLayer(ImageBank.winparatest1, 0, 6000, true);
+		background.addLayer(ImageBank.winparatest2, 0, 4000, true);
+		//background.addLayer(ImageBank.winparatest3, 0, -4500, true);
+		background.resumeScroll();
 	}
 
 	private void tryCreateFood(boolean[][] visited, int r, int c) {
@@ -337,6 +346,9 @@ public class WinState extends State {
 
 	@Override
 	public void render(Graphics g) {
+		g.setColor(Palette.MAGENTA);
+		g.fillRect(0, 0, Engine.SCREEN_WIDTH, Engine.SCREEN_HEIGHT);
+		background.render(g);
 		if (state == FREEFALL) {
 			double progress = sceneTimer.elapsed() / (double) FREEFALL_DURATION;
 			boolean plates = progress < 0.5;

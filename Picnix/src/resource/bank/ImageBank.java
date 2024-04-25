@@ -19,6 +19,9 @@ public class ImageBank {
 	public static BufferedImage paratest1;
 	public static BufferedImage paratest2;
 	public static BufferedImage paratest3;
+	public static BufferedImage winparatest1;
+	public static BufferedImage winparatest2;
+	public static BufferedImage winparatest3;
 	public static BufferedImage[] parkobjsheet;
 	public static BufferedImage[] treeobjsheet;
 	public static BufferedImage mushroom;
@@ -143,6 +146,9 @@ public class ImageBank {
 		paratest1 = loadSheet("testpara1.png");
 		paratest2 = loadSheet("testpara2.png");
 		paratest3 = loadSheet("testpara3.png");
+		winparatest1 = loadSheet("winparatest1.png");
+		winparatest2 = loadSheet("winparatest2.png");
+		winparatest3 = loadSheet("winparatest3.png");
 		mushroom = loadSheet("mushroom.png");
 		// island objs
 		BufferedImage parkobj = loadSheet("parkobj.png");
@@ -255,7 +261,7 @@ public class ImageBank {
 		numsmed = loadMany(blanketSheet, 86, 140, 8, 10, 5, 2);
 		numstiny = loadMany(blanketSheet, 161, 75, 6, 7, 5, 4);
 		isoplate = loadOne(blanketSheet, 141, 218, 33, 16);
-		streakWords = loadMany(blanketSheet, 126, 110, 75, 17, 1, 5);
+		streakWords = loadMany(blanketSheet, 126, 110, 75, 16, 1, 5);
 		// foods (placeholder)
 		BufferedImage foodSheet = loadSheet("food.png");
 		foods35 = new BufferedImage[PuzzleState.NUM_FOOD_TYPES];
