@@ -97,10 +97,10 @@ public class StateManager {
 	 */
 	public void popUntilNextLoadState() {
 		// pop current state
-		exitTopState(false);
+		exitTopState(true);
 		// keep popping until its a load state
 		while (!(stateStack.peek() instanceof LoadState))
-			exitTopState(false);
+			exitTopState(true);
 	}
 	
 	public void tick() {

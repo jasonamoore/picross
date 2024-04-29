@@ -217,7 +217,7 @@ public class PuzzleState extends State {
 	
 	@Override
 	public void focus(int status) {
-		if (state < COMPLETE_WINNING)
+		if (status != ERROR_RETURN)
 			AudioBank.parkMusic.resume();
 		if (status == NEWLY_OPENED)
 			clock.resume();
@@ -493,7 +493,7 @@ public class PuzzleState extends State {
 			int ccol = chngd[Stroke.COL];
 			// mistakes should never be in history since they are immediately fixed
 			toSave.addChange(crow, ccol, revPuzzle.getMark(crow, ccol), false); // <- hence, false
-			//boolean mistake = revPuzzle.markSpot(crow, ccol, chngd[Stroke.MARK]);
+			revPuzzle.markSpot(crow, ccol, chngd[Stroke.MARK]);
 			//if (mistake)
 			//	mistakesDuringRevert++;
 		}
@@ -643,7 +643,7 @@ public class PuzzleState extends State {
 		return tracks;
 	}
 	
-	private int musicTracks = 1;
+	private int musicTracks = 0;
 	
 	private void updateMusicTracks() {
 		if (state > PICTURE_SOLVING) {
@@ -652,7 +652,7 @@ public class PuzzleState extends State {
 		}
 		double puzProgress = activePuzzle.getCorrectCells() /
 				(double) activePuzzle.getFilledCellsInSolution();
-		int count = 1 + (int) (puzProgress * getMaxMusicTrackCount());
+		int count = (int) (puzProgress * getMaxMusicTrackCount());
 		if (musicTracks != count) {
 			musicTracks = count;
 			AudioBank.parkMusic.setEnabledTracks(count);

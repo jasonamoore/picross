@@ -22,6 +22,7 @@ public class ImageBank {
 	public static BufferedImage winparatest1;
 	public static BufferedImage winparatest2;
 	public static BufferedImage winparatest3;
+	public static BufferedImage pausepara;
 	public static BufferedImage[] parkobjsheet;
 	public static BufferedImage[] treeobjsheet;
 	public static BufferedImage mushroom;
@@ -149,6 +150,7 @@ public class ImageBank {
 		winparatest1 = loadSheet("winparatest1.png");
 		winparatest2 = loadSheet("winparatest2.png");
 		winparatest3 = loadSheet("winparatest3.png");
+		pausepara = loadSheet("pausepara.png");
 		mushroom = loadSheet("mushroom.png");
 		// island objs
 		BufferedImage parkobj = loadSheet("parkobj.png");

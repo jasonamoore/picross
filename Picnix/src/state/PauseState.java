@@ -1,9 +1,11 @@
 package state;
 
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 import engine.Engine;
 import engine.Transition;
+import picnix.Parallax;
 import resource.bank.AudioBank;
 import resource.bank.ImageBank;
 import state.element.Icon;
@@ -14,6 +16,8 @@ public class PauseState extends State {
 	public static final int PAUSE_YOFFSET = 50;
 	public static final int OPT_WIDTH = 100;
 	public static final int OPT_HEIGHT = 50;
+	
+	private Parallax background;
 	
 	public PauseState() {
 		AudioBank.pauseMusic.resume();
@@ -35,10 +39,14 @@ public class PauseState extends State {
 			}
 		};
 		resume.setAllTileMaps(ImageBank.greenbutton, ImageBank.greenbuttonclick, ImageBank.buttondisabled);
-		quit.setAllTileMaps(ImageBank.pinkbutton, ImageBank.pinkbuttonclick, ImageBank.buttondisabled);
+		quit.setAllTileMaps(ImageBank.redbutton, ImageBank.redbuttonclick, ImageBank.buttondisabled);
 		add(pause);
 		add(resume);
 		add(quit);
+		// parallax
+		background = new Parallax(true, true);
+		background.addLayer(ImageBank.pausepara, 0, 8000, true);
+		background.resumeScroll();
 	}
 
 	@Override
@@ -52,8 +60,15 @@ public class PauseState extends State {
 	}
 	
 	public void quit() {
+		AudioBank.pauseMusic.pause();
 		AudioBank.pauseMusic.reset(false);
 		Engine.getEngine().getStateManager().popUntilNextLoadState();
+	}
+	
+	@Override
+	public void render(Graphics g) {
+		background.render(g);
+		super.render(g);
 	}
 	
 }

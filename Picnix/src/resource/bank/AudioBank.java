@@ -9,19 +9,20 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
+import resource.FakeSong;
 import resource.Song;
 import resource.SoundEffect;
 
 public class AudioBank {
 
 	public static SoundEffect test;
-	public static Song pauseMusic;
-	public static Song parkMusic;
+	public static FakeSong pauseMusic;
+	public static FakeSong parkMusic;
 	
 	public static void loadGlobalResources() {
 		test = loadSoundEffect("bloop.wav", 5);
 		pauseMusic = loadSong(true, "pause.wav");
-		parkMusic = loadSong(true, "park0.wav", "park1.wav", "park2.wav", "park3.wav");
+		parkMusic = loadSong(true, "park0.wav", "fpark1.wav", "fpark2.wav", "fpark3.wav");
 	}
 	
 	public static SoundEffect loadSoundEffect(String src, int beltSize) {
@@ -40,7 +41,7 @@ public class AudioBank {
 		}
 	}
 	
-	public static Song loadSong(boolean loop, String... trackSrcs) {
+	public static FakeSong loadSong(boolean loop, String... trackSrcs) {
 		try {
 			Clip[] tracks = new Clip[trackSrcs.length];
 			for (int i = 0; i < trackSrcs.length; i++) {
@@ -49,7 +50,7 @@ public class AudioBank {
 				tracks[i] = AudioSystem.getClip();
 				tracks[i].open(stream);
 			}
-			return new Song(loop, tracks);
+			return new FakeSong(loop, tracks);
 		} catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
 			e.printStackTrace();
 			return null;

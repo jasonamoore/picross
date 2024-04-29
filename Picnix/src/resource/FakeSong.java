@@ -16,7 +16,7 @@ public class FakeSong {
 	public FakeSong(boolean loop, Clip[] tracks) {
 		this.loop = loop;
 		this.tracks = tracks;
-		trackHead = 1;
+		trackHead = 0;
 		for (int i = 0; i < tracks.length; i++) {
 			tracks[i].addLineListener(new SongListener());
 			if (loop) // 0 to -1 means loop from start to end
@@ -32,14 +32,6 @@ public class FakeSong {
 	
 	public void resume() {
 		playing = true;
-		//for (int i = 0; i < tracks.length; i++)
-		//	tracks[i].stop();
-		//int sync = tracks[0].getFramePosition();
-		//for (int i = 0; i < tracks.length; i++)
-		//	tracks[i].setFramePosition(sync);
-		tracks[trackHead - 1].stop();
-		int sync = tracks[trackHead - 1].getFramePosition();
-		tracks[trackHead].setFramePosition(sync);
 		if (loop)
 			tracks[trackHead].loop(Clip.LOOP_CONTINUOUSLY);
 		else
@@ -55,7 +47,7 @@ public class FakeSong {
 	
 	public void stripTracks() {
 		// set trackHead back to start
-		setEnabledTracks(1);
+		setEnabledTracks(0);
 	}
 	
 	public void addTrack() {
@@ -67,10 +59,14 @@ public class FakeSong {
 	}
 	
 	public void setEnabledTracks(int count) {
-		if (count < 1 || count > tracks.length)
+		if (count < 0 || count >= tracks.length)
 			return;
 		trackHead = count;
-		if (playing)
+		boolean wasPlaying = playing;
+		pause();
+		int sync = count == 0 ? 0 : tracks[trackHead - 1].getFramePosition();
+		tracks[trackHead].setFramePosition(sync);
+		if (wasPlaying)
 			resume();
 	}
 
