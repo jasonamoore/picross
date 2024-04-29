@@ -36,6 +36,7 @@ public class Mushroom extends Organism {
 	public void onReward() {
 		stopPull();
 		((PuzzleState) state).increaseCritterScore(2000);
+		((PuzzleState) state).removeCritter(this);
 		onRelease(Input.LEFT_CLICK);
 		// remove itself
 		updateState(null);

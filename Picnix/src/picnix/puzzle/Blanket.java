@@ -198,8 +198,11 @@ public class Blanket extends Element {
 		// find out where to drop
 		int rmx = getRelativeMouseX();
 		int rmy = getRelativeMouseY();
-		int row = getCellAtPoint(rmy);
-		int col = getCellAtPoint(rmx);
+		int[] food = PuzzleState.getFoodById(dragging.foodId);
+		int fHalfW = (food[0] * puzState.getPuzzleCellSize()) / 2;
+		int fHalfH = (food[1] * puzState.getPuzzleCellSize()) / 2;
+		int row = getClosestCellAtPoint(rmy - fHalfH);
+		int col = getClosestCellAtPoint(rmx - fHalfW);
 		// where it will go
 		int where[] = findValidInsertSpot(dragging.foodId, row, col);
 		// check if we found anywhere to place
@@ -339,6 +342,10 @@ public class Blanket extends Element {
 	
 	private int getCellAtPoint(int xory) {
 		return Math.floorDiv(xory, puzState.getPuzzleCellSize());
+	}
+	
+	private int getClosestCellAtPoint(int xory) {
+		return (int) Math.round(xory / (double) puzState.getPuzzleCellSize());
 	}
 	
 	@Override
@@ -616,13 +623,18 @@ public class Blanket extends Element {
 				}
 			}
 			// render drop hitbox
-			if (isDraggingFood() && isValidFoodSpot(highRow, highCol)) {
+			if (isDraggingFood()) {
 				int[] food = PuzzleState.getFoodById(dragging.foodId);
+				int fHalfW = (food[0] * cellSize) / 2;
+				int fHalfH = (food[1] * cellSize) / 2;
+				int foodRow = getClosestCellAtPoint(rmy - fHalfH);
+				int foodCol = getClosestCellAtPoint(rmx - fHalfW);
 				// all of the food needs to be in bounds to render
-				if (isValidFoodSpot(highRow + food[1] - 1, highCol + food[0] - 1)) {
+				if (isValidFoodSpot(foodRow, foodCol) &&
+					isValidFoodSpot(foodRow + food[1] - 1, foodCol + food[0] - 1)) {
 					// half opacity for the color
 					gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-					int where[] = findValidInsertSpot(dragging.foodId, highRow, highCol);
+					int where[] = findValidInsertSpot(dragging.foodId, foodRow, foodCol);
 					// if there is a valid spot, draw it green
 					if (where[0] != -1 && where[1] != -1) {
 						g.setColor(Palette.PEAR);
@@ -631,11 +643,11 @@ public class Blanket extends Element {
 					// if no valid spot, draw red
 					else {
 						g.setColor(Palette.RED);
-						g.fillRect(highCol * cellSize, highRow * cellSize, food[0] * cellSize, food[1] * cellSize);
+						g.fillRect(foodCol * cellSize, foodRow * cellSize, food[0] * cellSize, food[1] * cellSize);
 					}
 					gg.setComposite(oldComp);
 				}
-				g.drawImage(foods[dragging.foodId], rmx, rmy, null);
+				g.drawImage(foods[dragging.foodId], rmx - fHalfW, rmy - fHalfH, null);
 			}
 		}
 		gg.setComposite(oldComp);

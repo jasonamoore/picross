@@ -15,10 +15,12 @@ import picnix.Level;
 import picnix.World;
 import picnix.data.UserData;
 import picnix.interactable.Mushroom;
+import picnix.interactable.Organism;
 import picnix.puzzle.Blanket;
 import picnix.puzzle.Field;
 import picnix.puzzle.Puzzle;
 import picnix.puzzle.Stroke;
+import resource.bank.AudioBank;
 import resource.bank.FontBank;
 import resource.bank.ImageBank;
 import resource.bank.Palette;
@@ -73,6 +75,10 @@ public class PuzzleState extends State {
 	private static final int MISTAKES_X = 290;
 	private static final int STREAK_X = 380;
 	private static final int STREAK_Y = 300;
+	private static final int MINIMAP_X = 365;
+	private static final int MINIMAP_Y = 65;
+	private static final int MINIMAP_HEIGHT = 60;
+	private static final float MINIMAP_MAX_OPACITY = 0.8f;
 	
 	// the puzzle(s)
 	private Puzzle[] puzzleLayers;
@@ -152,6 +158,8 @@ public class PuzzleState extends State {
 	private World world;
 	private Level level;
 	
+	private ArrayList<Organism> critters;
+	
 	/* ~~~~~~~~~~~~~~~~~~~~
 	 * 	SETUP
 	 * ~~~~~~~~~~~~~~~~~~~~
@@ -189,6 +197,7 @@ public class PuzzleState extends State {
 		switchTimer = new Timer(false);
 		generateUI();
 		// make some random shrooms
+		critters = new ArrayList<Organism>();
 		for (int i = 0; i < 30; i++) {
 			Mushroom m = new Mushroom();
 			int rx, ry;
@@ -198,12 +207,18 @@ public class PuzzleState extends State {
 			} while (field.getBlanket().inAbsoluteBounds(rx, ry) ||
 					field.getBlanket().inAbsoluteBounds(rx + 20, ry + 20));
 			m.setBounds(rx, ry, 20, 20);
+			critters.add(m);
 			field.add(m);
 		}
+		// music stuff
+		AudioBank.parkMusic.reset(false);
+		AudioBank.parkMusic.stripTracks();
 	}
 	
 	@Override
 	public void focus(int status) {
+		if (state < COMPLETE_WINNING)
+			AudioBank.parkMusic.resume();
 		if (status == NEWLY_OPENED)
 			clock.resume();
 	}
@@ -214,6 +229,8 @@ public class PuzzleState extends State {
 	 * of the undo/redo, clear, and center buttons.
 	 */
 	private void generateUI() {
+		double ratio = Field.FIELD_WIDTH / (double) Field.FIELD_HEIGHT;
+		minimap = new BufferedImage((int) (MINIMAP_HEIGHT * ratio), MINIMAP_HEIGHT, BufferedImage.TYPE_INT_ARGB);
 		pause = new TiledButton(Engine.SCREEN_WIDTH - 24, 0, 24, 32) {
 			@Override
 			public void onButtonUp() {
@@ -295,7 +312,7 @@ public class PuzzleState extends State {
 		int hintMax = activePuzzle.getLongestRowClueList();
 		for (int i = 0; i < puzzleLayers.length; i++)
 			hintMax = Math.max(hintMax, puzzleLayers[i].getLongestRowClueList());
-		return Blanket.getHintScrollWidth(cellSize) * hintMax + Sidebar.SIDEBAR_W;
+		return Blanket.getHintScrollWidth(cellSize) * hintMax + Sidebar.SIDEBAR_W / 2;
 	}
 	
 	public int getPuzzleTopPadding() {
@@ -452,6 +469,8 @@ public class PuzzleState extends State {
 			bwon &= puzzleLayers[i].isSolved();
 		if (bwon)
 			pictureWin();
+		// update music progression
+		updateMusicTracks();
 	}
 	
 	public void undo() {
@@ -559,6 +578,10 @@ public class PuzzleState extends State {
 		updateScore();
 	}
 	
+	public void removeCritter(Organism c) {
+		critters.remove(c);
+	}
+	
 	public void increaseCritterScore(int amount) {
 		critterScore += amount;
 		updateScore();
@@ -610,6 +633,33 @@ public class PuzzleState extends State {
 	}
 	
 	/* ~~~~~~~~~~~~~~~~~~~~~
+	 * MUSIC STUFF
+	 * ~~~~~~~~~~~~~~~~~~~~~
+	 */
+	
+	private int getMaxMusicTrackCount() {
+		int msize = Math.max(activePuzzle.getRows(), activePuzzle.getColumns());
+		int tracks = 4;//msize <= 5 ? 2 : msize <= 10 ? 3 : 4;
+		return tracks;
+	}
+	
+	private int musicTracks = 1;
+	
+	private void updateMusicTracks() {
+		if (state > PICTURE_SOLVING) {
+			AudioBank.parkMusic.pause();
+			return;
+		}
+		double puzProgress = activePuzzle.getCorrectCells() /
+				(double) activePuzzle.getFilledCellsInSolution();
+		int count = 1 + (int) (puzProgress * getMaxMusicTrackCount());
+		if (musicTracks != count) {
+			musicTracks = count;
+			AudioBank.parkMusic.setEnabledTracks(count);
+		}
+	}
+	
+	/* ~~~~~~~~~~~~~~~~~~~~~
 	 * GAME HOOKS (LOSING/WINNING)
 	 * ~~~~~~~~~~~~~~~~~~~~~
 	 */
@@ -647,6 +697,7 @@ public class PuzzleState extends State {
 	}
 	
 	private void pause() {
+		AudioBank.parkMusic.pause();
 		PauseState ps = new PauseState();
 		Engine.getEngine().getStateManager().transitionToState(ps, Transition.SLIDE_TOP, 250, 0);
 	}
@@ -695,10 +746,12 @@ public class PuzzleState extends State {
 			switchToFoodSolving();
 			break;
 		case COMPLETE_WINNING:
+			AudioBank.parkMusic.pause();
 			LoadWinState lws = new LoadWinState(world, level);
 			Engine.getEngine().getStateManager().transitionToState(lws, Transition.CURTAIN, 500, 750);
 			break;
 		case LOSING:
+			AudioBank.parkMusic.pause();
 			Engine.getEngine().getStateManager().transitionExitState(Transition.FADE, 500, 0);
 			break;
 		}
@@ -873,6 +926,8 @@ public class PuzzleState extends State {
 	
 	// ~~~~~~~~~~ RENDER
 
+	BufferedImage minimap;
+	
 	@Override
 	public void render(Graphics g) {
 		super.render(g);
@@ -942,32 +997,60 @@ public class PuzzleState extends State {
 		g.setClip(null);
 		((Graphics2D) g).setComposite(oldComp);
 		
-		// streak viewer
-		int streak = field.getBlanket().getStreak();
-		if (streak > 0 && state == PICTURE_SOLVING) {
-			final int max = ImageBank.streakWords.length - 1;
-			int remTime = field.getBlanket().getStreakTimeRemaining();
-			int fadeTime = Math.max(0, remTime + Blanket.STREAK_GAP);
-			float opacity = Math.min(1f, fadeTime / (Blanket.STREAK_GAP / 2f));
+		if (state == PICTURE_SOLVING) {
 			Graphics2D gg = (Graphics2D) g;
-			gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
-			g.drawImage(ImageBank.streakWords[Math.min(streak - 1, max)], STREAK_X, STREAK_Y, null);
-			final int w = 75;
-			int barW = (int) (w * Math.max(0, remTime) / (double) Blanket.STREAK_GAP);
-			int yup = 20;
-			g.setColor(Palette.BLACK);
-			g.drawRect(STREAK_X, STREAK_Y - yup, w, 10);
-			g.setColor(Palette.RED);
-			g.fillRect(STREAK_X + w - barW, STREAK_Y + 1 - yup, barW, 9);
+			// minimap
+			int mapW = minimap.getWidth();
+			int mapH = minimap.getHeight();
+			double scale = minimap.getWidth() / (double) Field.FIELD_WIDTH;
+			Graphics mapG = minimap.getGraphics();
+			mapG.setColor(Palette.BLACK);
+			mapG.fillRect(0, 0, mapW, mapH);
+			mapG.setColor(Palette.PALE_TAN);
+			int camX = (int) (field.getScrollX() * scale);
+			int camY = (int) (field.getScrollY() * scale);
+			final int camW = (int) (Engine.SCREEN_WIDTH * scale);
+			final int camH = (int) (Engine.SCREEN_HEIGHT * scale);
+			mapG.drawRect(camX, camY, camW, camH);
+			mapG.setColor(Palette.WHITE);
+			for (int i = 0; i < critters.size(); i++) {
+				Organism c = critters.get(i);
+				int mapX = (int) (c.getX() * scale);
+				int mapY = (int) (c.getY() * scale);
+				mapG.fillRect(mapX, mapY, 2, 2);
+			}
+			mapG.dispose();
+			float mapOpac = MINIMAP_MAX_OPACITY;
+			gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, mapOpac));
+			g.drawImage(minimap, MINIMAP_X, MINIMAP_Y, null);
 			gg.setComposite(oldComp);
+			// streak viewer
+			int streak = field.getBlanket().getStreak();
+			if (streak > 0) {
+				final int max = ImageBank.streakWords.length - 1;
+				int remTime = field.getBlanket().getStreakTimeRemaining();
+				int fadeTime = Math.max(0, remTime + Blanket.STREAK_GAP);
+				float opacity = Math.min(1f, fadeTime / (Blanket.STREAK_GAP / 2f));
+				gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
+				g.drawImage(ImageBank.streakWords[Math.min(streak - 1, max)], STREAK_X, STREAK_Y, null);
+				final int w = 75;
+				int barW = (int) (w * Math.max(0, remTime) / (double) Blanket.STREAK_GAP);
+				int yup = 20;
+				g.setColor(Palette.BLACK);
+				g.drawRect(STREAK_X, STREAK_Y - yup, w, 10);
+				g.setColor(Palette.RED);
+				g.fillRect(STREAK_X + w - barW, STREAK_Y + 1 - yup, barW, 9);
+				gg.setComposite(oldComp);
+			}
 		}
 		// draw big text if during transition substates
 		int textY = textDrop.getIntValue();
 		if (state == LOSING) {
-			g.drawImage(ImageBank.ohno, 37, textY, null);
+			g.drawImage(ImageBank.ohno, Engine.getScreenCenterX(ImageBank.ohno.getWidth()), textY, null);
 		}
 		else if (state == PICTURE_WINNING) {
-			g.drawImage(ImageBank.youwin, 37, textY - 75, null);
+			g.drawImage(ImageBank.youwin, Engine.getScreenCenterX(ImageBank.youwin.getWidth()), textY - 75, null);
+			// draw a rectangle background?
 		}
 	}
 	

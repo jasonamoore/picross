@@ -38,7 +38,7 @@ public class FontBank {
 			}
 			endX++;
 		}
-		return new Font(glyphs, 1, image.getHeight());
+		return new Font(glyphs, 1, image.getHeight() + 2);
 	}
 	
 }

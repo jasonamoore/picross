@@ -25,6 +25,8 @@ public class LevelSelectState extends ScrollableState {
 	private Parallax background;
 	// buttons for navigating the list
 	private TiledButton prev, next;
+	// array of the level buttons
+	private LevelButton[] levelButtons;
 	
 	public LevelSelectState(World world) {
 		super(calculateWidth(world.getLevelCount()), Engine.SCREEN_HEIGHT);
@@ -42,9 +44,20 @@ public class LevelSelectState extends ScrollableState {
 	@Override
 	public void focus(int status) {
 		//if (status == NEWLY_OPENED)
+		updateUnlockedLevels();
 		slideTo(getFirstUnclearedLevel());
 	}
 
+	private void updateUnlockedLevels() {
+		// AFTER we reach an unbeaten level, the remaining
+		// levels will be set to disabled
+		boolean unlocked = true;
+		for (int i = 0; i < world.getLevelCount(); i++) {
+			levelButtons[i].setEnabled(unlocked);
+			unlocked &= UserData.isPuzzleCleared(world.getId(), i);
+		}
+	}
+	
 	private int getFirstUnclearedLevel() {
 		int i;
 		for (i = 0; i < world.getLevelCount(); i++)
@@ -54,10 +67,11 @@ public class LevelSelectState extends ScrollableState {
 	}
 	
 	private void generateUI() {
+		levelButtons = new LevelButton[world.getLevelCount()];
 		// level buttons
-		for (int i = 0; i < world.getLevelCount(); i++) {
-			LevelButton lb = new LevelButton(this, i);
-			scrollContainer.add(lb);
+		for (int i = 0; i < levelButtons.length; i++) {
+			levelButtons[i] = new LevelButton(this, i);
+			scrollContainer.add(levelButtons[i]);
 		}
 		// navigation buttons
 		prev = new TiledButton(15, 330, 48, 48) {

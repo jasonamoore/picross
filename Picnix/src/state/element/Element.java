@@ -25,8 +25,8 @@ public abstract class Element implements Comparable<Element> {
 	// list of child elements
 	private ArrayList<Element> children;
 	// element's defined bounds
-	private int x, y;
-	private int width, height;
+	protected int x, y;
+	protected int width, height;
 	// the element's depth order (greater z means farther in front)
 	protected int z;
 	

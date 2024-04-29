@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 
 import engine.Engine;
 import engine.Transition;
+import resource.bank.AudioBank;
 import resource.bank.ImageBank;
 import state.element.Icon;
 import state.element.TiledButton;
@@ -15,6 +16,7 @@ public class PauseState extends State {
 	public static final int OPT_HEIGHT = 50;
 	
 	public PauseState() {
+		AudioBank.pauseMusic.resume();
 		BufferedImage paused = ImageBank.paused;
 		Icon pause = new Icon(paused, Engine.getScreenCenterX(paused.getWidth()),
 				Engine.getScreenCenterY(paused.getHeight()) - PAUSE_YOFFSET);
@@ -45,10 +47,12 @@ public class PauseState extends State {
 	}
 	
 	public void resume() {
+		AudioBank.pauseMusic.pause();
 		Engine.getEngine().getStateManager().transitionExitState(Transition.SLIDE_BOTTOM, 250, 0);
 	}
 	
 	public void quit() {
+		AudioBank.pauseMusic.reset(false);
 		Engine.getEngine().getStateManager().popUntilNextLoadState();
 	}
 	

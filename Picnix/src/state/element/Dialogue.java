@@ -26,7 +26,7 @@ public class Dialogue extends Button {
 		this.lines = lines;
 		index = 0;
 		timer = new Timer(false);
-		textField = new TextField(font, TEXT_PADDING, TEXT_PADDING, calcBoxWidth() - TEXT_PADDING * 2);
+		textField = new TextField(font, TEXT_PADDING, TEXT_PADDING, calcBoxWidth() - TEXT_PADDING * 2, BOX_HEIGHT);
 		textField.setEnabled(false); // make sure text is not clickable (it would eat box clicks)
 		add(textField);
 		next();

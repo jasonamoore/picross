@@ -58,7 +58,9 @@ public class TitleState extends State {
 		add(titleIcon);
 		add(play);
 		add(gallery);
-		add(new Dialogue(FontBank.defout, "hi", "this is a test dialogue", "you should be able to click through these", "and see all the text/", "bye for now"));
+		add(new Dialogue(FontBank.defout, "welcome to picnix",
+				"press play to start throwing some antastic picnic parties",
+				"once you solve some puzzles the gallery will start framing pictures"));
 	}
 
 	@Override
