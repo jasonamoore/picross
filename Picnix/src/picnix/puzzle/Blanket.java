@@ -8,6 +8,7 @@ import java.awt.image.BufferedImage;
 
 import engine.Engine;
 import engine.Input;
+import resource.bank.AudioBank;
 import resource.bank.ImageBank;
 import resource.bank.Palette;
 import state.PuzzleState;
@@ -47,7 +48,7 @@ public class Blanket extends Element {
 	
 	// streak constants
 	public static final double[] MULTIPLIERS = {1, 1.2, 1.5, 2, 3, 5};
-	public static final int STREAK_GAP = 3500;
+	public static final int STREAK_GAP = 4500;
 	
 	// for keeping track of what grids have ever been marked (for score)
 	private boolean[][] scoreChart;
@@ -416,6 +417,8 @@ public class Blanket extends Element {
 				else
 					streak = 1;
 				scoreChart[row][col] = true;
+				// play plate sound
+				AudioBank.plateDinks[Math.min(4, streak - 1)].play();
 				puzState.increasePlateScore(getPlateScoreBonus());
 				streakTimer.reset(true);
 			}

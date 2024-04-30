@@ -16,6 +16,7 @@ import picnix.Level;
 import picnix.Parallax;
 import picnix.World;
 import picnix.puzzle.Puzzle;
+import resource.bank.AudioBank;
 import resource.bank.FontBank;
 import resource.bank.ImageBank;
 import resource.bank.Palette;
@@ -40,7 +41,7 @@ public class WinState extends State {
 	private static final int CELL_SIZE = 35;
 
 	private static final int FREEFALL_DURATION = 5000;
-	private static final int SIMULATION_DURATION = 25000;
+	private static final int SIMULATION_DURATION = 30000;
 	private static final int SHOW_DURATION = 3500;
 	private static final int HALFTIME = SIMULATION_DURATION / 2;
 	
@@ -309,6 +310,7 @@ public class WinState extends State {
 	
 	@Override
 	public void navigateBack() {
+		AudioBank.winMusic.pause();
 		state = CLOSING;
 		Engine.getEngine().getStateManager().transitionExitState(Transition.FADE, 250, 0);
 	}

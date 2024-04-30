@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 import engine.Input;
+import resource.bank.AudioBank;
 
 public class TiledButton extends Button {
 
@@ -25,6 +26,7 @@ public class TiledButton extends Button {
 	
 	public TiledButton(int x, int y, int w, int h) {
 		super(x, y, w, h);
+		setSounds(AudioBank.buttonDown, AudioBank.buttonUp);
 	}
 
 	public void setAllTileMaps(BufferedImage[] tiles, BufferedImage[] clickTiles, BufferedImage[] disabledTiles) {

@@ -61,10 +61,10 @@ public class FakeSong {
 	public void setEnabledTracks(int count) {
 		if (count < 0 || count >= tracks.length)
 			return;
-		trackHead = count;
+		int sync = count == 0 ? 0 : tracks[trackHead].getFramePosition();
 		boolean wasPlaying = playing;
+		trackHead = count;
 		pause();
-		int sync = count == 0 ? 0 : tracks[trackHead - 1].getFramePosition();
 		tracks[trackHead].setFramePosition(sync);
 		if (wasPlaying)
 			resume();

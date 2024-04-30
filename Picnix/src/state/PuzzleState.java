@@ -639,7 +639,7 @@ public class PuzzleState extends State {
 	
 	private int getMaxMusicTrackCount() {
 		int msize = Math.max(activePuzzle.getRows(), activePuzzle.getColumns());
-		int tracks = 4;//msize <= 5 ? 2 : msize <= 10 ? 3 : 4;
+		int tracks = msize <= 5 ? 2 : msize <= 10 ? 3 : 4;
 		return tracks;
 	}
 	
@@ -736,6 +736,7 @@ public class PuzzleState extends State {
 	private void foodWin() {
 		state = COMPLETE_WINNING;
 		UserData.setPuzzleScore(world.getId(), level.getId(), getScore());
+		AudioBank.winMusic.reset(true);
 		finish();
 	}
 

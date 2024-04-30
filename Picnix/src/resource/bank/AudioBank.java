@@ -10,19 +10,33 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 import resource.FakeSong;
-import resource.Song;
 import resource.SoundEffect;
 
 public class AudioBank {
 
 	public static SoundEffect test;
+	public static SoundEffect buttonUp;
+	public static SoundEffect buttonDown;
+	public static SoundEffect[] plateDinks;
+	public static FakeSong titleMusic;
 	public static FakeSong pauseMusic;
 	public static FakeSong parkMusic;
+	public static FakeSong winMusic;
 	
 	public static void loadGlobalResources() {
 		test = loadSoundEffect("bloop.wav", 5);
+		buttonUp = loadSoundEffect("buttonup.wav", 1);
+		buttonDown = loadSoundEffect("buttondown.wav", 1);
+		plateDinks = new SoundEffect[5];
+		plateDinks[0] = loadSoundEffect("plate0.wav", 1);
+		plateDinks[1] = loadSoundEffect("plate1.wav", 1);
+		plateDinks[2] = loadSoundEffect("plate2.wav", 1);
+		plateDinks[3] = loadSoundEffect("plate3.wav", 1);
+		plateDinks[4] = loadSoundEffect("plate4.wav", 3);
+		titleMusic = loadSong(true, "title.wav");
 		pauseMusic = loadSong(true, "pause.wav");
 		parkMusic = loadSong(true, "park0.wav", "fpark1.wav", "fpark2.wav", "fpark3.wav");
+		winMusic = loadSong(false, "results.wav");
 	}
 	
 	public static SoundEffect loadSoundEffect(String src, int beltSize) {

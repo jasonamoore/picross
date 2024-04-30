@@ -7,6 +7,7 @@ import java.awt.geom.AffineTransform;
 import engine.Engine;
 import engine.Transition;
 import picnix.Island;
+import resource.bank.AudioBank;
 import resource.bank.FontBank;
 import resource.bank.ImageBank;
 import state.element.Dialogue;
@@ -65,6 +66,7 @@ public class TitleState extends State {
 
 	@Override
 	public void focus(int status) {
+		AudioBank.titleMusic.reset(true);
 		if (zoomState == READY_TO_ZOOM)
 			startZoom(true);
 	}
@@ -89,6 +91,7 @@ public class TitleState extends State {
 	}
 	
 	private void playButtonClicked() {
+		AudioBank.titleMusic.pause();
 		setZoomAnim(true, smoothRot.getValue(), 0);
 		startZoom(false);
 		// open world state, with a "part A" delay so the zoom anim plays first
@@ -96,6 +99,7 @@ public class TitleState extends State {
 	}
 	
 	private void galleryButtonClicked() {
+		AudioBank.titleMusic.pause();
 		Engine.getEngine().getStateManager().transitionToState(new LoadGalleryState(), Transition.FADE, 250, 0);
 	}
 	

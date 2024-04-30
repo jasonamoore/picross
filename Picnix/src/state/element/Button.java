@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 import engine.Input;
+import resource.SoundEffect;
 import resource.bank.Palette;
 
 /**
@@ -21,6 +22,10 @@ public class Button extends Element {
 	// backgrounds for button states
 	protected BufferedImage clickBackground;
 	protected BufferedImage disabledBackground;
+	
+	// sfx for clicking
+	private SoundEffect onDownSound;
+	private SoundEffect onUpSound;
 	
 	/**
 	 * Creates a Button with undefined bounds.
@@ -38,6 +43,11 @@ public class Button extends Element {
 	 */
 	public Button(int x, int y, int w, int h) {
 		super(x, y, w, h);
+	}
+	
+	public void setSounds(SoundEffect down, SoundEffect up) {
+		onDownSound = down;
+		onUpSound = up;
 	}
 	
 	/**
@@ -90,11 +100,20 @@ public class Button extends Element {
 	}
 	
 	@Override
+	public void onClick(int mbutton) {
+		super.onClick(mbutton);
+		if (mbutton == Input.LEFT_CLICK)
+			if (onDownSound != null) onDownSound.play();
+	}
+	
+	@Override
 	public void onRelease(int mbutton) {
 		super.onRelease(mbutton);
 		if (mbutton == Input.LEFT_CLICK
-				&& beingHovered())
+				&& beingHovered()) {
+			if (onUpSound != null) onUpSound.play();
 			onButtonUp();
+		}
 	}
 	
 	protected void onButtonUp() {}
